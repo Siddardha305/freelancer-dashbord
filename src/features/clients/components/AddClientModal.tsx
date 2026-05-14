@@ -9,7 +9,7 @@ const initialState = {
   errors: {},
 }
 
-export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: (client?: any) => void }) {
   const [state, formAction, isPending] = useActionState(createClientAction, initialState)
   const [pricingModel, setPricingModel] = useState('monthly')
   const [thumbnailsCount, setThumbnailsCount] = useState(0)
