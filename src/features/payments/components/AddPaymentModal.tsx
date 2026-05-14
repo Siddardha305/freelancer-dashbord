@@ -11,7 +11,7 @@ const initialState = {
   errors: {},
 }
 
-export function AddPaymentModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
   const [state, formAction, isPending] = useActionState(createPaymentAction, initialState)
   const [clients, setClients] = useState<any[]>([])
 
@@ -25,10 +25,12 @@ export function AddPaymentModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     }
   }, [isOpen]);
 
-  if (state?.message === 'success') {
-    onClose();
-    state.message = ''; 
-  }
+  useEffect(() => {
+    if (state?.message === 'success' && isOpen) {
+      if (onSuccess) onSuccess();
+      onClose();
+    }
+  }, [state?.message, isOpen, onClose, onSuccess]);
 
   return (
     <FormModal isOpen={isOpen} onClose={onClose} title="Create Invoice">
