@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Download, CheckCircle2, Clock, AlertCircle, Trash2, DollarSign, FileText, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { updatePaymentStatusAction, deletePaymentAction } from "@/features/payments/actions/payment-actions";
+import { downloadCSV } from "@/lib/export-utils";
 
 export function PaymentTable({ initialPayments = [] }: { initialPayments?: any[] }) {
   const [payments, setPayments] = useState(initialPayments);
@@ -10,6 +11,17 @@ export function PaymentTable({ initialPayments = [] }: { initialPayments?: any[]
   useEffect(() => {
     setPayments(initialPayments);
   }, [initialPayments]);
+
+  const handleExportCSV = () => {
+    const data = payments.map(p => ({
+      InvoiceID: p.id.slice(-6).toUpperCase(),
+      Client: p.client,
+      Amount: p.amount,
+      Status: p.payment_status,
+      DueDate: p.due_date
+    }));
+    downloadCSV(data, `Invoices_${new Date().toISOString().split('T')[0]}.csv`);
+  };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     const previousPayments = [...payments];
@@ -99,7 +111,10 @@ export function PaymentTable({ initialPayments = [] }: { initialPayments?: any[]
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Recent Invoices</h2>
             <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Real-time payment tracking</p>
           </div>
-          <button className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all border border-slate-100">
+          <button 
+            onClick={handleExportCSV}
+            className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all border border-slate-100 active:scale-95"
+          >
             <Download className="h-5 w-5" />
           </button>
         </div>

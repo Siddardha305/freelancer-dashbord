@@ -46,12 +46,19 @@ export async function createPaymentAction(prevState: any, formData: FormData) {
 
   try {
     await dbConnect()
-    await Payment.create(validatedFields.data)
+    const newPayment = await Payment.create(validatedFields.data)
 
     revalidatePath('/payments')
     revalidatePath('/')
     
-    return { message: 'success' }
+    return { 
+      message: 'success', 
+      payment: {
+        ...newPayment.toObject(),
+        _id: newPayment._id.toString(),
+        id: newPayment._id.toString()
+      }
+    }
   } catch (error) {
     console.error("MongoDB Error:", error)
     return {

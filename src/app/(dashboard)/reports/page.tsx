@@ -5,6 +5,7 @@ import { Download, TrendingUp, DollarSign, Image as ImageIcon, LayoutDashboard, 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { getPaymentsAction } from '@/features/payments/actions/payment-actions';
 import { getWorksAction } from '@/features/work/actions/work-actions';
+import { downloadCSV } from '@/lib/export-utils';
 
 export default function ReportsPage() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -33,6 +34,22 @@ export default function ReportsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleExportCSV = () => {
+    const reportData = payments.map(p => ({
+      InvoiceID: p.id.slice(-6).toUpperCase(),
+      Client: p.client,
+      Amount: p.amount,
+      Status: p.payment_status,
+      DueDate: p.due_date,
+      CreatedAt: new Date(p.createdAt).toLocaleDateString()
+    }));
+    downloadCSV(reportData, `Financial_Report_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleGetPDF = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -58,17 +75,32 @@ export default function ReportsPage() {
   const completedWorks = works.filter((w: any) => w.status === "Completed").length;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 print:bg-white">
+      <style jsx global>{`
+        @media print {
+          nav, aside, button, .print-hide { display: none !important; }
+          main { padding: 0 !important; margin: 0 !important; }
+          .print-break-inside-avoid { page-break-inside: avoid; }
+          .flex-1 { overflow: visible !important; }
+          .overflow-y-auto { overflow: visible !important; }
+        }
+      `}</style>
       <PageHeader
         title="Reports & Analytics"
         description="Monitor your financial performance and delivery metrics"
         action={
-          <div className="flex gap-4">
-            <button className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm">
+          <div className="flex gap-4 print-hide">
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+            >
               <Download className="h-4 w-4 text-indigo-600" />
               Export CSV
             </button>
-            <button className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+            <button 
+              onClick={handleGetPDF}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
+            >
               <Download className="h-4 w-4" />
               Get PDF Report
             </button>
