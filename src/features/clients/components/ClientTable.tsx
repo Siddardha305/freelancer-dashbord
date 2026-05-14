@@ -5,24 +5,18 @@ import { MoreHorizontal, Mail, Play, Trash2, Edit3, ArrowRight, ExternalLink, Us
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { deleteClientAction } from "@/features/clients/actions/client-actions";
 
-export function ClientTable({ clients: initialClients = [] }: { clients?: any[] }) {
-  const [clients, setClients] = useState(initialClients);
+export function ClientTable({ clients = [] }: { clients?: any[] }) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this client?")) return;
     
-    // Optimistic Update
-    const previousClients = [...clients];
-    setClients(current => current.filter(c => c.id !== id && c._id !== id));
-    setActiveMenu(null);
-
     try {
       const result = await deleteClientAction(id);
       if (result.message !== 'success') throw new Error(result.message);
+      // The parent will refresh via polling or we could add a callback
     } catch (error) {
       alert("Failed to delete client.");
-      setClients(previousClients);
     }
   };
 

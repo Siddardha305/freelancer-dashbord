@@ -26,10 +26,10 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean
   // Handle successful submission
   useEffect(() => {
     if (state?.message === 'success' && isOpen) {
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(state.client);
       onClose();
     }
-  }, [state?.message, isOpen, onClose, onSuccess]);
+  }, [state?.message, state?.client, isOpen, onClose, onSuccess]);
 
   if (!isOpen) return null
 

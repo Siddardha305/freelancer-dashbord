@@ -68,7 +68,14 @@ export async function createClientAction(prevState: any, formData: FormData) {
     revalidatePath('/clients')
     revalidatePath('/')
     
-    return { message: 'success' }
+    return { 
+      message: 'success', 
+      client: {
+        ...newClient.toObject(),
+        _id: newClient._id.toString(),
+        id: newClient._id.toString()
+      }
+    }
   } catch (error: any) {
     console.error("MongoDB Error in Action:", error.message || error)
     return {

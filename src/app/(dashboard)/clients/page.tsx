@@ -46,7 +46,13 @@ export default function ClientsPage() {
     );
   }
 
-  const refreshData = async () => {
+  const refreshData = async (newClient?: any) => {
+    if (newClient) {
+      // Instant update: prepend the new client to the current list
+      setClients(prev => [newClient, ...prev]);
+    }
+    
+    // Background refresh to ensure full data consistency
     const data = await getClientsAction();
     setClients(data);
   };
