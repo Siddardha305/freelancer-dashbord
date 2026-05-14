@@ -2,6 +2,8 @@ import { getDatabaseDiagnostics } from "@/lib/db-diagnostics";
 import { Database, HardDrive, Layers, CheckCircle2, AlertCircle } from "lucide-react";
 import { WipeDatabaseButton } from "@/features/diagnostics/components/WipeDatabaseButton";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DiagnosticsPage() {
   const result = await getDatabaseDiagnostics();
 
