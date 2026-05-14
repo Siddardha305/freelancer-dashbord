@@ -65,7 +65,9 @@ export default async function DiagnosticsPage() {
                 <Database className="h-24 w-24" />
               </div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Presence</p>
-              <h2 className="text-4xl font-black text-slate-900 mt-2 tracking-tighter">{counts?.clients + counts?.works + counts?.payments} Records</h2>
+              <h2 className="text-4xl font-black text-slate-900 mt-2 tracking-tighter">
+                {(counts?.clients || 0) + (counts?.works || 0) + (counts?.payments || 0)} Records
+              </h2>
               <div className="mt-6 flex items-center gap-2">
                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Verified across all collections</span>
@@ -83,15 +85,15 @@ export default async function DiagnosticsPage() {
            <div className="grid grid-cols-3 gap-8">
               <div className="space-y-1">
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Clients</p>
-                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.clients}</p>
+                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.clients || 0}</p>
               </div>
               <div className="space-y-1">
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Tasks</p>
-                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.works}</p>
+                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.works || 0}</p>
               </div>
               <div className="space-y-1">
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Invoices</p>
-                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.payments}</p>
+                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{counts?.payments || 0}</p>
               </div>
            </div>
         </div>
