@@ -1,6 +1,7 @@
 import { getDatabaseDiagnostics } from "@/lib/db-diagnostics";
 import { Database, HardDrive, Layers, CheckCircle2, AlertCircle } from "lucide-react";
 import { WipeDatabaseButton } from "@/features/diagnostics/components/WipeDatabaseButton";
+import { ResetWorkspaceButton } from "@/features/diagnostics/components/ResetWorkspaceButton";
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +101,10 @@ export default async function DiagnosticsPage() {
            </div>
         </div>
 
-        <WipeDatabaseButton />
+        <div className="grid grid-cols-1 gap-6">
+          <ResetWorkspaceButton />
+          <WipeDatabaseButton />
+        </div>
 
         <div className="text-center">
            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Database Diagnostics Utility • Real-Time Data Verification</p>

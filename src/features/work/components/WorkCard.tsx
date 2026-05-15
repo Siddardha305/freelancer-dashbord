@@ -1,25 +1,67 @@
 'use client'
 
-import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw, Pause, MessageSquare, Trash2 } from "lucide-react";
+import { formatDistanceToNow, isBefore, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface Task {
   id: string;
   _id?: string;
   client: string;
   title: string;
+  description?: string;
   status: string;
   deadline: string;
-  priority: string;
+  priority: "Urgent" | "High" | "Normal" | "Low";
+  revisions: number;
+  approvedByClient: boolean;
+  actualHours: number;
+  tags?: string[];
 }
 
 interface WorkCardProps {
   task: Task;
   onStatusChange: (id: string, newStatus: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export function WorkCard({ task, onStatusChange }: WorkCardProps) {
-  const isHighPriority = task.priority === 'High';
+export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(task.actualHours * 3600);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isUrgent = task.priority === 'Urgent';
+  const isHigh = task.priority === 'High';
   const isCompleted = task.status === 'Completed';
+  
+  const deadlineDate = parseISO(task.deadline);
+  const isOverdue = !isCompleted && isBefore(deadlineDate, new Date());
+
+  useEffect(() => {
+    if (isTimerRunning) {
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isTimerRunning]);
+
+  const toggleTimer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTimerRunning(!isTimerRunning);
+  };
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs}h ${mins}m ${secs}s`;
+  };
 
   const statusConfigs = [
     { name: "To Do", icon: RefreshCcw, color: "hover:bg-slate-100 text-slate-500", active: "bg-slate-100 text-slate-900 border-slate-200" },
@@ -29,33 +71,97 @@ export function WorkCard({ task, onStatusChange }: WorkCardProps) {
   ];
   
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-md group/card">
+    <div className={cn(
+      "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
+      isOverdue && "border-red-200 bg-red-50/30",
+      isUrgent && "border-red-400 ring-1 ring-red-100"
+    )}>
+      {/* Priority Badge */}
       <div className="flex justify-between items-start mb-4">
-        <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+        <div className={cn(
+          "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border",
+          task.priority === 'Urgent' ? 'bg-red-600 text-white border-red-600' :
           task.priority === 'High' ? 'bg-red-50 text-red-700 border-red-100' : 
-          task.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
+          task.priority === 'Normal' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
           'bg-emerald-50 text-emerald-700 border-emerald-100'
-        }`}>
+        )}>
           {task.priority}
         </div>
         
-        {isHighPriority && (
-          <AlertCircle className="h-4 w-4 text-red-500 animate-pulse" />
+        {isUrgent && (
+          <div className="flex items-center gap-1 text-red-600">
+            <AlertCircle className="h-4 w-4 animate-pulse" />
+            <span className="text-[9px] font-black uppercase">Urgent</span>
+          </div>
         )}
+
+        {isOverdue && !isUrgent && (
+           <div className="flex items-center gap-1 text-red-500">
+             <AlertCircle className="h-3.5 w-3.5" />
+             <span className="text-[9px] font-bold uppercase">Overdue</span>
+           </div>
+        )}
+
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id || task._id || "");
+          }}
+          className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all active:scale-90"
+          title="Delete Task"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
 
       <h4 className="font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors line-clamp-1">{task.title}</h4>
-      <p className="text-xs text-slate-500 font-semibold mb-6 uppercase tracking-wider">{task.client}</p>
+      <p className="text-[10px] text-slate-400 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
       
+      {/* Time Tracker UI */}
+      <div className="mb-6 flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+         <div className="flex items-center gap-3">
+            <button 
+              onClick={toggleTimer}
+              className={cn(
+                "p-2 rounded-xl transition-all shadow-sm active:scale-90",
+                isTimerRunning ? "bg-amber-500 text-white" : "bg-white text-indigo-600 hover:bg-indigo-50"
+              )}
+            >
+              {isTimerRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            </button>
+            <div>
+               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Time Tracked</p>
+               <p className={cn("text-xs font-bold tracking-tight", isTimerRunning ? "text-indigo-600 animate-pulse" : "text-slate-600")}>
+                  {formatTime(elapsedSeconds)}
+               </p>
+            </div>
+         </div>
+      </div>
+
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <div className={cn(
+            "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest",
+            isOverdue ? "text-red-500" : "text-slate-400"
+          )}>
             {isCompleted ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
             ) : (
-              <Clock className="h-3.5 w-3.5 text-indigo-500" />
+              <Clock className={cn("h-3.5 w-3.5", isOverdue ? "text-red-500" : "text-indigo-500")} />
             )}
-            <span>{task.deadline}</span>
+            <span>{formatDistanceToNow(deadlineDate, { addSuffix: true })}</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+             {task.revisions > 0 && (
+               <div className="flex items-center gap-1.5 text-amber-600" title="Revisions">
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  <span className="text-[10px] font-bold">{task.revisions}</span>
+               </div>
+             )}
+             {task.approvedByClient && (
+               <CheckCircle2 className="h-4 w-4 text-emerald-500" title="Approved by Client" />
+             )}
           </div>
         </div>
 
@@ -68,11 +174,12 @@ export function WorkCard({ task, onStatusChange }: WorkCardProps) {
                 key={config.name}
                 onClick={() => onStatusChange(task.id || task._id || "", config.name)}
                 title={config.name}
-                className={`p-2 rounded-lg border transition-all duration-200 group/btn ${
+                className={cn(
+                  "p-2 rounded-lg border transition-all duration-200 group/btn",
                   isActive 
-                    ? `${config.active} shadow-sm scale-105` 
-                    : `border-transparent ${config.color}`
-                }`}
+                    ? cn(config.active, "shadow-sm scale-110 z-10") 
+                    : cn("border-transparent opacity-40 hover:opacity-100", config.color)
+                )}
               >
                 <Icon className="h-3.5 w-3.5" />
               </button>
@@ -83,6 +190,7 @@ export function WorkCard({ task, onStatusChange }: WorkCardProps) {
     </div>
   );
 }
+
 
 
 

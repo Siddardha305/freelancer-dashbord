@@ -9,6 +9,9 @@ const WorkSchema = new Schema({
     type: String,
     required: [true, 'Title is required'],
   },
+  description: {
+    type: String,
+  },
   deadline: {
     type: String,
     required: [true, 'Deadline is required'],
@@ -19,7 +22,35 @@ const WorkSchema = new Schema({
   },
   priority: {
     type: String,
-    default: 'Medium',
+    enum: ['Urgent', 'High', 'Normal', 'Low'],
+    default: 'Normal',
+  },
+  attachments: {
+    type: [String],
+    default: [],
+  },
+  estimatedHours: {
+    type: Number,
+    default: 0,
+  },
+  actualHours: {
+    type: Number,
+    default: 0,
+  },
+  revisions: {
+    type: Number,
+    default: 0,
+  },
+  approvedByClient: {
+    type: Boolean,
+    default: false,
+  },
+  completedAt: {
+    type: Date,
+  },
+  tags: {
+    type: [String],
+    default: [],
   },
 }, {
   timestamps: true,
@@ -28,3 +59,4 @@ const WorkSchema = new Schema({
 const Work = models.Work || model('Work', WorkSchema);
 
 export default Work;
+

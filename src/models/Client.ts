@@ -17,9 +17,20 @@ const ClientSchema = new Schema({
   phone: {
     type: String,
   },
+  country: {
+    type: String,
+  },
+  timezone: {
+    type: String,
+  },
   status: {
     type: String,
     default: 'Active',
+  },
+  priority: {
+    type: String,
+    enum: ['High', 'Medium', 'Low'],
+    default: 'Medium',
   },
   monthly_price: {
     type: Number,
@@ -32,6 +43,32 @@ const ClientSchema = new Schema({
   channel_link: {
     type: String,
     trim: true,
+  },
+  avatar: {
+    type: String,
+  },
+  notes: {
+    type: String,
+  },
+  tags: {
+    type: [String],
+    default: [],
+  },
+  totalEarned: {
+    type: Number,
+    default: 0,
+  },
+  contractStartDate: {
+    type: Date,
+  },
+  contractEndDate: {
+    type: Date,
+  },
+  lastContactedAt: {
+    type: Date,
+  },
+  referredBy: {
+    type: String,
   },
   thumbnails_per_month: {
     type: Number,
@@ -48,3 +85,4 @@ const ClientSchema = new Schema({
 const Client = models.Client || model('Client', ClientSchema);
 
 export default Client;
+

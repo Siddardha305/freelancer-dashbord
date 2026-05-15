@@ -4,16 +4,28 @@ import dbConnect from '@/lib/mongodb'
 import Client from '@/models/Client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { sendWelcomeEmail } from '@/lib/mail'
 
 const ClientSchema = z.object({
   name: z.string().min(1, "Name is required"),
   niche: z.string().nullable().optional().transform(v => !v || v.trim() === "" ? "General" : v),
-  email: z.string().nullable().optional().transform(v => !v || v.trim() === "" ? "" : v),
-  phone: z.string().nullable().optional().transform(v => !v || v.trim() === "" ? "" : v),
+  email: z.string().email("Invalid email").nullable().optional().or(z.literal("")),
+  phone: z.string().nullable().optional().or(z.literal("")),
+  country: z.string().nullable().optional().or(z.literal("")),
+  timezone: z.string().nullable().optional().or(z.literal("")),
   status: z.string().default("Active"),
+  priority: z.enum(['High', 'Medium', 'Low']).default('Medium'),
   monthly_price: z.coerce.number().min(0, "Price must be positive").default(0),
   pricing_model: z.string().default("monthly"),
-  channel_link: z.string().nullable().optional().transform(v => !v || v.trim() === "" ? "" : v),
+  channel_link: z.string().nullable().optional().or(z.literal("")),
+  avatar: z.string().nullable().optional().or(z.literal("")),
+  notes: z.string().nullable().optional().or(z.literal("")),
+  tags: z.array(z.string()).default([]),
+  totalEarned: z.coerce.number().default(0),
+  contractStartDate: z.string().nullable().optional().or(z.literal("")),
+  contractEndDate: z.string().nullable().optional().or(z.literal("")),
+  lastContactedAt: z.string().nullable().optional().or(z.literal("")),
+  referredBy: z.string().nullable().optional().or(z.literal("")),
   thumbnails_per_month: z.coerce.number().min(0).default(0),
   price_per_thumbnail: z.coerce.number().min(0).default(0),
 })
@@ -22,10 +34,9 @@ export async function getClientsAction() {
   await dbConnect()
   try {
     const clients = await Client.find({}).sort({ createdAt: -1 }).lean()
-    return clients.map(doc => ({
+    return JSON.parse(JSON.stringify(clients)).map((doc: any) => ({
       ...doc,
       id: doc._id.toString(),
-      _id: doc._id.toString()
     }))
   } catch (error) {
     console.error("Error fetching clients:", error)
@@ -33,67 +44,93 @@ export async function getClientsAction() {
   }
 }
 
-export async function createClientAction(prevState: any, formData: FormData) {
-  const rawData = {
-    name: formData.get('name') as string,
-    niche: formData.get('niche') as string,
-    email: formData.get('email') as string,
-    phone: formData.get('phone') as string,
-    status: (formData.get('status') as string) || 'Active',
-    monthly_price: formData.get('monthly_price') || '0',
-    pricing_model: (formData.get('pricing_model') as string) || 'monthly',
-    channel_link: formData.get('channel_link') as string,
-    thumbnails_per_month: formData.get('thumbnails_per_month') || '0',
-    price_per_thumbnail: formData.get('price_per_thumbnail') || '0',
+export async function getClientByIdAction(id: string) {
+  await dbConnect()
+  try {
+    const client = await Client.findById(id).lean()
+    if (!client) return null
+    return JSON.parse(JSON.stringify({
+      ...client,
+      id: client._id.toString(),
+    }))
+  } catch (error) {
+    console.error("Error fetching client by ID:", error)
+    return null
   }
+}
+
+export async function createClientAction(prevState: any, formData: FormData) {
+  await dbConnect()
+  const rawData: any = {}
+  formData.forEach((value, key) => {
+    if (key === 'tags') {
+      rawData[key] = (value as string).split(',').map(t => t.trim()).filter(t => t)
+    } else {
+      rawData[key] = value
+    }
+  })
 
   try {
-    console.log("SERVER ACTION: Creating client with data:", rawData);
     const validatedFields = ClientSchema.safeParse(rawData)
 
     if (!validatedFields.success) {
-      console.log("SERVER ACTION: Validation failed:", validatedFields.error.flatten().fieldErrors);
-      const fieldErrors = validatedFields.error.flatten().fieldErrors;
-      const errorMsg = Object.values(fieldErrors).flat().join(", ");
       return {
-        errors: fieldErrors,
-        message: `Validation Error: ${errorMsg || 'Failed to Create Client.'}`,
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Validation Error',
       }
     }
 
-    await dbConnect()
     const newClient = await Client.create(validatedFields.data)
-    console.log("SERVER ACTION: Client created with ID:", newClient._id);
-
+    
+    // Send automated thank you email
+    if (newClient.email) {
+      sendWelcomeEmail(newClient.email, newClient.name);
+    }
+    
     revalidatePath('/clients')
     revalidatePath('/')
     
     return { 
       message: 'success', 
-      client: {
+      client: JSON.parse(JSON.stringify({
         ...newClient.toObject(),
-        _id: newClient._id.toString(),
         id: newClient._id.toString()
-      }
+      }))
     }
   } catch (error: any) {
-    console.error("MongoDB Error in Action:", error.message || error)
-    return {
-      message: `Database Error: ${error.message || 'Failed to Create Client.'}`,
+    return { message: error.message || 'Database Error' }
+  }
+}
+
+export async function updateClientAction(id: string, data: any) {
+  await dbConnect()
+  try {
+    const validatedFields = ClientSchema.partial().safeParse(data)
+    if (!validatedFields.success) {
+      return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
     }
+
+    const updatedClient = await Client.findByIdAndUpdate(id, validatedFields.data, { new: true }).lean()
+    revalidatePath('/clients')
+    revalidatePath(`/clients/${id}`)
+    revalidatePath('/')
+    
+    return { 
+      message: 'success', 
+      client: JSON.parse(JSON.stringify({
+        ...updatedClient,
+        id: updatedClient?._id.toString()
+      }))
+    }
+  } catch (error: any) {
+    return { message: error.message || 'Database Error' }
   }
 }
 
 export async function deleteClientAction(id: string) {
   try {
     await dbConnect()
-    const result = await Client.deleteOne({ _id: id })
-    
-    if (result.deletedCount === 0) {
-      // Try string ID if ObjectId didn't work
-      await Client.deleteOne({ id: id })
-    }
-
+    await Client.findByIdAndDelete(id)
     revalidatePath('/clients')
     revalidatePath('/')
     return { message: 'success' }
@@ -102,3 +139,4 @@ export async function deleteClientAction(id: string) {
     return { message: 'Database Error' }
   }
 }
+

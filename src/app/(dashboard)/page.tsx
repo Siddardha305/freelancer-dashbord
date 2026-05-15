@@ -54,9 +54,9 @@ export default function Home() {
     .filter((p: any) => p.payment_status === "Paid")
     .reduce((acc, p: any) => acc + Number(p.amount), 0);
 
-  const pendingPayments = payments
-    .filter((p: any) => p.payment_status === "Pending")
-    .reduce((acc, p: any) => acc + Number(p.amount), 0);
+  const pendingPayments = clients
+    .filter((c: any) => c.status === "Active")
+    .reduce((acc, c: any) => acc + Number(c.monthly_price || 0), 0);
 
   const completedWorks = works.filter((w: any) => w.status === "Completed").length;
   const completionRate = works.length > 0 ? Math.round((completedWorks / works.length) * 100) : 0;

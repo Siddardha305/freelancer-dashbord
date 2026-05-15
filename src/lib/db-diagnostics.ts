@@ -71,3 +71,28 @@ export async function wipeDatabaseAction() {
     return { success: false, error: error.message };
   }
 }
+
+export async function resetWorkspaceAction() {
+  await dbConnect()
+  try {
+    // Delete all documents except Clients
+    await Promise.all([
+      Work.deleteMany({}),
+      Payment.deleteMany({}),
+    ]);
+
+    // Reset client totalEarned if needed
+    await Client.updateMany({}, { totalEarned: 0 });
+
+    revalidatePath('/')
+    revalidatePath('/work')
+    revalidatePath('/payments')
+    revalidatePath('/reports')
+    revalidatePath('/diagnostics')
+    
+    return { success: true, message: 'Tasks and Payments cleared. Clients preserved.' };
+  } catch (error: any) {
+    console.error("Reset error:", error);
+    return { success: false, error: error.message };
+  }
+}

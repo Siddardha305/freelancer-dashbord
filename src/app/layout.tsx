@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
+import { AppProviders } from "@/components/providers/AppProviders";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "FreelanceOS",
-  description: "Dashboard for freelance thumbnail design business",
+  title: "FreelanceOS | Premium Dashboard",
+  description: "High-performance dashboard for independent professionals",
 };
 
 export default function RootLayout({
@@ -23,10 +26,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body suppressHydrationWarning className="h-full bg-gray-50 text-gray-900 overflow-hidden">
-        {children}
+    <html lang="en" suppressHydrationWarning className={`${plusJakarta.variable} ${inter.variable} h-full antialiased`}>
+      <body suppressHydrationWarning className="h-full bg-background text-foreground overflow-hidden font-sans">
+        <AppProviders>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
 }
+

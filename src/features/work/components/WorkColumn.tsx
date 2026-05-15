@@ -5,11 +5,12 @@ interface WorkColumnProps {
   count: number;
   tasks: Task[];
   onStatusChange: (id: string, newStatus: string) => void;
+  onDelete: (id: string) => void;
   alert?: boolean;
   color?: "slate" | "indigo" | "amber" | "emerald";
 }
 
-export function WorkColumn({ title, count, tasks, onStatusChange, alert = false, color = "slate" }: WorkColumnProps) {
+export function WorkColumn({ title, count, tasks, onStatusChange, onDelete, alert = false, color = "slate" }: WorkColumnProps) {
   const colorClasses = {
     slate: "text-slate-500 bg-slate-100 border-slate-200",
     indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
@@ -36,7 +37,7 @@ export function WorkColumn({ title, count, tasks, onStatusChange, alert = false,
       </div>
       <div className="space-y-4 min-h-[150px]">
         {tasks.map(task => (
-          <WorkCard key={task.id} task={task} onStatusChange={onStatusChange} />
+          <WorkCard key={task.id} task={task} onStatusChange={onStatusChange} onDelete={onDelete} />
         ))}
         {tasks.length === 0 && (
           <div className="h-32 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center">

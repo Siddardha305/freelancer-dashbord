@@ -12,7 +12,6 @@ const navigation = [
   { name: 'Monthly Work', href: '/work', icon: CalendarDays },
   { name: 'Payments', href: '/payments', icon: CreditCard },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'Diagnostics', href: '/diagnostics', icon: Activity },
 ];
 
 export function Sidebar() {
@@ -122,6 +121,3 @@ export function Sidebar() {
     </div>
   );
 }
-
-
-
