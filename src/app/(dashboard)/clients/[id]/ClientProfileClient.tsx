@@ -26,6 +26,9 @@ import { Badge } from "@/components/shared/Badge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { EditClientModal } from "@/features/clients/components/EditClientModal";
 import { deleteClientAction } from "@/features/clients/actions/client-actions";
+import { useQuery } from "@tanstack/react-query";
+import { getWorksAction } from "@/features/work/actions/work-actions";
+import { format } from "date-fns";
 
 export function ClientProfileClient({ initialClient }: { initialClient: any }) {
   const router = useRouter();
@@ -33,6 +36,46 @@ export function ClientProfileClient({ initialClient }: { initialClient: any }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['works'],
+    queryFn: getWorksAction,
+    refetchInterval: 10000,
+  });
+
+  const clientTasks = tasks.filter((t: any) => t.client === client.name);
+
+  // 1. Quota & deliveries calculation
+  const monthlyQuota = client.thumbnails_per_month || 8;
+  const pricePerThumbnail = client.price_per_thumbnail || (client.pricing_model === 'monthly' ? (client.monthly_price / monthlyQuota) : 500) || 500;
+  
+  // Total target monthly contract amount
+  const monthlyPrice = client.pricing_model === 'monthly' 
+    ? (client.monthly_price || 4000) 
+    : (monthlyQuota * pricePerThumbnail);
+
+  // Completed/Done tasks this month
+  const now = new Date();
+  const currentMonthTasks = clientTasks.filter((t: any) => {
+    if (t.status !== "Completed" && t.status !== "Done") return false;
+    const dateStr = t.completedAt || t.updatedAt || t.createdAt;
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  });
+  const deliveriesUsed = currentMonthTasks.length;
+  const deliveriesBalance = Math.max(0, monthlyQuota - deliveriesUsed);
+
+  // 2. Earnings and Balance calculations
+  const earnedThisMonth = deliveriesUsed * pricePerThumbnail;
+  const amountBalance = Math.max(0, monthlyPrice - earnedThisMonth);
+
+  // 3. Pending tasks (To Do, In Progress, Review)
+  const pendingTasks = clientTasks.filter((t: any) => 
+    ["To Do", "In Progress", "Review"].includes(t.status)
+  );
+  const pendingCount = pendingTasks.length;
+  const pendingAmount = pendingCount * pricePerThumbnail;
 
   const priorityColors = {
     High: "bg-red-50 text-red-700 border-red-100",
@@ -174,6 +217,116 @@ export function ClientProfileClient({ initialClient }: { initialClient: any }) {
                </button>
             </div>
 
+            {/* Quota & Billing Cycle Tracker */}
+            <div className="glass-bg rounded-[2.5rem] p-8 border border-card-border overflow-hidden relative space-y-6">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+                <CreditCard className="h-40 w-40 text-indigo-600" />
+              </div>
+              
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Monthly Billing & Quota Cycle</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Current Month Cycle</p>
+                </div>
+                <Badge variant="success">
+                  {format(now, "MMMM yyyy")}
+                </Badge>
+              </div>
+
+              {/* Graphical Visual Segmented Progress Bar */}
+              <div className="space-y-3">
+                <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>Earned: ₹{earnedThisMonth.toLocaleString()}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>Pending: ₹{pendingAmount.toLocaleString()}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>Remaining: ₹{amountBalance.toLocaleString()}</span>
+                </div>
+                
+                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden shadow-inner">
+                  {/* Earned portion */}
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500" 
+                    style={{ width: `${monthlyPrice > 0 ? (earnedThisMonth / monthlyPrice) * 100 : 0}%` }}
+                    title={`Earned: ₹${earnedThisMonth}`}
+                  />
+                  {/* Pending portion */}
+                  <div 
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500" 
+                    style={{ width: `${monthlyPrice > 0 ? (pendingAmount / monthlyPrice) * 100 : 0}%` }}
+                    title={`Pending: ₹${pendingAmount}`}
+                  />
+                  {/* Remaining portion */}
+                  {amountBalance > 0 && (
+                    <div 
+                      className="h-full bg-gradient-to-r from-indigo-400 to-indigo-500 transition-all duration-500 opacity-80" 
+                      style={{ width: `${monthlyPrice > 0 ? (amountBalance / monthlyPrice) * 100 : 100}%` }}
+                      title={`Remaining: ₹${amountBalance}`}
+                    />
+                  )}
+                </div>
+                
+                <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <span>0%</span>
+                  <span>Target Contract Price: ₹{monthlyPrice.toLocaleString()}</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              {/* Dynamic Metrics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                
+                {/* Deliveries Quota balance */}
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deliveries Quota</span>
+                    <Badge variant={deliveriesBalance > 0 ? "success" : "warning"}>
+                      {deliveriesBalance} Left
+                    </Badge>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{deliveriesUsed}</span>
+                    <span className="text-xs font-bold text-slate-400">/ {monthlyQuota} Deliveries</span>
+                  </div>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    {deliveriesBalance} remaining this month
+                  </p>
+                </div>
+
+                {/* Pending Amount card */}
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Amount</span>
+                    <Badge variant={pendingCount > 0 ? "warning" : "outline"}>
+                      {pendingCount} Tasks
+                    </Badge>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight">₹{pendingAmount.toLocaleString()}</span>
+                  </div>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    Adds when tasks are in progress
+                  </p>
+                </div>
+
+                {/* Amount Remaining balance */}
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Balance</span>
+                    <Badge variant="info">
+                      Remaining
+                    </Badge>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">₹{amountBalance.toLocaleString()}</span>
+                  </div>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    Decrements as tasks complete
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
             {/* Contract & Revenue */}
             <div className="premium-card rounded-[2rem] p-8 space-y-8">
                <div className="flex items-center justify-between">
@@ -266,7 +419,7 @@ export function ClientProfileClient({ initialClient }: { initialClient: any }) {
                       </div>
                       <span className="text-xs font-bold text-slate-600">Tasks Done</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">12</span>
+                    <span className="text-sm font-bold text-slate-900">{clientTasks.filter((t: any) => t.status === 'Completed' || t.status === 'Done').length}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -274,9 +427,9 @@ export function ClientProfileClient({ initialClient }: { initialClient: any }) {
                       <div className="p-2 rounded-xl bg-white shadow-sm text-emerald-600">
                         <CreditCard className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-bold text-slate-600">Paid Invoices</span>
+                      <span className="text-xs font-bold text-slate-600">Active Tasks</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">8</span>
+                    <span className="text-sm font-bold text-slate-900">{clientTasks.filter((t: any) => t.status === 'In Progress').length}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -284,9 +437,16 @@ export function ClientProfileClient({ initialClient }: { initialClient: any }) {
                       <div className="p-2 rounded-xl bg-white shadow-sm text-amber-600">
                         <Calendar className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-bold text-slate-600">Last Contact</span>
+                      <span className="text-xs font-bold text-slate-600">Last Activity</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-900">2d ago</span>
+                    <span className="text-xs font-bold text-slate-900">
+                      {(() => {
+                        const lastTask = clientTasks.sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())[0];
+                        if (!lastTask) return 'No tasks yet';
+                        const diff = Math.floor((Date.now() - new Date(lastTask.updatedAt || lastTask.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+                        return diff === 0 ? 'Today' : diff === 1 ? '1d ago' : `${diff}d ago`;
+                      })()}
+                    </span>
                   </div>
                </div>
             </div>

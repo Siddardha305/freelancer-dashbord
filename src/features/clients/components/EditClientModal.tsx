@@ -215,6 +215,29 @@ export function EditClientModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Deliveries Quota</label>
+                <input 
+                  type="number" 
+                  name="thumbnails_per_month" 
+                  defaultValue={client.thumbnails_per_month ?? 8}
+                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
+                  placeholder="e.g. 8"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate Per Delivery (₹)</label>
+                <input 
+                  type="number" 
+                  name="price_per_thumbnail" 
+                  defaultValue={client.price_per_thumbnail ?? 500}
+                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
+                  placeholder="e.g. 500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Start</label>
                 <input 
                   type="date" 
