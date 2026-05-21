@@ -267,7 +267,10 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
                     <td className="px-10 py-8">
                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
                           <Clock className="h-3.5 w-3.5 text-indigo-500" />
-                          {format(new Date(task.deadline), 'MMM dd, yyyy')}
+                           {(() => {
+                             const d = new Date(task.deadline);
+                             return !isNaN(d.getTime()) ? format(d, 'MMM dd, yyyy') : task.deadline;
+                           })()}
                        </div>
                     </td>
                     <td className="px-10 py-8">

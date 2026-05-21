@@ -35,8 +35,12 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
   const isHigh = task.priority === 'High';
   const isCompleted = task.status === 'Completed';
   
-  const deadlineDate = parseISO(task.deadline);
-  const isOverdue = !isCompleted && isBefore(deadlineDate, new Date());
+  let deadlineDate = parseISO(task.deadline);
+  if (isNaN(deadlineDate.getTime())) {
+    deadlineDate = new Date(task.deadline);
+  }
+  const isDeadlineValid = !isNaN(deadlineDate.getTime());
+  const isOverdue = !isCompleted && isDeadlineValid && isBefore(deadlineDate, new Date());
 
   useEffect(() => {
     if (isTimerRunning) {
@@ -149,7 +153,11 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
             ) : (
               <Clock className={cn("h-3.5 w-3.5", isOverdue ? "text-red-500" : "text-indigo-500")} />
             )}
-            <span>{formatDistanceToNow(deadlineDate, { addSuffix: true })}</span>
+            <span>
+              {isDeadlineValid 
+                ? formatDistanceToNow(deadlineDate, { addSuffix: true }) 
+                : task.deadline}
+            </span>
           </div>
           
           <div className="flex items-center gap-3">
