@@ -49,17 +49,49 @@ export default function Home() {
 
   const totalClients = clients.length;
   const activeClients = clients.filter((c: any) => c.status === "Active").length;
-  
-  const thisMonthRevenue = payments
-    .filter((p: any) => p.payment_status === "Paid")
-    .reduce((acc, p: any) => acc + Number(p.amount), 0);
 
-  const pendingPayments = clients
-    .filter((c: any) => c.status === "Active")
-    .reduce((acc, c: any) => acc + Number(c.monthly_price || 0), 0);
+  // Build a lookup: client name → client object
+  const clientMap: Record<string, any> = {};
+  clients.forEach((c: any) => { clientMap[c.name] = c; });
 
-  const completedWorks = works.filter((w: any) => w.status === "Completed").length;
-  const completionRate = works.length > 0 ? Math.round((completedWorks / works.length) * 100) : 0;
+  // Helper: get effective price per thumbnail for a task's client
+  const getPricePerTask = (work: any): number => {
+    const c = clientMap[work.client];
+    if (!c) return 0;
+    if (c.price_per_thumbnail > 0) return c.price_per_thumbnail;
+    const quota = c.thumbnails_per_month || 8;
+    return quota > 0 ? (c.monthly_price || 0) / quota : 0;
+  };
+
+  // TOTAL REVENUE: completed/done tasks this calendar month × their rate
+  const now = new Date();
+  const completedThisMonth = works.filter((w: any) => {
+    if (w.status !== "Completed" && w.status !== "Done") return false;
+    const dateStr = w.completedAt || w.updatedAt || w.createdAt;
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const thisMonthRevenue = completedThisMonth.reduce(
+    (acc: number, w: any) => acc + getPricePerTask(w), 0
+  );
+
+  // PENDING: tasks still To Do / In Progress / Review
+  const pendingWorks = works.filter((w: any) =>
+    ["To Do", "In Progress", "Review"].includes(w.status)
+  );
+  const pendingPayments = pendingWorks.reduce(
+    (acc: number, w: any) => acc + getPricePerTask(w), 0
+  );
+
+  // DELIVERED: all-time completed or done tasks
+  const completedWorks = works.filter((w: any) =>
+    w.status === "Completed" || w.status === "Done"
+  ).length;
+
+  const completionRate = works.length > 0
+    ? Math.round((completedWorks / works.length) * 100)
+    : 0;
 
   if (loading) {
     return (
@@ -103,8 +135,8 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard title="Total Clients" value={totalClients} icon={Users} trend="All active" />
             <KpiCard title="Active Projects" value={activeClients} icon={UserCheck} trend="In progress" />
-            <KpiCard title="Total Revenue" value={`₹${thisMonthRevenue}`} icon={DollarSign} trend="Collected" />
-            <KpiCard title="Pending" value={`₹${pendingPayments}`} icon={Clock} trend="Awaiting" alert={pendingPayments > 0} />
+            <KpiCard title="Total Revenue" value={`₹${thisMonthRevenue.toLocaleString()}`} icon={DollarSign} trend="This month" />
+            <KpiCard title="Pending" value={`₹${pendingPayments.toLocaleString()}`} icon={Clock} trend="Awaiting" alert={pendingPayments > 0} />
             <KpiCard title="Delivered" value={completedWorks} icon={ImageIcon} trend="Completed" />
           </div>
 

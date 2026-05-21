@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { DollarSign, ArrowDownRight, ArrowUpRight, FileText } from "lucide-react";
 import { PaymentTable } from "@/features/payments/components/PaymentTable";
 import { PaymentHeader } from "@/features/payments/components/PaymentHeader";
+import { MonthlyPayoutSummary } from "@/features/payments/components/MonthlyPayoutSummary";
 import { getPaymentsAction } from '@/features/payments/actions/payment-actions';
 
 export default function PaymentsPage() {
@@ -53,7 +54,8 @@ export default function PaymentsPage() {
       <PaymentHeader onSuccess={refreshData} />
 
       <main className="flex-1 overflow-y-auto p-8 lg:p-12">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl space-y-10">
+          <MonthlyPayoutSummary />
           <PaymentTable initialPayments={payments} />
         </div>
       </main>
