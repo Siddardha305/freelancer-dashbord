@@ -17,6 +17,7 @@ import {
 import { WorkColumn } from "./WorkColumn";
 import { AddWorkModal } from "./AddWorkModal";
 import { updateWorkStatusAction, getWorksAction, deleteWorkAction } from "@/features/work/actions/work-actions";
+import { getClientsAction } from "@/features/clients/actions/client-actions";
 import { StatCard } from "@/components/shared/StatCard";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +39,12 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
     queryFn: getWorksAction,
     initialData: initialTasks,
     refetchInterval: 10000, // 10s fallback polling
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: getClientsAction,
+    refetchInterval: 10000,
   });
 
   const updateStatusMutation = useMutation({
@@ -107,13 +114,36 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
   const now = new Date();
   const weekStart = startOfWeek(now);
   const weekEnd = endOfWeek(now);
-  
+
   const weeklyTasks = tasks.filter((t: any) => {
     try {
       const d = new Date(t.deadline);
       return isWithinInterval(d, { start: weekStart, end: weekEnd });
     } catch { return false; }
   });
+  
+  const completedToday = tasks.filter((t: any) => {
+    if (t.status !== "Completed" && t.status !== "Done") return false;
+    if (!t.completedAt && !t.updatedAt) return false;
+    try {
+      const compDate = new Date(t.completedAt || t.updatedAt);
+      const today = new Date();
+      return compDate.getDate() === today.getDate() &&
+             compDate.getMonth() === today.getMonth() &&
+             compDate.getFullYear() === today.getFullYear();
+    } catch {
+      return false;
+    }
+  });
+
+  const earnedToday = completedToday.reduce((sum: number, t: any) => {
+    const client = clients.find((c: any) => c.name === t.client);
+    const price = client?.price_per_thumbnail || 400; // Fallback to 400 INR/USD if not set
+    return sum + price;
+  }, 0);
+
+  const pendingTasksCount = tasks.filter((t: any) => t.status === "To Do").length;
+  const inProgressTasksCount = tasks.filter((t: any) => t.status === "In Progress").length;
 
   const stats = {
     total: tasks.length,
@@ -134,16 +164,37 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
            <StatCard title="Success Rate" value={`${completionRate}%`} icon={CheckCircle2} />
         </div>
         
-        {/* Weekly Workload Summary Card */}
-        <div className="glass-bg p-6 rounded-[2rem] border border-card-border flex flex-col justify-between relative overflow-hidden group hover:shadow-xl transition-all">
-           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
-              <Calendar className="h-16 w-16 text-indigo-600" />
+        {/* Today's Work Summary Card */}
+        <div className="glass-bg p-5 rounded-[2rem] border border-card-border flex flex-col justify-between relative overflow-hidden group hover:shadow-xl transition-all">
+           <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:scale-110 transition-transform">
+              <Zap className="h-16 w-16 text-indigo-600 animate-pulse" />
            </div>
            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Weekly Workload</p>
-              <h4 className="text-2xl font-bold text-slate-900 tracking-tight">{stats.weekly} Tasks</h4>
+              <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Today's Pulse</p>
+              <h4 className="text-lg font-black text-slate-950 tracking-tight mb-3">Today's Work</h4>
+              
+              <div className="grid grid-cols-3 gap-2.5">
+                 <div className="bg-slate-50/70 hover:bg-slate-100/80 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between transition-colors shadow-sm">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Earned</span>
+                    <span className="text-xs font-black text-emerald-600 mt-1 truncate">₹{earnedToday}</span>
+                 </div>
+                 
+                 <div className="bg-slate-50/70 hover:bg-slate-100/80 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between transition-colors shadow-sm">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Pending</span>
+                    <span className="text-xs font-black text-amber-600 mt-1 truncate">{pendingTasksCount}</span>
+                 </div>
+                 
+                 <div className="bg-slate-50/70 hover:bg-slate-100/80 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between transition-colors shadow-sm">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Active</span>
+                    <span className="text-xs font-black text-indigo-600 mt-1 truncate">{inProgressTasksCount}</span>
+                 </div>
+              </div>
            </div>
-           <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mt-4">Due by {format(weekEnd, 'MMM dd')}</p>
+           
+           <div className="mt-3 flex justify-between items-center text-[9px] font-bold border-t border-slate-100/80 pt-2.5">
+              <span className="text-indigo-600">Active Pipeline</span>
+              <span className="text-slate-400 font-medium">{format(new Date(), 'EEEE, MMM dd')}</span>
+           </div>
         </div>
       </div>
 
