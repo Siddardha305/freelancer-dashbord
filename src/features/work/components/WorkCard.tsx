@@ -160,7 +160,9 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
                </div>
              )}
              {task.approvedByClient && (
-               <CheckCircle2 className="h-4 w-4 text-emerald-500" title="Approved by Client" />
+               <span title="Approved by Client" className="flex items-center">
+                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+               </span>
              )}
           </div>
         </div>
