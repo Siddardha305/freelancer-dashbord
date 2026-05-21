@@ -46,13 +46,8 @@ export default function ClientsPage() {
     );
   }
 
-  const refreshData = async (newClient?: any) => {
-    if (newClient) {
-      // Instant update: prepend the new client to the current list
-      setClients(prev => [newClient, ...prev]);
-    }
-    
-    // Background refresh to ensure full data consistency
+  const refreshData = async (_newClient?: any) => {
+    // Always fetch the canonical list from DB — deduplication is guaranteed
     const data = await getClientsAction();
     setClients(data);
   };

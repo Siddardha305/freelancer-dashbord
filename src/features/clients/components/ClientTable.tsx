@@ -8,6 +8,11 @@ import { deleteClientAction } from "@/features/clients/actions/client-actions";
 export function ClientTable({ clients = [] }: { clients?: any[] }) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
+  // Deduplicate by id — guard against any duplicate entries from polling race conditions
+  const uniqueClients = clients.filter(
+    (c, index, self) => index === self.findIndex((x) => x.id === c.id)
+  );
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this client?")) return;
     
@@ -22,7 +27,7 @@ export function ClientTable({ clients = [] }: { clients?: any[] }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
-      {clients.map((client) => (
+      {uniqueClients.map((client) => (
         <div key={client.id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-8">
             <div className="flex justify-between items-start mb-6">
@@ -112,7 +117,7 @@ export function ClientTable({ clients = [] }: { clients?: any[] }) {
         </div>
       ))}
       
-      {clients.length === 0 && (
+      {uniqueClients.length === 0 && (
         <div className="col-span-full py-24 text-center">
           <div className="h-20 w-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-slate-100">
             <User className="h-8 w-8 text-slate-200" />
