@@ -11,7 +11,7 @@ import ScrollReveal from '../components/scroll/ScrollReveal';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 selection:bg-indigo-500 selection:text-white overflow-x-hidden font-sans relative">
+    <div className="min-h-screen bg-slate-50 text-slate-800 selection:bg-indigo-500 selection:text-white font-sans relative">
       
       {/* Premium Dashboard Subtle Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#fff_80%,transparent_100%)] opacity-80 pointer-events-none -z-10" />
