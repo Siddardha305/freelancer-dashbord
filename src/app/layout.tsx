@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${plusJakarta.variable} ${inter.variable} h-full antialiased`}>
-      <body suppressHydrationWarning className="h-full bg-background text-foreground overflow-hidden font-sans">
+      <body suppressHydrationWarning className="h-full bg-background text-foreground font-sans">
         <AppProviders>
           {children}
         </AppProviders>

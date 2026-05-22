@@ -7,18 +7,26 @@ import { getDatabaseDiagnostics } from '@/lib/db-diagnostics';
 import { useState, useEffect } from 'react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Clients', href: '/clients', icon: Users },
-  { name: 'Monthly Work', href: '/work', icon: CalendarDays },
-  { name: 'Payments', href: '/payments', icon: CreditCard },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Clients', href: '/dashboard/clients', icon: Users },
+  { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+  { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
+  { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
 ];
 
-export function Sidebar() {
+import { logoutAction } from '@/auth/actions/auth-actions';
+
+interface SidebarProps {
+  user?: any;
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [dbStats, setDbStats] = useState<any>(null);
 
   useEffect(() => {
+    if (user?.role !== 'admin') return;
+
     const fetchStats = async () => {
       const result = await getDatabaseDiagnostics();
       if (result.success) {
@@ -29,7 +37,7 @@ export function Sidebar() {
     // Poll every 60 seconds
     const interval = setInterval(fetchStats, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.id, user?.role]);
 
   const storageUsed = Number(dbStats?.storageUsedMB || 0);
   const storageLimit = 512;
@@ -80,39 +88,57 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Storage Usage Widget */}
-        <div className="mt-8 px-2">
-           <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-              <div className="flex items-center gap-2 mb-3">
-                 <HardDrive className="h-3.5 w-3.5 text-slate-400" />
-                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Storage Usage</span>
-              </div>
-              <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-slate-400 uppercase tracking-wider">{storageUsed.toFixed(1)} MB used</span>
-                    <span className="text-slate-600">{storagePercent.toFixed(1)}%</span>
-                 </div>
-                 <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${storagePercent > 80 ? 'bg-red-500' : 'bg-indigo-600'}`}
-                      style={{ width: `${storagePercent}%` }}
-                    />
-                 </div>
-              </div>
-           </div>
-        </div>
+        {/* Storage Usage Widget (Only for admins) */}
+        {user?.role === 'admin' && (
+          <div className="mt-8 px-2">
+             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                   <HardDrive className="h-3.5 w-3.5 text-slate-400" />
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Storage Usage</span>
+                </div>
+                <div className="space-y-2">
+                   <div className="flex justify-between text-[10px] font-bold">
+                      <span className="text-slate-400 uppercase tracking-wider">{storageUsed.toFixed(1)} MB used</span>
+                      <span className="text-slate-600">{storagePercent.toFixed(1)}%</span>
+                   </div>
+                   <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${storagePercent > 80 ? 'bg-red-500' : 'bg-indigo-600'}`}
+                        style={{ width: `${storagePercent}%` }}
+                      />
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
       </div>
+
+      {/* User profile section */}
+      {user && (
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold border border-indigo-200 shrink-0">
+            {user.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-900 truncate">{user.name || 'User Account'}</p>
+            <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-wider">{user.email || ''}</p>
+          </div>
+        </div>
+      )}
 
       <div className="p-6 space-y-2 border-t border-slate-100 bg-slate-50/30">
         <Link
-          href="/settings"
+          href="/dashboard/settings"
           className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all duration-200"
         >
           <Settings className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-indigo-600" />
           Settings
         </Link>
         <button
-          className="w-full group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+          onClick={async () => {
+            await logoutAction();
+          }}
+          className="w-full group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
         >
           <LogOut className="h-5 w-5 shrink-0" />
           Sign Out

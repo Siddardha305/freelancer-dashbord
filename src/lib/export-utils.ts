@@ -39,7 +39,7 @@ export function downloadCSV(data: any[], filename: string) {
 /**
  * Generates a simple, professional HTML invoice
  */
-export function downloadInvoice(payment: any) {
+export function downloadInvoice(payment: any, symbol: string = '₹') {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -94,15 +94,15 @@ export function downloadInvoice(payment: any) {
         <tbody>
           <tr>
             <td style="font-weight: 700;">Freelance Services - ${payment.client}</td>
-            <td>₹${Number(payment.amount).toLocaleString()}</td>
+            <td>${symbol}${Number(payment.amount).toLocaleString()}</td>
             <td>1</td>
-            <td style="text-align: right; font-weight: 700;">₹${Number(payment.amount).toLocaleString()}</td>
+            <td style="text-align: right; font-weight: 700;">${symbol}${Number(payment.amount).toLocaleString()}</td>
           </tr>
         </tbody>
       </table>
       <div class="total-section">
         <div class="total-label">Grand Total</div>
-        <div class="total-value">₹${Number(payment.amount).toLocaleString()}</div>
+        <div class="total-value">${symbol}${Number(payment.amount).toLocaleString()}</div>
       </div>
       <div class="footer">
         Thank you for your business. Please make payment by the due date.
