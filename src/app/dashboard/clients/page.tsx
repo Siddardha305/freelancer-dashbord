@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Zap } from 'lucide-react';
 import { ClientTable } from '@/dashboard/clients/components/ClientTable';
 import { ClientList } from '@/dashboard/clients/components/ClientList';
@@ -11,10 +12,9 @@ import { ClientFilterControls } from '@/dashboard/clients/components/ClientFilte
 import { ClientProfileDrawer } from '@/dashboard/clients/components/ClientProfileDrawer';
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<any[]>([]);
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [drawerClient, setDrawerClient] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -35,32 +35,20 @@ export default function ClientsPage() {
     setTimeout(() => setDrawerClient(null), 500);
   };
 
-  useEffect(() => {
-    async function loadClients() {
-      try {
-        const data = await getClientsAction();
-        setClients(data);
-      } catch (error) {
-        console.error("Error loading clients:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    loadClients();
-    // Enable 5-second live polling for real-time synchronization
-    const interval = setInterval(loadClients, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Real-time clients fetching
+  const { data: clients = [], isLoading: loading } = useQuery({
+    queryKey: ["clients"],
+    queryFn: getClientsAction,
+    refetchInterval: 8000,
+  });
 
   const refreshData = async (_newClient?: any) => {
-    const data = await getClientsAction();
-    setClients(data);
+    queryClient.invalidateQueries({ queryKey: ["clients"] });
   };
 
   // Filter and Sort logic
   const filteredClients = clients
-    .filter(client => {
+    .filter((client: any) => {
       // 1. Search Query
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -77,7 +65,7 @@ export default function ClientsPage() {
 
       return matchesSearch && matchesStatus && matchesPriority;
     })
-    .sort((a, b) => {
+    .sort((a: any, b: any) => {
       switch (sortBy) {
         case 'newest':
           return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
