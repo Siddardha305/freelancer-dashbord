@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MoreHorizontal, Mail, Play, Trash2, Edit3, ArrowRight, ExternalLink, User } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
+import { deleteClientAction, updateClientAction } from "@/dashboard/clients/actions/client-actions";
 import { useCurrency } from "@/context/CurrencyContext";
 import { EditClientModal } from "@/dashboard/clients/components/EditClientModal";
 
@@ -26,6 +26,16 @@ export function ClientTable({ clients = [], onUpdate }: { clients?: any[]; onUpd
       // The parent will refresh via polling or we could add a callback
     } catch (error) {
       alert("Failed to delete client.");
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const result = await updateClientAction(id, { status: newStatus });
+      if (result.message !== 'success') throw new Error(result.message);
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      alert("Failed to update status.");
     }
   };
 
@@ -120,7 +130,22 @@ export function ClientTable({ clients = [], onUpdate }: { clients?: any[]; onUpd
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
-                 <StatusBadge status={client.status || 'Active'} />
+                  <select 
+                    value={client.status || 'Active'} 
+                    onChange={(e) => handleStatusChange(client.id, e.target.value)}
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all select-none shadow-sm ${
+                      client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
+                      client.status === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
+                      client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
+                      client.status === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
+                      'bg-slate-50 text-slate-700 border-slate-200/60'
+                    }`}
+                  >
+                    <option value="Active" className="bg-white text-emerald-700 font-bold">Active</option>
+                    <option value="On Hold" className="bg-white text-amber-700 font-bold">On Hold</option>
+                    <option value="Inactive" className="bg-white text-red-700 font-bold">Inactive</option>
+                    <option value="Completed" className="bg-white text-indigo-700 font-bold">Completed</option>
+                  </select>
                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Retainer</p>
               </div>
             </div>
