@@ -259,7 +259,7 @@ export function ClientList({ clients = [] }: { clients?: any[] }) {
                   {/* Actions */}
                   <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <Link
-                      href={`/clients/${client.id}`}
+                      href={`/dashboard/clients/${client.id}`}
                       className="p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"
                       title="View Profile"
                     >

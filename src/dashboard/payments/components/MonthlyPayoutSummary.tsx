@@ -184,7 +184,7 @@ export function MonthlyPayoutSummary() {
                   </div>
 
                   <Link
-                    href={`/clients/${client.id}`}
+                    href={`/dashboard/clients/${client.id}`}
                     className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0"
                   >
                     <ChevronRight className="h-4 w-4" />

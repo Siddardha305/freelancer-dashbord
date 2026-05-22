@@ -110,7 +110,7 @@ export default function ClientsPage() {
           {/* Client Content */}
           <div className="transition-all duration-500">
             {viewMode === 'grid' ? (
-              <ClientTable clients={clients} />
+              <ClientTable clients={clients} onUpdate={refreshData} />
             ) : (
               <ClientList clients={clients} />
             )}

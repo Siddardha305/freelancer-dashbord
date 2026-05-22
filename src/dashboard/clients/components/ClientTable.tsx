@@ -5,10 +5,12 @@ import { MoreHorizontal, Mail, Play, Trash2, Edit3, ArrowRight, ExternalLink, Us
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
 import { useCurrency } from "@/context/CurrencyContext";
+import { EditClientModal } from "@/dashboard/clients/components/EditClientModal";
 
-export function ClientTable({ clients = [] }: { clients?: any[] }) {
+export function ClientTable({ clients = [], onUpdate }: { clients?: any[]; onUpdate?: () => void }) {
   const { formatCurrency } = useCurrency();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
 
   // Deduplicate by id — guard against any duplicate entries from polling race conditions
   const uniqueClients = clients.filter(
@@ -28,6 +30,7 @@ export function ClientTable({ clients = [] }: { clients?: any[] }) {
   };
 
   return (
+    <>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
       {uniqueClients.map((client) => (
         <div key={client.id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -58,7 +61,13 @@ export function ClientTable({ clients = [] }: { clients?: any[] }) {
                       onClick={() => setActiveMenu(null)}
                     />
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
-                      <button className="w-full px-4 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-3 uppercase tracking-wider transition-colors">
+                      <button 
+                        onClick={() => {
+                          setEditingClient(client);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-3 uppercase tracking-wider transition-colors"
+                      >
                         <Edit3 className="h-3.5 w-3.5" />
                         Edit Client
                       </button>
@@ -128,6 +137,18 @@ export function ClientTable({ clients = [] }: { clients?: any[] }) {
         </div>
       )}
     </div>
+
+    {editingClient && (
+      <EditClientModal
+        isOpen={editingClient !== null}
+        onClose={() => setEditingClient(null)}
+        client={editingClient}
+        onSuccess={() => {
+          if (onUpdate) onUpdate();
+        }}
+      />
+    )}
+    </>
   );
 }
 
