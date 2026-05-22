@@ -9,31 +9,31 @@ import FeatureSidebarButton from '../shared/FeatureSidebarButton';
 const screenshots = [
   {
     title: 'Dashboard Overview',
-    description: 'Track your total revenue, client health, and delivery metrics in one unified dashboard.',
+    description: 'Get a clear view of your revenue, active clients, and monthly goals in one gorgeous interface.',
     path: '/dashbord pics/maindashbord.png',
     icon: LayoutDashboard,
     badge: 'Consolidated Metrics'
   },
   {
-    title: 'Client Management CRM',
-    description: 'Monitor active contracts, pricing plans, and client communication priorities in detail.',
+    title: 'Client CRM',
+    description: 'Keep your client details, contracts, and custom rates organized in one secure database.',
     path: '/dashbord pics/Clients-mannagement.png',
     icon: Users,
-    badge: 'CRM Pipeline'
+    badge: 'Client CRM'
   },
   {
     title: 'Visual Workboards',
-    description: 'Track visual progress, attachments, deadlines, and revisions for monthly work outputs.',
+    description: 'Manage deadlines, tasks, and deliverables with a beautifully simple progress board.',
     path: '/dashbord pics/Monthly-Work.png',
     icon: Kanban,
     badge: 'Visual Kanban'
   },
   {
     title: 'Invoices & Payouts',
-    description: 'Automate billing cycles, send professional PDF reports, and log bank or PayPal payments.',
+    description: 'Log payments, track invoice statuses, and generate professional PDF reports with one click.',
     path: '/dashbord pics/Monthly-Payout-Summary.png',
     icon: CreditCard,
-    badge: 'Ledger Settlement'
+    badge: 'Smart Invoicing'
   }
 ];
 
@@ -45,10 +45,10 @@ export default function FeatureTour() {
       
       {/* Standardized Section Header */}
       <SectionHeader 
-        badge="Console Walkthrough"
+        badge="Platform Tour"
         badgeIcon={Compass}
-        title="Explore the Workspace Modules"
-        description="Toggle between the live modules of FreelanceOS. Engineered for design elegance and modular telemetry."
+        title="Designed for modern freelancers"
+        description="A simple, powerful set of tools designed to help you run a highly professional business."
         centered={true}
       />
 

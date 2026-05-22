@@ -37,10 +37,10 @@ export default function ContactSection() {
 
         {/* Reusable Section Header inside card */}
         <SectionHeader 
-          badge="Preflight Console"
+          badge="Contact Us"
           badgeIcon={Cpu}
-          title="Preflight Workspace Registry"
-          description="Transmit telemetry pings directly to system diagnostics logs."
+          title="Have questions? Let's connect"
+          description="Reach out to learn more about how FreelanceOS can elevate your freelance business."
           centered={true}
           className="!mb-12"
         />
@@ -50,7 +50,7 @@ export default function ContactSection() {
           <form onSubmit={handleContactSubmit} className="space-y-5 lg:col-span-7">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Workspace Operator</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Name</label>
                 <input 
                   type="text" 
                   required
@@ -62,7 +62,7 @@ export default function ContactSection() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Telemetry Destination</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Email</label>
                 <input 
                   type="email" 
                   required
@@ -75,13 +75,13 @@ export default function ContactSection() {
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Payload Data (Message Details)</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Message</label>
               <textarea 
                 rows={4}
                 disabled={isSubmitted}
                 value={contactMsg}
                 onChange={(e) => setContactMsg(e.target.value)}
-                placeholder="Ask about data isolation, session encryption protocols, or MongoDB configuration details..."
+                placeholder="Tell us about your freelance business and what you're looking for..."
                 className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 resize-none transition-all font-medium shadow-inner"
               />
             </div>
@@ -94,7 +94,7 @@ export default function ContactSection() {
                 iconPosition="left"
                 className="w-full py-4 text-[10px] rounded-xl"
               >
-                Transmit Inquiries to Workspace Logs
+                Send Message
               </ActionButton>
             ) : (
               <ActionButton
@@ -105,14 +105,14 @@ export default function ContactSection() {
                 onClick={handleReset}
                 className="w-full py-4 text-[10px] rounded-xl"
               >
-                Transmit Complete. Reset Preflight Form
+                Message Sent! Send Another
               </ActionButton>
             )}
           </form>
 
           {/* Reusable ConsoleWindow rendered as standard shell screen */}
           <ConsoleWindow 
-            title="preflight_telemetry.log"
+            title="message_delivery.log"
             isTerminal={true}
             aspectRatio="auto"
             className="lg:col-span-5 border border-slate-200"
@@ -120,27 +120,25 @@ export default function ContactSection() {
             <div className="p-5 font-mono text-[10px] leading-relaxed min-h-[220px] text-slate-350 space-y-2 select-all selection:bg-indigo-650 selection:text-white">
               {!isSubmitted ? (
                 <>
-                  <p className="text-slate-600">// Standing by for preflight handshake...</p>
-                  <p className="text-slate-550">&gt; waiting_for_inputs: TRUE</p>
-                  <p className="text-slate-550">&gt; ready_for_transmission: FALSE</p>
-                  <p className="text-slate-450 animate-pulse text-[9px]">▋ LINE ACTIVE</p>
+                  <p className="text-slate-600">// Ready to receive message...</p>
+                  <p className="text-slate-550">&gt; system_status: ACTIVE</p>
+                  <p className="text-slate-550">&gt; secure_connection: READY</p>
+                  <p className="text-slate-450 animate-pulse text-[9px]">▋ LINE OPEN</p>
                 </>
               ) : (
                 <>
-                  <p className="text-indigo-400">// Telemetry handshake initialized...</p>
-                  <p className="text-slate-500">[{logTime}] CONNECTIVITY PREFLIGHT CHECK: OK</p>
-                  <p className="text-slate-400">&gt; target_payload: REGISTER_REQUEST</p>
-                  <p className="text-slate-400">&gt; name_length: {contactName.length} chars</p>
-                  <p className="text-slate-400">&gt; source: {contactEmail}</p>
-                  <p className="text-indigo-300">&gt; transport_sec: AES-256-GCM</p>
+                  <p className="text-indigo-400">// Dispatching message...</p>
+                  <p className="text-slate-500">[{logTime}] MESSAGE PIPELINE: CONNECTED</p>
+                  <p className="text-slate-400">&gt; sender_name: {contactName}</p>
+                  <p className="text-slate-400">&gt; contact_email: {contactEmail}</p>
                   {contactMsg ? (
-                    <p className="text-indigo-400/80">&gt; payload_body: &quot;{contactMsg.slice(0, 32)}...&quot;</p>
+                    <p className="text-indigo-300">&gt; message_preview: &quot;{contactMsg.slice(0, 32)}...&quot;</p>
                   ) : (
-                    <p className="text-slate-650">&gt; payload_body: EMPTY</p>
+                    <p className="text-slate-650">&gt; message_preview: NONE</p>
                   )}
                   <p className="text-emerald-400 font-bold flex items-center gap-1 mt-3">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    &gt; STABLE TRANSMISSION DISPATCH: SUCCESS [202]
+                    &gt; STATUS: SENT SUCCESSFULLY [200]
                   </p>
                 </>
               )}

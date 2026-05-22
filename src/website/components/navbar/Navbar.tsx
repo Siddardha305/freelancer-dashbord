@@ -14,14 +14,14 @@ export default function Navbar() {
             </div>
             <div>
               <span className="text-sm font-black tracking-tight text-slate-900 leading-none">FreelanceOS</span>
-              <div className="text-[8px] font-black text-indigo-600 tracking-[0.2em] uppercase leading-none mt-0.5">Console</div>
+              <div className="text-[8px] font-black text-indigo-600 tracking-[0.2em] uppercase leading-none mt-0.5">Workspace</div>
             </div>
           </Link>
         </div>
 
         <nav className="hidden lg:flex items-center gap-8">
           <a href="#features-tabs" className="text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">Tour</a>
-          <a href="#contact" className="text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">Preflight</a>
+          <a href="#contact" className="text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">Contact</a>
           <a href="#faq" className="text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">FAQs</a>
         </nav>
 

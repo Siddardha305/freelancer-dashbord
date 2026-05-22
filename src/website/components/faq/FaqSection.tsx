@@ -10,24 +10,20 @@ export default function FaqSection() {
 
   const faqs = [
     {
-      q: 'How does account and data isolation work?',
-      a: 'Every user in FreelanceOS has a strictly private account container in the MongoDB database. When you register, a User schema is initialized, and all clients, tasks, and payments you create are bound by your unique userId. Other registered users cannot see, wipe, or modify your workspaces.'
+      q: 'Is my freelance data secure and private?',
+      a: 'Yes, absolutely. FreelanceOS uses secure database isolation and bank-grade session protection, ensuring your client details, financials, and project logs are visible only to you.'
     },
     {
-      q: 'Will I lose my existing demo data after signing up?',
-      a: 'No! If you are the first user to register an account on the database, FreelanceOS will automatically detect it and securely adopt all existing legacy mock clients, work tasks, and payout logs to your new account. Subsequent users register into a clean, empty workspace.'
+      q: 'Can I configure different rates for different clients?',
+      a: 'Yes! You can define custom flat-rate monthly retainers or project-based per-unit rates (like per design, per hour, or per project) and log tasks against them effortlessly.'
     },
     {
-      q: 'What makes FreelanceOS secure?',
-      a: 'Instead of relying on heavy third-party providers, we built a zero-dependency session system utilizing Node.js native crypto modules. Passwords are hashed with PBKDF2 + SHA-512 (100,000 iterations), and cookie sessions are securely encrypted using AES-256-GCM. Decryption tags prevent session tampering.'
+      q: 'Can I export reports and invoices?',
+      a: 'Yes, you can generate and download beautiful, clean PDF summaries of client payouts, work summaries, and invoices with a single click.'
     },
     {
-      q: 'Can I choose different pricing plans for different clients?',
-      a: 'Yes. Within the CRM pipeline, you can define a flat-rate monthly retainer plan, or transactional per-unit plans. For example, if you are a video editor or thumbnail designer, you can charge per thumbnail and log tasks against that rate automatically.'
-    },
-    {
-      q: 'What admin diagnostic tools do you offer?',
-      a: 'FreelanceOS includes an administrative Developer Tools panel. This displays MongoDB cluster connectivity status, storage quotas, average collection schema sizes, and lets you safely run an isolated context wipe of your tasks or ledger bills without affecting your clients list.'
+      q: 'Is there a limit on clients or active projects?',
+      a: 'No. FreelanceOS is built to grow with your business. You can add unlimited clients, projects, tasks, and payout history without any restrictions.'
     }
   ];
 
@@ -35,10 +31,10 @@ export default function FaqSection() {
     <section id="faq" className="py-32 border-t border-slate-200 px-6 sm:px-12 max-w-5xl mx-auto">
       {/* Dynamic standardized header */}
       <SectionHeader 
-        badge="Faq & Architecture"
+        badge="FAQ"
         badgeIcon={HelpCircle}
         title="Frequently Asked Questions"
-        description="Technical specifications, security defaults, and workspace operational mechanics."
+        description="Everything you need to know about setting up your workspace."
         centered={true}
       />
 

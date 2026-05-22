@@ -10,19 +10,19 @@ import FooterLinkColumn from '../shared/FooterLinkColumn';
 export default function FooterSection() {
   const testimonials = [
     {
-      text: 'FreelanceOS replaced Notion for me. The visual Kanban revision counter has saved me countless arguments with clients about scope creep. Absolute game-changer.',
+      text: 'FreelanceOS replaced Notion for me. The visual Kanban board is incredibly clear, helping me align deliverables with my clients seamlessly. Absolute game-changer.',
       author: 'Siddardha K.',
       role: 'High-Value Video Editor',
       tag: 'Video Production'
     },
     {
-      text: 'The price-per-unit billing model is perfect. I bill per thumbnail designed. When I mark a task approved on the Kanban, my monthly ledger aggregates it instantly.',
+      text: 'The custom per-unit billing model is perfect. I bill per asset delivered, and marking a task approved updates my invoice ledger instantly.',
       author: 'Aryan Sharma',
       role: 'YouTube Thumbnail Designer',
       tag: 'Design & Graphics'
     },
     {
-      text: 'Data privacy was critical. Having dedicated database namespaces scoped via AES-256 cookies gives me absolute confidence that my billing contracts remain secure.',
+      text: 'Data privacy was critical. Having a secure private workspace gives me absolute confidence that my billing contracts are kept safe.',
       author: 'Neha Deshmukh',
       role: 'Brand Consultant & Designer',
       tag: 'Consulting'
@@ -31,30 +31,30 @@ export default function FooterSection() {
 
   const footerColumns = [
     {
-      title: 'Workspace Module',
+      title: 'Platform Modules',
       links: [
         { label: 'Client CRM', href: '#features-tabs' },
-        { label: 'Kanban Manager', href: '#features-tabs' },
-        { label: 'Ledger Invoicing', href: '#features-tabs' },
-        { label: 'Analytics Telemetry', href: '#features-tabs' }
+        { label: 'Kanban Board', href: '#features-tabs' },
+        { label: 'Smart Ledgers', href: '#features-tabs' },
+        { label: 'PDF Reports', href: '#features-tabs' }
       ]
     },
     {
-      title: 'Security Schema',
+      title: 'Privacy & Security',
       links: [
-        { label: 'AES-256 Encryption', href: '#faq' },
-        { label: 'PBKDF2 SHA-512', href: '#faq' },
-        { label: 'Data Isolation', href: '#faq' },
-        { label: 'Session Crypto Tags', href: '#faq' }
+        { label: 'Secure Isolation', href: '#faq' },
+        { label: 'Bank-Grade Encryption', href: '#faq' },
+        { label: 'Data Safety', href: '#faq' },
+        { label: 'Private Accounts', href: '#faq' }
       ]
     },
     {
-      title: 'System Diagnostics',
+      title: 'Product',
       links: [
-        { label: 'MongoDB Telemetry', href: '/login' },
-        { label: 'Cluster Config', href: '/login' },
-        { label: 'Preflight Handshake', href: '#contact' },
-        { label: 'Sandbox Wipe', href: '/login' }
+        { label: 'Sign In', href: '/login' },
+        { label: 'Start Workspace', href: '/signup' },
+        { label: 'Contact Support', href: '#contact' },
+        { label: 'Reset Password', href: '/login' }
       ]
     }
   ];
@@ -68,8 +68,8 @@ export default function FooterSection() {
           <SectionHeader 
             badge="Creator Endorsements"
             badgeIcon={Sparkles}
-            title="Migrated Creators Speak Out"
-            description="Real telemetry reviews from verified independent workspace operators."
+            title="What other freelancers say"
+            description="Real feedback from verified independent creators running their businesses on FreelanceOS."
             centered={true}
           />
 
@@ -97,10 +97,10 @@ export default function FooterSection() {
           <div className="relative z-10 max-w-3xl mx-auto">
             {/* Header utilizing shared subcomponent */}
             <SectionHeader 
-              badge="Instance Deployer v1.1"
+              badge="Get Started"
               badgeIcon={Server}
-              title="Organize Your Freelance Engine Today"
-              description="Instantiate your private, database-isolated space now. Aggregate your contracts, active retentions, and live Kanban cards under absolute zero-dependency encryption."
+              title="Ready to elevate your freelance business?"
+              description="Start your private, secure workspace today and manage your clients, project pipelines, and earnings in one place."
               centered={true}
               className="!mb-10"
             />
@@ -113,7 +113,7 @@ export default function FooterSection() {
                 iconPosition="right"
                 className="w-full sm:w-auto"
               >
-                Deploy Workspace
+                Start Free Workspace
               </ActionButton>
               
               <ActionButton 
@@ -121,16 +121,16 @@ export default function FooterSection() {
                 variant="secondary"
                 className="w-full sm:w-auto"
               >
-                Enter Active Space
+                Sign In
               </ActionButton>
             </div>
 
             <div className="mt-12 flex items-center justify-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-indigo-600" /> MongoDB Scoping</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-indigo-600" /> 100% Private</span>
               <span className="text-slate-300">•</span>
-              <span>AES-256 Crypto Tags</span>
+              <span>Smart Invoicing</span>
               <span className="text-slate-300">•</span>
-              <span>Zero dependencies</span>
+              <span>Visual Pipelines</span>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function FooterSection() {
                 <span className="font-black text-slate-900 uppercase tracking-widest text-xs">FreelanceOS</span>
               </div>
               <p className="text-slate-400 text-xs font-semibold leading-relaxed max-w-xs">
-                The zero-dependency sandbox environment built specifically for creators, thumbnail designers, editors, and independent developers.
+                The ultimate professional workspace built specifically for independent creators, designers, editors, and freelance professionals.
               </p>
             </div>
 
@@ -171,7 +171,7 @@ export default function FooterSection() {
             </div>
 
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center sm:text-left">
-              &copy; {new Date().getFullYear()} FreelanceOS. All rights reserved. Registered container console.
+              &copy; {new Date().getFullYear()} FreelanceOS. All rights reserved. Designed for high-performance freelancers.
             </p>
           </div>
         </div>

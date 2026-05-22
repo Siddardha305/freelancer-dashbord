@@ -18,18 +18,18 @@ export default function HeroSection() {
         
         {/* Sleek dashboard-matched tag badge */}
         <TechBadge 
-          label="High-Performance Console for Independent Creators"
+          label="The Smart Platform for Modern Independent Creators"
           icon={Sparkles}
           variant="slate"
           className="mb-8"
         />
 
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-slate-900 max-w-5xl leading-[1.05] mb-8">
-          The Clean, Isolated OS to Run Your <span className="text-indigo-650">Entire Freelance Business</span>
+          The Clean, Elegant Workspace to Run Your <span className="text-indigo-650">Entire Freelance Business</span>
         </h1>
 
         <p className="text-sm sm:text-base text-slate-400 font-bold uppercase tracking-widest max-w-2xl leading-relaxed mb-12">
-          Say goodbye to spreadsheet chaos. FreelanceOS delivers modular client pipelines, visual Kanban boards, automated ledgers, and database-isolated telemetry.
+          Organize clients, manage visual project boards, log multi-currency payments, and generate professional PDF reports in one gorgeous, secure workspace.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-24 z-10">
@@ -39,21 +39,21 @@ export default function HeroSection() {
             icon={ArrowRight} 
             iconPosition="right"
           >
-            Deploy Your Space
+            Get Started
           </ActionButton>
           
           <ActionButton 
             href="#contact" 
             variant="secondary"
           >
-            Preflight Registry
+            Explore Features
           </ActionButton>
         </div>
 
         {/* Premium Dashboard Application Frame Window */}
         <div id="features-tabs" className="w-full z-10">
           <ConsoleWindow 
-            title="freelanceos_console_v1.1" 
+            title="freelanceos_workspace_v1.1" 
             imageSrc="/dashbord pics/maindashbord.png" 
             imageAlt="FreelanceOS Unified Workspace"
           />
@@ -64,10 +64,10 @@ export default function HeroSection() {
       <section className="bg-white border-y border-slate-200/80 py-12 px-6 sm:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { label: 'Data Scoping', value: '100% Isolated', desc: 'Secure database namespaces', icon: Shield },
-            { label: 'Cryptography', value: 'AES-256-GCM', desc: 'Tamper-proof cookies', icon: Cpu },
-            { label: 'Sync Pipeline', value: '5-Second Poll', desc: 'Real-time hot updates', icon: RefreshCw },
-            { label: 'Auth Footprint', value: 'Zero Dependency', desc: 'Native node algorithms', icon: Layers },
+            { label: 'Client CRM', value: 'Smart Hub', desc: 'Manage unlimited clients & rates', icon: Shield },
+            { label: 'Visual Kanban', value: 'Intuitive Boards', desc: 'Track task stages and timelines', icon: Layers },
+            { label: 'Smart Ledgers', value: 'Multi-Currency', desc: 'Log payments & track invoices', icon: RefreshCw },
+            { label: 'Reports Export', value: 'One-Click PDF', desc: 'Generate professional reports', icon: Cpu },
           ].map((item, idx) => (
             <MetricsCard 
               key={idx}
