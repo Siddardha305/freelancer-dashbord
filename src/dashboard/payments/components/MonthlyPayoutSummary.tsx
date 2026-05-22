@@ -35,7 +35,6 @@ export function MonthlyPayoutSummary() {
 
   // Build per-client payout summaries
   const clientPayouts = (clients as any[])
-    .filter((c: any) => c.status === "Active")
     .map((client: any) => {
       const clientWorks = (works as any[]).filter(
         (w: any) => w.client === client.name
@@ -96,14 +95,12 @@ export function MonthlyPayoutSummary() {
       };
     });
 
-  const totalPayoutDue = clientPayouts.reduce(
-    (sum, c) => sum + c.earnedAmount,
-    0
-  );
-  const totalPending = clientPayouts.reduce(
-    (sum, c) => sum + c.pendingAmount,
-    0
-  );
+  const totalPayoutDue = clientPayouts
+    .filter((cp) => cp.client.status !== "Inactive")
+    .reduce((sum, c) => sum + c.earnedAmount, 0);
+  const totalPending = clientPayouts
+    .filter((cp) => cp.client.status !== "Inactive")
+    .reduce((sum, c) => sum + c.pendingAmount, 0);
 
   if (clientPayouts.length === 0) return null;
 
@@ -171,9 +168,27 @@ export function MonthlyPayoutSummary() {
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">
-                        {client.name}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-black text-slate-900 truncate">
+                          {client.name}
+                        </p>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border select-none ${
+                          client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
+                          client.status === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
+                          client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
+                          client.status === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
+                          'bg-slate-50 text-slate-700 border-slate-200/60'
+                        }`}>
+                          <span className={`h-1 w-1 rounded-full ${
+                            client.status === 'Active' ? 'bg-emerald-500' :
+                            client.status === 'On Hold' ? 'bg-amber-500' :
+                            client.status === 'Inactive' ? 'bg-red-500' :
+                            client.status === 'Completed' ? 'bg-indigo-500' :
+                            'bg-slate-400'
+                          }`} />
+                          {client.status || 'Active'}
+                        </span>
+                      </div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
                         {client.niche || "General"} ·{" "}
                         {client.pricing_model === "per_thumbnail"

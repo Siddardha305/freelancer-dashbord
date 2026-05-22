@@ -1,18 +1,39 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Filter, LayoutGrid, List as ListIcon, Zap } from 'lucide-react';
+import { Plus, Search, Zap } from 'lucide-react';
 import { ClientTable } from '@/dashboard/clients/components/ClientTable';
 import { ClientList } from '@/dashboard/clients/components/ClientList';
 import { AddClientModal } from '@/dashboard/clients/components/AddClientModal';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
+import { ClientFilterControls } from '@/dashboard/clients/components/ClientFilterControls';
+import { ClientProfileDrawer } from '@/dashboard/clients/components/ClientProfileDrawer';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [drawerClient, setDrawerClient] = useState<any | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'price-desc' | 'price-asc'
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+
+  const openDrawer = (client: any) => {
+    setDrawerClient(client);
+    setTimeout(() => setIsDrawerOpen(true), 50);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setDrawerClient(null), 500);
+  };
 
   useEffect(() => {
     async function loadClients() {
@@ -32,6 +53,49 @@ export default function ClientsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const refreshData = async (_newClient?: any) => {
+    const data = await getClientsAction();
+    setClients(data);
+  };
+
+  // Filter and Sort logic
+  const filteredClients = clients
+    .filter(client => {
+      // 1. Search Query
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = 
+        client.name.toLowerCase().includes(searchLower) ||
+        (client.email && client.email.toLowerCase().includes(searchLower)) ||
+        (client.niche && client.niche.toLowerCase().includes(searchLower)) ||
+        client.id.toLowerCase().includes(searchLower);
+
+      // 2. Status Filter
+      const matchesStatus = statusFilter === 'All' || client.status === statusFilter;
+
+      // 3. Priority Filter
+      const matchesPriority = priorityFilter === 'All' || client.priority === priorityFilter;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case 'oldest':
+          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'price-desc':
+          return (b.monthly_price || 0) - (a.monthly_price || 0);
+        case 'price-asc':
+          return (a.monthly_price || 0) - (b.monthly_price || 0);
+        default:
+          return 0;
+      }
+    });
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -45,12 +109,6 @@ export default function ClientsPage() {
       </div>
     );
   }
-
-  const refreshData = async (_newClient?: any) => {
-    // Always fetch the canonical list from DB — deduplication is guaranteed
-    const data = await getClientsAction();
-    setClients(data);
-  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
@@ -69,56 +127,61 @@ export default function ClientsPage() {
       />
 
       <main className="flex-1 overflow-y-auto p-8 lg:p-12">
-        <div className="mx-auto max-w-7xl space-y-10">
+        <div className="mx-auto max-w-7xl space-y-8 animate-in fade-in duration-500">
           
-          {/* Filters & Search */}
-          <div className="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center">
-            <div className="relative w-full xl:w-[500px] group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search by client name or ID..." 
-                className="w-full pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all placeholder-slate-400 shadow-sm"
-              />
+          {/* Reusable Client Filter & Sort Controls */}
+          <ClientFilterControls 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            priorityFilter={priorityFilter}
+            setPriorityFilter={setPriorityFilter}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            isFilterPanelOpen={isFilterPanelOpen}
+            setIsFilterPanelOpen={setIsFilterPanelOpen}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
+
+          {/* Client Content Display */}
+          {clients.length > 0 && filteredClients.length > 0 && (
+            <div className="transition-all duration-500">
+              {viewMode === 'grid' ? (
+                <ClientTable clients={filteredClients} onUpdate={refreshData} onViewProfile={openDrawer} />
+              ) : (
+                <ClientList clients={filteredClients} onViewProfile={openDrawer} />
+              )}
             </div>
-            
-            <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
-              <button className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                <Filter className="h-4 w-4" />
-                Sort & Filter
-              </button>
-              
-              <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                <button 
-                  onClick={() => setViewMode('grid')}
-                  className={`flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Grid
-                </button>
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                >
-                  <ListIcon className="h-4 w-4" />
-                  List
-                </button>
+          )}
+
+          {/* Empty State: No Matches Found */}
+          {clients.length > 0 && filteredClients.length === 0 && (
+            <div className="text-center py-24 bg-white rounded-[3rem] border border-slate-200/80 flex flex-col items-center justify-center animate-in fade-in duration-300 shadow-sm">
+              <div className="h-16 w-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4 border border-indigo-100/50">
+                <Search className="h-6 w-6 text-indigo-600 animate-pulse" />
               </div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">No matches found</h3>
+              <p className="text-[10px] text-slate-400 font-bold max-w-xs mx-auto mb-6 uppercase tracking-widest leading-relaxed">We couldn't find any clients matching your active filters or search terms.</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('All');
+                  setPriorityFilter('All');
+                  setSortBy('newest');
+                }}
+                className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-widest border border-indigo-100 px-6 py-3 rounded-2xl hover:bg-indigo-50 transition-all active:scale-95"
+              >
+                Clear Search & Filters
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Client Content */}
-          <div className="transition-all duration-500">
-            {viewMode === 'grid' ? (
-              <ClientTable clients={clients} onUpdate={refreshData} />
-            ) : (
-              <ClientList clients={clients} />
-            )}
-          </div>
-
+          {/* Empty State: Onboarding */}
           {clients.length === 0 && (
-            <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center">
-              <div className="h-20 w-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
+            <div className="text-center py-32 bg-white rounded-[3rem] border border-slate-200/80 flex flex-col items-center justify-center shadow-sm">
+              <div className="h-20 w-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 border border-slate-100">
                 <Zap className="h-10 w-10 text-slate-300" />
               </div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">No Clients Found</h3>
@@ -142,6 +205,21 @@ export default function ClientsPage() {
           onSuccess={refreshData}
         />
       )}
+
+      {/* Reusable slide-over Client Profile Drawer Component */}
+      <ClientProfileDrawer 
+        isOpen={isDrawerOpen}
+        client={drawerClient}
+        onClose={closeDrawer}
+        onSuccess={(updatedClient) => {
+          if (updatedClient === null) {
+            refreshData();
+          } else {
+            setDrawerClient(updatedClient);
+            refreshData();
+          }
+        }}
+      />
     </div>
   );
 }

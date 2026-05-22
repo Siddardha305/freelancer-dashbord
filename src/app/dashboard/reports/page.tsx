@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Download,
   TrendingUp,
@@ -25,30 +26,20 @@ import { useCurrency } from "@/context/CurrencyContext";
 
 export default function ReportsPage() {
   const { formatCurrency, symbol } = useCurrency();
-  const [clients, setClients] = useState<any[]>([]);
-  const [works, setWorks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [clientsData, worksData] = await Promise.all([
-          getClientsAction(),
-          getWorksAction()
-        ]);
-        setClients(clientsData);
-        setWorks(worksData);
-      } catch (error) {
-        console.error("Error loading report data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: getClientsAction,
+    refetchInterval: 8000,
+  });
 
-    loadData();
-    const interval = setInterval(loadData, 8000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: works = [], isLoading: isLoadingWorks } = useQuery({
+    queryKey: ["works"],
+    queryFn: getWorksAction,
+    refetchInterval: 8000,
+  });
+
+  const loading = isLoadingClients || isLoadingWorks;
 
   if (loading) {
     return (
@@ -92,12 +83,20 @@ export default function ReportsPage() {
     const d = new Date(dateStr);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const thisMonthRevenue = thisMonthCompleted.reduce((s: number, w: any) => s + getPricePerTask(w), 0);
+  const thisMonthRevenue = thisMonthCompleted.reduce((s: number, w: any) => {
+    const c = clientMap[w.client];
+    if (!c || c.status === 'Inactive') return s;
+    return s + getPricePerTask(w);
+  }, 0);
   const thisMonthDeliveries = thisMonthCompleted.length;
 
   // Pending pipeline
   const pendingWorks = works.filter((w: any) => ['To Do', 'In Progress', 'Review'].includes(w.status));
-  const pendingRevenue = pendingWorks.reduce((s: number, w: any) => s + getPricePerTask(w), 0);
+  const pendingRevenue = pendingWorks.reduce((s: number, w: any) => {
+    const c = clientMap[w.client];
+    if (!c || c.status === 'Inactive') return s;
+    return s + getPricePerTask(w);
+  }, 0);
   const pendingCount = pendingWorks.length;
 
   // Completion rate
@@ -106,10 +105,10 @@ export default function ReportsPage() {
   // Urgent tasks
   const urgentCount = works.filter((w: any) => w.priority === 'Urgent' && w.status !== 'Completed' && w.status !== 'Done').length;
 
-  // Active clients
-  const activeClients = clients.filter((c: any) => c.status === 'Active');
+  // Active clients (Active, On Hold, or Completed)
+  const activeClients = clients.filter((c: any) => c.status === 'Active' || c.status === 'On Hold' || c.status === 'Completed');
 
-  // Per-client stats for the breakdown table
+  // Per-client stats for the breakdown table (excluding Inactive clients)
   const clientStats = activeClients.map((client: any) => {
     const cWorks = works.filter((w: any) => w.client === client.name);
     const quota = client.thumbnails_per_month || 8;
@@ -141,7 +140,7 @@ export default function ReportsPage() {
       progress,
       totalAllTime: cWorks.filter((w: any) => w.status === 'Completed' || w.status === 'Done').length,
     };
-  }).sort((a, b) => b.earnedThisMonth - a.earnedThisMonth);
+  }).sort((a: any, b: any) => b.earnedThisMonth - a.earnedThisMonth);
 
   // Work status distribution
   const statusCounts = {
@@ -153,7 +152,7 @@ export default function ReportsPage() {
   const statusMax = Math.max(...Object.values(statusCounts), 1);
 
   const handleExportCSV = () => {
-    const rows = clientStats.map(s => ({
+    const rows = clientStats.map((s: any) => ({
       Client: s.client.name,
       Niche: s.client.niche || '',
       [`Monthly Target (${symbol})`]: s.monthlyTarget,
@@ -375,7 +374,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {clientStats.map((s) => (
+                    {clientStats.map((s: any) => (
                       <tr key={s.client.id} className="hover:bg-slate-50/60 transition-colors group">
                         {/* Client */}
                         <td className="px-10 py-5">
@@ -386,7 +385,25 @@ export default function ReportsPage() {
                               </span>
                             </div>
                             <div>
-                              <p className="text-sm font-black text-slate-900">{s.client.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-black text-slate-900">{s.client.name}</p>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border select-none ${
+                                  s.client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
+                                  s.client.status === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
+                                  s.client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
+                                  s.client.status === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
+                                  'bg-slate-50 text-slate-700 border-slate-200/60'
+                                }`}>
+                                  <span className={`h-1 w-1 rounded-full ${
+                                    s.client.status === 'Active' ? 'bg-emerald-500' :
+                                    s.client.status === 'On Hold' ? 'bg-amber-500' :
+                                    s.client.status === 'Inactive' ? 'bg-red-500' :
+                                    s.client.status === 'Completed' ? 'bg-indigo-500' :
+                                    'bg-slate-400'
+                                  }`} />
+                                  {s.client.status || 'Active'}
+                                </span>
+                              </div>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.client.niche || 'General'}</p>
                             </div>
                           </div>

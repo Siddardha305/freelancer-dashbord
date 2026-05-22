@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { DollarSign, ArrowDownRight, ArrowUpRight, FileText } from "lucide-react";
 import { PaymentTable } from "@/dashboard/payments/components/PaymentTable";
 import { PaymentHeader } from "@/dashboard/payments/components/PaymentHeader";
 import { MonthlyPayoutSummary } from "@/dashboard/payments/components/MonthlyPayoutSummary";
+import { PaymentSummaryCards } from "@/dashboard/payments/components/PaymentSummaryCards";
 import { getPaymentsAction } from '@/dashboard/payments/actions/payment-actions';
 
 export default function PaymentsPage() {
@@ -37,13 +37,6 @@ export default function PaymentsPage() {
     );
   }
 
-  const totalCollected = payments.filter((p: any) => p.payment_status === "Paid").reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-  const totalPending = payments.filter((p: any) => p.payment_status === "Pending").reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-  const totalOverdue = payments.filter((p: any) => p.payment_status === "Overdue").reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-  
-  const pendingCount = payments.filter((p: any) => p.payment_status === "Pending").length;
-  const overdueCount = payments.filter((p: any) => p.payment_status === "Overdue").length;
-
   const refreshData = async () => {
     const data = await getPaymentsAction();
     setPayments(data);
@@ -55,7 +48,13 @@ export default function PaymentsPage() {
 
       <main className="flex-1 overflow-y-auto p-8 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-10">
+          {/* 4 Financial KPI Summary Cards at the absolute top */}
+          <PaymentSummaryCards payments={payments} />
+          
+          {/* Monthly Payout Summary section */}
           <MonthlyPayoutSummary />
+          
+          {/* Recent Invoices Table section */}
           <PaymentTable initialPayments={payments} />
         </div>
       </main>

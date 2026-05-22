@@ -64,6 +64,7 @@ export default function Home() {
   const getPricePerTask = (work: any): number => {
     const c = clientMap[work.client];
     if (!c) return 0;
+    if (c.status === "Inactive") return 0;
     if (c.price_per_thumbnail > 0) return c.price_per_thumbnail;
     const quota = c.thumbnails_per_month || 8;
     return quota > 0 ? (c.monthly_price || 0) / quota : 0;

@@ -31,6 +31,30 @@ const ClientSchema = z.object({
   price_per_thumbnail: z.coerce.number().min(0).default(0),
 })
 
+const UpdateClientSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  niche: z.string().nullable().optional().transform(v => v === undefined ? undefined : (!v || v.trim() === "" ? "General" : v)),
+  email: z.string().email("Invalid email").nullable().optional().or(z.literal("")),
+  phone: z.string().nullable().optional().or(z.literal("")),
+  country: z.string().nullable().optional().or(z.literal("")),
+  timezone: z.string().nullable().optional().or(z.literal("")),
+  status: z.string().optional(),
+  priority: z.enum(['High', 'Medium', 'Low']).optional(),
+  monthly_price: z.coerce.number().min(0, "Price must be positive").optional(),
+  pricing_model: z.string().optional(),
+  channel_link: z.string().nullable().optional().or(z.literal("")),
+  avatar: z.string().nullable().optional().or(z.literal("")),
+  notes: z.string().nullable().optional().or(z.literal("")),
+  tags: z.array(z.string()).optional(),
+  totalEarned: z.coerce.number().optional(),
+  contractStartDate: z.string().nullable().optional().or(z.literal("")),
+  contractEndDate: z.string().nullable().optional().or(z.literal("")),
+  lastContactedAt: z.string().nullable().optional().or(z.literal("")),
+  referredBy: z.string().nullable().optional().or(z.literal("")),
+  thumbnails_per_month: z.coerce.number().min(0).optional(),
+  price_per_thumbnail: z.coerce.number().min(0).optional(),
+})
+
 export async function getClientsAction() {
   const user = await getSessionUser()
   if (!user) return []
@@ -121,14 +145,22 @@ export async function updateClientAction(id: string, data: any) {
 
   await dbConnect()
   try {
-    const validatedFields = ClientSchema.partial().safeParse(data)
+    const validatedFields = UpdateClientSchema.safeParse(data)
     if (!validatedFields.success) {
       return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
     }
 
+    // Filter out undefined values to prevent overwriting with undefined
+    const updateData = { ...validatedFields.data } as any
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key]
+      }
+    })
+
     const updatedClient = await Client.findOneAndUpdate(
       { _id: id, userId: user._id },
-      validatedFields.data,
+      updateData,
       { new: true }
     ).lean()
     
