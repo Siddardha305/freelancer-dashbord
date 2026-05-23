@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from "react";
-import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw, Pause, MessageSquare, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw, Trash2 } from "lucide-react";
 import { formatDistanceToNow, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -27,10 +27,6 @@ interface WorkCardProps {
 }
 
 export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(task.actualHours * 3600);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const isUrgent = task.priority === 'Urgent';
   const isHigh = task.priority === 'High';
   const isCompleted = task.status === 'Completed';
@@ -41,31 +37,6 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
   }
   const isDeadlineValid = !isNaN(deadlineDate.getTime());
   const isOverdue = !isCompleted && isDeadlineValid && isBefore(deadlineDate, new Date());
-
-  useEffect(() => {
-    if (isTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isTimerRunning]);
-
-  const toggleTimer = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsTimerRunning(!isTimerRunning);
-  };
-
-  const formatTime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hrs}h ${mins}m ${secs}s`;
-  };
 
   const statusConfigs = [
     { name: "To Do", icon: RefreshCcw, color: "hover:bg-slate-100 text-slate-500", active: "bg-slate-100 text-slate-900 border-slate-200" },
@@ -121,27 +92,6 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
       <h4 className="font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors line-clamp-1">{task.title}</h4>
       <p className="text-[10px] text-slate-400 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
       
-      {/* Time Tracker UI */}
-      <div className="mb-6 flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
-         <div className="flex items-center gap-3">
-            <button 
-              onClick={toggleTimer}
-              className={cn(
-                "p-2 rounded-xl transition-all shadow-sm active:scale-90",
-                isTimerRunning ? "bg-amber-500 text-white" : "bg-white text-indigo-600 hover:bg-indigo-50"
-              )}
-            >
-              {isTimerRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            </button>
-            <div>
-               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Time Tracked</p>
-               <p className={cn("text-xs font-bold tracking-tight", isTimerRunning ? "text-indigo-600 animate-pulse" : "text-slate-600")}>
-                  {formatTime(elapsedSeconds)}
-               </p>
-            </div>
-         </div>
-      </div>
-
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <div className={cn(
@@ -200,9 +150,3 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
     </div>
   );
 }
-
-
-
-
-
-
