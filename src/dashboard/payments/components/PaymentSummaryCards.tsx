@@ -62,7 +62,7 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
     const monthlyTarget =
       client.pricing_model === "monthly"
         ? client.monthly_price || 0
-        : 0;
+        : quota * ratePerTask;
 
     // Completed this month
     const completedThisMonth = clientWorks.filter((w: any) => {
@@ -85,7 +85,10 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
     const earnedAmount = completedCount * ratePerTask;
     const pendingCount = pendingWorks.length;
     const pendingAmount = pendingCount * ratePerTask;
-    const balanceRemaining = Math.max(0, monthlyTarget - earnedAmount);
+    const balanceRemaining =
+      client.pricing_model === "monthly"
+        ? Math.max(0, monthlyTarget - earnedAmount)
+        : earnedAmount;
 
     clientPayoutEarned += earnedAmount;
     clientBalanceToCollect += balanceRemaining;
