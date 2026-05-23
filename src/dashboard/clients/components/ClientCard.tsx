@@ -69,6 +69,8 @@ export function ClientCard({
           status={client.status || 'Active'}
           monthlyPrice={client.monthly_price || 0}
           thumbnailsPerMonth={client.thumbnails_per_month || 0}
+          pricingModel={client.pricing_model || 'monthly'}
+          pricePerThumbnail={client.price_per_thumbnail || 0}
           onStatusChange={onStatusChange}
         />
       </div>

@@ -62,7 +62,7 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
     const monthlyTarget =
       client.pricing_model === "monthly"
         ? client.monthly_price || 0
-        : quota * ratePerTask;
+        : 0;
 
     // Completed this month
     const completedThisMonth = clientWorks.filter((w: any) => {

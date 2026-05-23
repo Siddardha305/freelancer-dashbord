@@ -52,7 +52,7 @@ export function MonthlyPayoutSummary() {
       const monthlyTarget =
         client.pricing_model === "monthly"
           ? client.monthly_price || 0
-          : quota * ratePerTask;
+          : 0;
 
       // Completed this month
       const completedThisMonth = clientWorks.filter((w: any) => {
@@ -77,9 +77,9 @@ export function MonthlyPayoutSummary() {
       const pendingAmount = pendingCount * ratePerTask;
       const balanceRemaining = Math.max(0, monthlyTarget - earnedAmount);
       const progress =
-        monthlyTarget > 0
-          ? Math.min(100, Math.round((earnedAmount / monthlyTarget) * 100))
-          : 0;
+        client.pricing_model === "monthly"
+          ? (monthlyTarget > 0 ? Math.min(100, Math.round((earnedAmount / monthlyTarget) * 100)) : 0)
+          : (quota > 0 ? Math.min(100, Math.round((completedCount / quota) * 100)) : 0);
 
       return {
         client,
@@ -209,8 +209,8 @@ export function MonthlyPayoutSummary() {
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                    <span>{progress}% of monthly target</span>
-                    <span>{formatCurrency(monthlyTarget)} target</span>
+                    <span>{client.pricing_model === 'per_thumbnail' ? `${progress}% of monthly quota` : `${progress}% of monthly target`}</span>
+                    <span>{client.pricing_model === 'per_thumbnail' ? `${quota} deliveries` : `${formatCurrency(monthlyTarget)} target`}</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
@@ -310,12 +310,16 @@ export function MonthlyPayoutSummary() {
                   </span>
                   <span
                     className={`text-sm font-black ${
-                      balanceRemaining > 0
+                      client.pricing_model === 'per_thumbnail'
+                        ? "text-slate-400"
+                        : balanceRemaining > 0
                         ? "text-indigo-600"
                         : "text-emerald-600"
                     }`}
                   >
-                    {balanceRemaining > 0
+                    {client.pricing_model === 'per_thumbnail'
+                      ? "₹0 (Per Delivery)"
+                      : balanceRemaining > 0
                       ? formatCurrency(balanceRemaining)
                       : "Fully Earned ✓"}
                   </span>
