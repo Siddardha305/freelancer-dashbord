@@ -7,17 +7,37 @@ import { Loader2, DollarSign, CheckCircle2, Download } from 'lucide-react'
 import { FormModal } from '@/components/shared/FormModal'
 import { downloadInvoice } from '@/lib/export-utils'
 import { useCurrency } from '@/context/CurrencyContext'
+import { format } from 'date-fns'
 
 const initialState = {
   message: '',
   errors: {},
 }
 
-export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+interface AddPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+  initialClient?: string;
+  initialAmount?: number;
+}
+
+export function AddPaymentModal({ 
+  isOpen, 
+  onClose, 
+  onSuccess,
+  initialClient = '',
+  initialAmount
+}: AddPaymentModalProps) {
   const { symbol } = useCurrency();
   const [state, formAction, isPending] = useActionState(createPaymentAction, initialState)
   const [clients, setClients] = useState<any[]>([])
   const [showSuccess, setShowSuccess] = useState(false)
+
+  // Prefill states
+  const [selectedClient, setSelectedClient] = useState(initialClient);
+  const [amount, setAmount] = useState(initialAmount !== undefined ? String(initialAmount) : '');
+  const [dueDate, setDueDate] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -27,8 +47,16 @@ export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolea
       }
       loadClients();
       setShowSuccess(false);
+
+      // Prepopulate
+      setSelectedClient(initialClient || '');
+      setAmount(initialAmount !== undefined ? String(initialAmount) : '');
+      
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 7);
+      setDueDate(format(defaultDate, 'MMM dd, yyyy'));
     }
-  }, [isOpen]);
+  }, [isOpen, initialClient, initialAmount]);
 
   useEffect(() => {
     if (state?.message === 'success' && isOpen) {
@@ -73,6 +101,8 @@ export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolea
               id="client" 
               name="client" 
               required
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
               className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium appearance-none"
             >
               <option value="">Select a client...</option>
@@ -93,6 +123,8 @@ export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolea
                 name="amount" 
                 step="0.01" 
                 required
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-bold" 
                 placeholder="0.00" 
               />
@@ -107,6 +139,8 @@ export function AddPaymentModal({ isOpen, onClose, onSuccess }: { isOpen: boolea
               id="due_date" 
               name="due_date" 
               required
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
               className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all placeholder-slate-400 font-medium" 
               placeholder="e.g. Oct 15, 2024" 
             />

@@ -6,10 +6,16 @@ import { PaymentHeader } from "@/dashboard/payments/components/PaymentHeader";
 import { MonthlyPayoutSummary } from "@/dashboard/payments/components/MonthlyPayoutSummary";
 import { PaymentSummaryCards } from "@/dashboard/payments/components/PaymentSummaryCards";
 import { getPaymentsAction } from '@/dashboard/payments/actions/payment-actions';
+import { AddPaymentModal } from "@/dashboard/payments/components/AddPaymentModal";
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Prefilled invoice modal states
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [prefilledClient, setPrefilledClient] = useState<string | undefined>(undefined);
+  const [prefilledAmount, setPrefilledAmount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     async function loadPayments() {
@@ -44,7 +50,11 @@ export default function PaymentsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
-      <PaymentHeader onSuccess={refreshData} />
+      <PaymentHeader onCreateInvoice={() => {
+        setPrefilledClient(undefined);
+        setPrefilledAmount(undefined);
+        setIsInvoiceModalOpen(true);
+      }} />
 
       <main className="flex-1 overflow-y-auto p-8 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-10">
@@ -52,12 +62,24 @@ export default function PaymentsPage() {
           <PaymentSummaryCards payments={payments} />
           
           {/* Monthly Payout Summary section */}
-          <MonthlyPayoutSummary />
+          <MonthlyPayoutSummary onCreateInvoice={(clientName, amount) => {
+            setPrefilledClient(clientName);
+            setPrefilledAmount(amount);
+            setIsInvoiceModalOpen(true);
+          }} />
           
           {/* Recent Invoices Table section */}
           <PaymentTable initialPayments={payments} />
         </div>
       </main>
+
+      <AddPaymentModal 
+        isOpen={isInvoiceModalOpen} 
+        onClose={() => setIsInvoiceModalOpen(false)} 
+        onSuccess={refreshData}
+        initialClient={prefilledClient}
+        initialAmount={prefilledAmount}
+      />
     </div>
   );
 }

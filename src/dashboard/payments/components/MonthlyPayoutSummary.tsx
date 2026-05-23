@@ -16,7 +16,11 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { useCurrency } from "@/context/CurrencyContext";
 
-export function MonthlyPayoutSummary() {
+interface MonthlyPayoutSummaryProps {
+  onCreateInvoice?: (clientName: string, amount: number) => void;
+}
+
+export function MonthlyPayoutSummary({ onCreateInvoice }: MonthlyPayoutSummaryProps) {
   const { formatCurrency } = useCurrency();
   const { data: clients = [] } = useQuery({
     queryKey: ["clients"],
@@ -201,12 +205,19 @@ export function MonthlyPayoutSummary() {
                     </div>
                   </div>
 
-                  <Link
-                    href={`/dashboard/clients/${client.id}`}
-                    className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0"
+                  <button
+                    onClick={() => {
+                      const amountToPrefill = 
+                        client.pricing_model === 'per_thumbnail'
+                          ? earnedAmount
+                          : (balanceRemaining > 0 ? balanceRemaining : monthlyTarget);
+                      if (onCreateInvoice) onCreateInvoice(client.name, amountToPrefill);
+                    }}
+                    className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 active:scale-95"
+                    title="Create Invoice"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  </button>
                 </div>
 
                 {/* Progress Bar */}
