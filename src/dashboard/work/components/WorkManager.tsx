@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { WorkColumn } from "./WorkColumn";
 import { AddWorkModal } from "./AddWorkModal";
-import { updateWorkStatusAction, getWorksAction, deleteWorkAction } from "@/dashboard/work/actions/work-actions";
+import { WorkCalendar } from "./WorkCalendar";
+import { updateWorkStatusAction, getWorksAction, deleteWorkAction, updateWorkAction } from "@/dashboard/work/actions/work-actions";
 import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
 import { StatCard } from "@/components/shared/StatCard";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -29,9 +30,10 @@ import { useCurrency } from "@/context/CurrencyContext";
 export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
   const { formatCurrency } = useCurrency();
   const queryClient = useQueryClient();
-  const [view, setView] = useState<"board" | "list">("board");
+  const [view, setView] = useState<"board" | "list" | "calendar">("board");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [prefilledDeadline, setPrefilledDeadline] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
@@ -73,6 +75,37 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
 
   const handleStatusChange = (taskId: string, newStatus: string) => {
     updateStatusMutation.mutate({ id: taskId, status: newStatus });
+  };
+
+  const updateWorkMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => updateWorkAction(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['works'] });
+      const previousTasks = queryClient.getQueryData(['works']);
+      queryClient.setQueryData(['works'], (old: any) => 
+        old?.map((t: any) => t.id === id ? { ...t, ...data } : t)
+      );
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(['works'], context?.previousTasks);
+      toast.error("Failed to update task deadline");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+    },
+    onSuccess: () => {
+      toast.success("Task deadline updated successfully");
+    }
+  });
+
+  const handleMoveTaskDeadline = (taskId: string, targetDateStr: string) => {
+    updateWorkMutation.mutate({ id: taskId, data: { deadline: targetDateStr } });
+  };
+
+  const handleQuickAddTask = (dateStr: string) => {
+    setPrefilledDeadline(dateStr);
+    setIsAddModalOpen(true);
   };
   
   const deleteMutation = useMutation({
@@ -224,6 +257,16 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
               <ListIcon className="h-4 w-4" />
               List
             </button>
+            <button 
+              onClick={() => setView("calendar")}
+              className={cn(
+                "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300",
+                view === 'calendar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              )}
+            >
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </button>
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-slate-400">
@@ -275,6 +318,13 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
           <WorkColumn title="Review" count={filteredTasks.filter((t: any) => t.status === "Review").length} tasks={filteredTasks.filter((t: any) => t.status === "Review")} onStatusChange={handleStatusChange} onDelete={handleDeleteTask} color="amber" alert />
           <WorkColumn title="Completed" count={filteredTasks.filter((t: any) => t.status === "Completed" || t.status === "Done").length} tasks={filteredTasks.filter((t: any) => t.status === "Completed" || t.status === "Done")} onStatusChange={handleStatusChange} onDelete={handleDeleteTask} color="emerald" />
         </div>
+      ) : view === "calendar" ? (
+        <WorkCalendar 
+          tasks={filteredTasks} 
+          onMoveTask={handleMoveTaskDeadline} 
+          onAddTask={handleQuickAddTask}
+          onStatusChange={handleStatusChange}
+        />
       ) : (
         <div className="glass-bg rounded-[2rem] border border-card-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="overflow-x-auto">
@@ -372,7 +422,11 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: any[] }) {
       {isAddModalOpen && (
         <AddWorkModal 
           isOpen={isAddModalOpen} 
-          onClose={() => setIsAddModalOpen(false)} 
+          initialDeadline={prefilledDeadline}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setPrefilledDeadline(undefined);
+          }} 
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ['works'] })}
         />
       )}

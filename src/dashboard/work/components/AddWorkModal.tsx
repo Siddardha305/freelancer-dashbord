@@ -11,7 +11,17 @@ const initialState = {
   errors: {},
 }
 
-export function AddWorkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+export function AddWorkModal({ 
+  isOpen, 
+  onClose, 
+  onSuccess,
+  initialDeadline
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSuccess?: () => void;
+  initialDeadline?: string;
+}) {
   const [state, formAction, isPending] = useActionState(createWorkAction, initialState)
   const [clients, setClients] = useState<any[]>([])
 
@@ -100,6 +110,7 @@ export function AddWorkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; 
                 id="deadline" 
                 name="deadline" 
                 required
+                defaultValue={initialDeadline}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold" 
               />
               {state?.errors?.deadline && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.deadline[0]}</p>}
