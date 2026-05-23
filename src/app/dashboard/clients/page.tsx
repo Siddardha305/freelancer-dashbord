@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Zap } from 'lucide-react';
 import { ClientTable } from '@/dashboard/clients/components/ClientTable';
@@ -13,17 +13,67 @@ import { ClientProfileDrawer } from '@/dashboard/clients/components/ClientProfil
 
 export default function ClientsPage() {
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Persist View Mode
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('clients_viewMode') as 'grid' | 'list') || 'grid';
+    }
+    return 'grid';
+  });
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [drawerClient, setDrawerClient] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
-  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'price-desc' | 'price-asc'
+  // Search & Filter State with LocalStorage Persistence
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('clients_searchQuery') || '';
+    }
+    return '';
+  });
+  const [statusFilter, setStatusFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('clients_statusFilter') || 'All';
+    }
+    return 'All';
+  });
+  const [priorityFilter, setPriorityFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('clients_priorityFilter') || 'All';
+    }
+    return 'All';
+  });
+  const [sortBy, setSortBy] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('clients_sortBy') || 'newest';
+    }
+    return 'newest';
+  });
+  
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+
+  // Synchronization Effects
+  useEffect(() => {
+    localStorage.setItem('clients_viewMode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('clients_searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem('clients_statusFilter', statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('clients_priorityFilter', priorityFilter);
+  }, [priorityFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('clients_sortBy', sortBy);
+  }, [sortBy]);
 
   const openDrawer = (client: any) => {
     setDrawerClient(client);
