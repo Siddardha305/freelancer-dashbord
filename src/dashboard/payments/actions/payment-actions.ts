@@ -20,7 +20,7 @@ export async function getPaymentsAction() {
   await dbConnect()
   try {
     const payments = await Payment.find({ userId: user._id }).sort({ createdAt: -1 }).lean()
-    return payments.map(doc => ({
+    return JSON.parse(JSON.stringify(payments)).map((doc: any) => ({
       ...doc,
       id: doc._id.toString(),
       _id: doc._id.toString()
@@ -63,11 +63,11 @@ export async function createPaymentAction(prevState: any, formData: FormData) {
     
     return { 
       message: 'success', 
-      payment: {
+      payment: JSON.parse(JSON.stringify({
         ...newPayment.toObject(),
         _id: newPayment._id.toString(),
         id: newPayment._id.toString()
-      }
+      }))
     }
   } catch (error) {
     console.error("MongoDB Error:", error)
