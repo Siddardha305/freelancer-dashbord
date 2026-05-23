@@ -210,25 +210,27 @@ export function MonthlyPayoutSummary() {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                    <span>{client.pricing_model === 'per_thumbnail' ? `${progress}% of monthly quota` : `${progress}% of monthly target`}</span>
-                    <span>{client.pricing_model === 'per_thumbnail' ? `${quota} deliveries (${formatCurrency(monthlyTarget)})` : `${formatCurrency(monthlyTarget)} target`}</span>
+                {client.pricing_model !== 'per_thumbnail' && (
+                  <div className="space-y-1.5 mt-4">
+                    <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                      <span>{progress}% of monthly target</span>
+                      <span>{formatCurrency(monthlyTarget)} target</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-700"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-700"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Divider */}
               <div className="border-t border-slate-100" />
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-3 divide-x divide-slate-100">
+              <div className={`grid ${client.pricing_model === 'per_thumbnail' ? 'grid-cols-2' : 'grid-cols-3'} divide-x divide-slate-100`}>
                 {/* Completed Orders */}
                 <div className="p-4 text-center space-y-1">
                   <div className="flex justify-center">
@@ -256,17 +258,19 @@ export function MonthlyPayoutSummary() {
                 </div>
 
                 {/* Quota */}
-                <div className="p-4 text-center space-y-1">
-                  <div className="flex justify-center">
-                    <Package className="h-4 w-4 text-indigo-500" />
+                {client.pricing_model !== 'per_thumbnail' && (
+                  <div className="p-4 text-center space-y-1">
+                    <div className="flex justify-center">
+                      <Package className="h-4 w-4 text-indigo-500" />
+                    </div>
+                    <p className="text-lg font-black text-slate-900 tracking-tight">
+                      {quota}
+                    </p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-tight">
+                      Quota / Mo
+                    </p>
                   </div>
-                  <p className="text-lg font-black text-slate-900 tracking-tight">
-                    {quota}
-                  </p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-tight">
-                    Quota / Mo
-                  </p>
-                </div>
+                )}
               </div>
 
               {/* Divider */}
