@@ -108,7 +108,7 @@ export function ClientFilterControls({
                 {['All', 'Active', 'On Hold', 'Inactive', 'Completed'].map((status) => (
                   <button
                     key={status}
-                    onClick={() => setStatusFilter(status)}
+                    onClick={() => setStatusFilter(status === 'All' ? 'All' : (statusFilter === status ? 'All' : status))}
                     className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${
                       statusFilter === status
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
@@ -128,7 +128,7 @@ export function ClientFilterControls({
                 {['All', 'High', 'Medium', 'Low'].map((priority) => (
                   <button
                     key={priority}
-                    onClick={() => setPriorityFilter(priority)}
+                    onClick={() => setPriorityFilter(priority === 'All' ? 'All' : (priorityFilter === priority ? 'All' : priority))}
                     className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${
                       priorityFilter === priority
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
