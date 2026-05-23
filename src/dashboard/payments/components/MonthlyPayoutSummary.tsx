@@ -207,10 +207,7 @@ export function MonthlyPayoutSummary({ onCreateInvoice }: MonthlyPayoutSummaryPr
 
                   <button
                     onClick={() => {
-                      const amountToPrefill = 
-                        client.pricing_model === 'per_thumbnail'
-                          ? earnedAmount
-                          : (balanceRemaining > 0 ? balanceRemaining : monthlyTarget);
+                      const amountToPrefill = earnedAmount;
                       if (onCreateInvoice) onCreateInvoice(client.name, amountToPrefill);
                     }}
                     className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors shrink-0 active:scale-95"
