@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from 'react'
 import { createPaymentAction } from '../actions/payment-actions'
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
-import { Loader2, DollarSign, CheckCircle2, Download } from 'lucide-react'
+import { Loader2, CheckCircle2, Download } from 'lucide-react'
 import { FormModal } from '@/components/shared/FormModal'
 import { downloadInvoice } from '@/lib/export-utils'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -116,7 +116,7 @@ export function AddPaymentModal({
           <div className="space-y-2">
             <label htmlFor="amount" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Amount ({symbol})</label>
             <div className="relative">
-              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 w-4 h-4 flex items-center justify-center select-none leading-none">{symbol}</span>
               <input 
                 type="number" 
                 id="amount" 

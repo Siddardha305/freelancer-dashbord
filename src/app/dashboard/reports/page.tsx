@@ -236,13 +236,22 @@ export default function ReportsPage() {
               },
             ].map((kpi) => {
               const Icon = kpi.icon;
+              const isCurrencyIcon = Icon === DollarSign;
               return (
                 <div key={kpi.label} className="bg-white rounded-[2rem] p-7 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                  <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 ${kpi.text}`}>
-                    <Icon className="w-28 h-28" />
+                  <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 ${kpi.text} select-none`}>
+                    {isCurrencyIcon ? (
+                      <span className="text-8xl font-black tracking-tighter block leading-none mr-2 mt-2">{symbol}</span>
+                    ) : (
+                      <Icon className="w-28 h-28" />
+                    )}
                   </div>
-                  <div className={`p-2.5 ${kpi.bg} rounded-xl ${kpi.text} w-fit mb-4`}>
-                    <Icon className="h-5 w-5" />
+                  <div className={`p-2.5 ${kpi.bg} rounded-xl ${kpi.text} w-fit mb-4 flex items-center justify-center font-bold text-lg select-none`}>
+                    {isCurrencyIcon ? (
+                      <span className="w-5 h-5 flex items-center justify-center text-sm leading-none font-black">{symbol}</span>
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
                   <p className="text-3xl font-black text-slate-900 tracking-tighter">{kpi.value}</p>

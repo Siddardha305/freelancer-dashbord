@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   CheckCircle2, 
   Clock, 
-  DollarSign, 
   ArrowUpRight, 
   TrendingUp 
 } from 'lucide-react';
@@ -18,7 +17,7 @@ interface PaymentSummaryCardsProps {
 }
 
 export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps) {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, symbol } = useCurrency();
 
   // Fetch real-time active client payouts and pipeline status
   const { data: clients = [] } = useQuery({
@@ -125,8 +124,8 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
 
       {/* Card 3: Total Collected */}
       <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-emerald-600">
-          <DollarSign className="w-24 h-24" />
+        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-emerald-600 select-none">
+          <span className="text-8xl font-black tracking-tighter block leading-none mr-2 mt-2">{symbol}</span>
         </div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Collected</p>
         <p className="mt-2 text-4xl font-bold text-slate-900 tracking-tighter">{formatCurrency(totalCollected)}</p>
