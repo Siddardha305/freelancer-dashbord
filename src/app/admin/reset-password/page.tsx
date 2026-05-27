@@ -111,7 +111,7 @@ function AdminResetPasswordForm({ token }: { token: string }) {
   );
 }
 
-export default function AdminResetPasswordPage() {
+function AdminResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
 
@@ -160,5 +160,17 @@ export default function AdminResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminResetPasswordPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans items-center justify-center">
+        <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+      </div>
+    }>
+      <AdminResetPasswordContent />
+    </React.Suspense>
   );
 }

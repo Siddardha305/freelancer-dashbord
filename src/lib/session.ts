@@ -3,13 +3,20 @@ import { cookies } from 'next/headers';
 import dbConnect from '@/database/mongodb';
 import User from '@/database/models/User';
 
-// SESSION_SECRET must be set in .env — no fallback allowed for security
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  throw new Error(
-    'SECURITY ERROR: SESSION_SECRET environment variable is not set. ' +
-    'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
-  );
+// SESSION_SECRET must be set in .env — no fallback allowed for security in production
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    // Avoid crashing during Next.js build phase on Vercel when env vars aren't injected
+    if (process.env.NEXT_PHASE?.includes('build') || process.env.NEXT_PHASE?.includes('export')) {
+      return 'dummy-secret-for-build-purposes-only';
+    }
+    throw new Error(
+      'SECURITY ERROR: SESSION_SECRET environment variable is not set. ' +
+      'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
+    );
+  }
+  return secret;
 }
 
 const PBKDF2_ITERATIONS = 210_000; // OWASP recommended minimum for SHA-512 (2024)
@@ -48,7 +55,7 @@ export function verifyPassword(password: string, storedValue: string): boolean {
 
 // AES-256-GCM Session Encryption
 export function encrypt(text: string): string {
-  const key = crypto.scryptSync(SESSION_SECRET!, 'salt', 32);
+  const key = crypto.scryptSync(getSessionSecret(), 'salt', 32);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   
@@ -61,7 +68,7 @@ export function encrypt(text: string): string {
 
 export function decrypt(cipherText: string): string {
   try {
-    const key = crypto.scryptSync(SESSION_SECRET!, 'salt', 32);
+    const key = crypto.scryptSync(getSessionSecret(), 'salt', 32);
     const [ivHex, authTagHex, encryptedText] = cipherText.split(':');
     if (!ivHex || !authTagHex || !encryptedText) return '';
     
