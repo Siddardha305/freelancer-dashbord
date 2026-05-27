@@ -29,11 +29,11 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="contact" className="py-32 border-t border-slate-200 px-6 sm:px-12 max-w-5xl mx-auto">
-      <div className="bg-white rounded-[2rem] border border-slate-200/80 p-8 sm:p-12 shadow-xl shadow-slate-100 relative overflow-hidden">
+    <section id="contact" className="py-32 border-t border-slate-900/60 px-6 sm:px-12 max-w-5xl mx-auto">
+      <div className="bg-slate-900/40 rounded-[2rem] border border-slate-800/60 p-8 sm:p-12 shadow-2xl shadow-slate-950/50 relative overflow-hidden">
         {/* Subtle decorative elements for professional dev-vibe */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-slate-100 rounded-full blur-[60px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-slate-950/20 rounded-full blur-[60px] pointer-events-none" />
 
         {/* Reusable Section Header inside card */}
         <SectionHeader 
@@ -50,7 +50,7 @@ export default function ContactSection() {
           <form onSubmit={handleContactSubmit} className="space-y-5 lg:col-span-7">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Name</label>
                 <input 
                   type="text" 
                   required
@@ -58,11 +58,11 @@ export default function ContactSection() {
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Siddardha Chitturi"
-                  className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 transition-all font-medium shadow-inner" 
+                  className="w-full bg-slate-950/60 hover:bg-slate-950/80 focus:bg-slate-950 border border-slate-800/80 rounded-xl px-4 py-3.5 text-xs text-white placeholder-slate-550 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium shadow-md shadow-slate-950/50" 
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Email</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Email</label>
                 <input 
                   type="email" 
                   required
@@ -70,19 +70,19 @@ export default function ContactSection() {
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   placeholder="sid@freelanceos.com"
-                  className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 transition-all font-medium shadow-inner" 
+                  className="w-full bg-slate-950/60 hover:bg-slate-950/80 focus:bg-slate-950 border border-slate-800/80 rounded-xl px-4 py-3.5 text-xs text-white placeholder-slate-550 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium shadow-md shadow-slate-950/50" 
                 />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Message</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Message</label>
               <textarea 
                 rows={4}
                 disabled={isSubmitted}
                 value={contactMsg}
                 onChange={(e) => setContactMsg(e.target.value)}
                 placeholder="Tell us about your freelance business and what you're looking for..."
-                className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 resize-none transition-all font-medium shadow-inner"
+                className="w-full bg-slate-950/60 hover:bg-slate-950/80 focus:bg-slate-950 border border-slate-800/80 rounded-xl px-4 py-3.5 text-xs text-white placeholder-slate-550 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all font-medium shadow-md shadow-slate-950/50"
               />
             </div>
 
@@ -92,7 +92,7 @@ export default function ContactSection() {
                 variant="primary"
                 icon={Mail}
                 iconPosition="left"
-                className="w-full py-4 text-[10px] rounded-xl"
+                className="w-full py-4 text-[10px] rounded-xl shadow-lg shadow-indigo-600/15"
               >
                 Send Message
               </ActionButton>
@@ -115,19 +115,19 @@ export default function ContactSection() {
             title="message_delivery.log"
             isTerminal={true}
             aspectRatio="auto"
-            className="lg:col-span-5 border border-slate-200"
+            className="lg:col-span-5 border border-slate-800/80 shadow-2xl"
           >
             <div className="p-5 font-mono text-[10px] leading-relaxed min-h-[220px] text-slate-350 space-y-2 select-all selection:bg-indigo-650 selection:text-white">
               {!isSubmitted ? (
                 <>
-                  <p className="text-slate-600">// Ready to receive message...</p>
+                  <p className="text-slate-600">{"// Ready to receive message..."}</p>
                   <p className="text-slate-550">&gt; system_status: ACTIVE</p>
                   <p className="text-slate-550">&gt; secure_connection: READY</p>
                   <p className="text-slate-450 animate-pulse text-[9px]">▋ LINE OPEN</p>
                 </>
               ) : (
                 <>
-                  <p className="text-indigo-400">// Dispatching message...</p>
+                  <p className="text-indigo-400">{"// Dispatching message..."}</p>
                   <p className="text-slate-500">[{logTime}] MESSAGE PIPELINE: CONNECTED</p>
                   <p className="text-slate-400">&gt; sender_name: {contactName}</p>
                   <p className="text-slate-400">&gt; contact_email: {contactEmail}</p>

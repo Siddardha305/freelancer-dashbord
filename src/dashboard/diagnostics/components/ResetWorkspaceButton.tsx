@@ -24,7 +24,7 @@ export function ResetWorkspaceButton() {
       } else {
         setStatus("error");
       }
-    } catch (error) {
+    } catch {
       setStatus("error");
     } finally {
       setIsResetting(false);

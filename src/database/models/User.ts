@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const UserSchema = new Schema({
   name: {
@@ -37,6 +37,32 @@ const UserSchema = new Schema({
   resetPasswordExpires: {
     type: Date,
     default: null,
+  },
+  plan: {
+    type: String,
+    enum: ['hobby', 'pro', 'agency'],
+    default: 'hobby',
+  },
+  slackWebhookUrl: {
+    type: String,
+    default: null,
+  },
+  agencyName: {
+    type: String,
+    default: null,
+  },
+  agencyLogoUrl: {
+    type: String,
+    default: null,
+  },
+  agencyLogoDarkUrl: {
+    type: String,
+    default: null,
+  },
+  agencyBrandingMode: {
+    type: String,
+    enum: ['logo', 'text', 'both'],
+    default: 'both',
   },
 }, {
   timestamps: true,

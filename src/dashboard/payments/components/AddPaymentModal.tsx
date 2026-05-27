@@ -8,8 +8,16 @@ import { FormModal } from '@/components/shared/FormModal'
 import { downloadInvoice } from '@/lib/export-utils'
 import { useCurrency } from '@/context/CurrencyContext'
 import { format } from 'date-fns'
+import { Client } from '@/types/client'
+import { Payment } from '@/types/payment'
 
-const initialState = {
+interface FormState {
+  message: string;
+  errors?: Record<string, string[]>;
+  payment?: Payment;
+}
+
+const initialState: FormState = {
   message: '',
   errors: {},
 }
@@ -30,14 +38,27 @@ export function AddPaymentModal({
   initialAmount
 }: AddPaymentModalProps) {
   const { symbol } = useCurrency();
-  const [state, formAction, isPending] = useActionState(createPaymentAction, initialState)
-  const [clients, setClients] = useState<any[]>([])
+  const [state, formAction, isPending] = useActionState(
+    createPaymentAction as (state: FormState, formData: FormData) => Promise<FormState>,
+    initialState
+  )
+  const [clients, setClients] = useState<Client[]>([])
   const [showSuccess, setShowSuccess] = useState(false)
 
   // Prefill states
   const [selectedClient, setSelectedClient] = useState(initialClient);
   const [amount, setAmount] = useState(initialAmount !== undefined ? String(initialAmount) : '');
   const [dueDate, setDueDate] = useState('');
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setShowSuccess(false);
+      setSelectedClient(initialClient || '');
+      setAmount(initialAmount !== undefined ? String(initialAmount) : '');
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -46,22 +67,23 @@ export function AddPaymentModal({
         setClients(data);
       }
       loadClients();
-      setShowSuccess(false);
 
-      // Prepopulate
-      setSelectedClient(initialClient || '');
-      setAmount(initialAmount !== undefined ? String(initialAmount) : '');
-      
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 7);
-      setDueDate(format(defaultDate, 'MMM dd, yyyy'));
+      const timer = setTimeout(() => {
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 7);
+        setDueDate(format(defaultDate, 'MMM dd, yyyy'));
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, initialClient, initialAmount]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (state?.message === 'success' && isOpen) {
-      setShowSuccess(true);
-      if (onSuccess) onSuccess();
+      const timer = setTimeout(() => {
+        setShowSuccess(true);
+        if (onSuccess) onSuccess();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [state?.message, isOpen, onSuccess]);
 
@@ -79,7 +101,7 @@ export function AddPaymentModal({
           
           <div className="w-full flex flex-col gap-3 px-2">
             <button 
-              onClick={() => (state as any).payment && downloadInvoice((state as any).payment, symbol)}
+              onClick={() => state.payment && downloadInvoice(state.payment, symbol)}
               className="flex items-center justify-center gap-3 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
             >
               <Download className="h-4 w-4" />

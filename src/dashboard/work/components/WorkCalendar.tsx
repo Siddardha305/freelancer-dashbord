@@ -14,14 +14,16 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
+import { Work } from "@/types/work";
+
 interface WorkCalendarProps {
-  tasks: any[];
+  tasks: Work[];
   onMoveTask: (taskId: string, targetDateStr: string) => void;
   onAddTask: (dateStr: string) => void;
   onStatusChange?: (taskId: string, newStatus: string) => void;
 }
 
-export function WorkCalendar({ tasks, onMoveTask, onAddTask, onStatusChange }: WorkCalendarProps) {
+export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverDateStr, setDragOverDateStr] = useState<string | null>(null);
@@ -225,7 +227,15 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask, onStatusChange }: W
         {gridDays.map(({ date, isCurrentMonth, dateStr }) => {
           const isToday = dateStr === todayStr;
           const isOver = dateStr === dragOverDateStr;
-          const dayTasks = tasks.filter((task) => getTaskDateString(task.deadline) === dateStr);
+          const dayTasks = tasks.filter((task) => {
+            const taskDateStr = getTaskDateString(task.deadline);
+            if (!taskDateStr) return false;
+            if (taskDateStr === dateStr) return true;
+            
+            // Overdue tasks rollover: If not completed, show on subsequent calendar cells up to today
+            const isCompleted = task.status === "Done";
+            return !isCompleted && taskDateStr < dateStr && dateStr <= todayStr;
+          });
 
           return (
             <div

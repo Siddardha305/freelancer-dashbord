@@ -17,15 +17,15 @@ export default function TechBadge({
   className = ''
 }: TechBadgeProps) {
   const variantStyles = {
-    slate: 'bg-slate-100 border-slate-200/80 text-slate-650',
-    indigo: 'bg-indigo-50 border-indigo-100/60 text-indigo-650',
-    emerald: 'bg-emerald-50 border-emerald-100/60 text-emerald-650'
+    slate: 'bg-slate-900/60 border-slate-800/80 text-slate-300',
+    indigo: 'bg-indigo-950/40 border-indigo-900/40 text-indigo-400',
+    emerald: 'bg-emerald-950/40 border-emerald-900/40 text-emerald-400'
   }[variant];
 
   const iconColorStyles = {
-    slate: 'text-indigo-600',
-    indigo: 'text-indigo-600',
-    emerald: 'text-emerald-600'
+    slate: 'text-indigo-400',
+    indigo: 'text-indigo-400',
+    emerald: 'text-emerald-400'
   }[variant];
 
   return (

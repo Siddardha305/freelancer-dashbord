@@ -9,12 +9,12 @@ const tasks: Task[] = [
 ];
 
 export function WorkBoard() {
-  const handleStatusChange = (id: string, status: string) => {
-    console.log("Status change:", id, status);
+  const handleStatusChange = () => {
+    // Status change handled by parent components via server actions
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Delete task:", id);
+  const handleDelete = () => {
+    // Delete handled by parent components via server actions
   };
 
   return (

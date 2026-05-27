@@ -1,5 +1,6 @@
 'use server'
 
+import crypto from 'crypto';
 import dbConnect from '@/database/mongodb';
 import User from '@/database/models/User';
 import Client from '@/database/models/Client';
@@ -8,9 +9,9 @@ import Payment from '@/database/models/Payment';
 import { hashPassword, verifyPassword, createSession, getSessionUser, destroySession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { sendUserWelcomeEmail } from '@/emails/mail';
+import { sendUserWelcomeEmail, sendAdminPasswordResetEmail } from '@/emails/mail';
 
-export async function adminLoginAction(prevState: any, formData: FormData) {
+export async function adminLoginAction(prevState: unknown, formData: FormData) {
   await dbConnect();
 
   const rawEmail = formData.get('email') as string;
@@ -23,53 +24,51 @@ export async function adminLoginAction(prevState: any, formData: FormData) {
     return { message: 'Email and password are required' };
   }
 
-  // Exact admin credentials verification
-  if (email !== 'siddardhachitturi789@gmail.com' || password !== '123456789') {
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+  if (!ADMIN_EMAIL) {
+    return { message: 'Admin panel is not configured. Contact system administrator.' };
+  }
+
+  // Reject any email that is not the configured admin email
+  if (email !== ADMIN_EMAIL.trim().toLowerCase()) {
     return { message: 'Invalid admin credentials' };
   }
 
   try {
     let adminUser = await User.findOne({ email });
-    const correctHashedPassword = hashPassword(password);
 
     if (!adminUser) {
-      // Auto-seed admin user
+      // First-time setup: no DB user yet — verify against env password to seed
+      if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
+        return { message: 'Invalid admin credentials' };
+      }
       adminUser = await User.create({
-        name: 'Siddardha Admin',
+        name: 'Admin',
         email,
-        password: correctHashedPassword,
+        password: hashPassword(password),
         role: 'admin',
       });
-      console.log('Seeded administrator user accounts successfully.');
     } else {
-      let needsSave = false;
-
+      // User exists in DB: verify against stored password hash
+      if (!verifyPassword(password, adminUser.password)) {
+        return { message: 'Invalid admin credentials' };
+      }
+      // Ensure role is admin
       if (adminUser.role !== 'admin') {
         adminUser.role = 'admin';
-        needsSave = true;
-      }
-
-      // Automatically sync/update DB password to match correct admin password if it differs
-      const isPasswordCorrect = verifyPassword(password, adminUser.password);
-      if (!isPasswordCorrect) {
-        adminUser.password = correctHashedPassword;
-        needsSave = true;
-      }
-
-      if (needsSave) {
         await adminUser.save();
-        console.log('Synchronized administrator role and credentials in database.');
       }
     }
 
-    // Set secure admin session cookie
     await createSession(adminUser._id.toString());
-
     revalidatePath('/admin');
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Admin login action failed:", error);
-    return { message: error.message || 'Authentication failed' };
+    const message = error instanceof Error ? error.message : 'Authentication failed';
+    return { message };
   }
 }
 
@@ -94,15 +93,22 @@ export async function getAdminOverviewAction() {
     ]);
 
     // Sum global revenue
-    const globalRevenue = allPayments.reduce((sum: number, pay: any) => {
-      const amt = parseFloat(pay.amount) || 0;
+    const globalRevenue = (allPayments as Array<{ amount?: string | number }>).reduce((sum: number, pay) => {
+      const amt = typeof pay.amount === 'number' ? pay.amount : parseFloat(pay.amount || '0') || 0;
       return sum + amt;
     }, 0);
 
     // Retrieve full platform user registry with itemized resource counts
     const rawUsers = await User.find({}).sort({ createdAt: -1 }).lean();
     
-    const userRegistry = await Promise.all(rawUsers.map(async (u: any) => {
+    const userRegistry = await Promise.all((rawUsers as Array<{
+      _id: { toString(): string };
+      name?: string;
+      email?: string;
+      role?: string;
+      plan?: string;
+      createdAt?: string | Date;
+    }>).map(async (u) => {
       const [clientCount, taskCount, paymentCount] = await Promise.all([
         Client.countDocuments({ userId: u._id }),
         Work.countDocuments({ userId: u._id }),
@@ -111,10 +117,11 @@ export async function getAdminOverviewAction() {
       
       return {
         id: u._id.toString(),
-        name: u.name,
-        email: u.email,
+        name: u.name || '',
+        email: u.email || '',
         role: u.role || 'user',
-        createdAt: u.createdAt,
+        plan: u.plan || 'hobby',
+        createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : '',
         clientCount,
         taskCount,
         paymentCount,
@@ -184,9 +191,10 @@ export async function deleteUserAction(userId: string) {
     console.log(`Cascade deleted user ${userId} and all linked workspace documents.`);
     revalidatePath('/admin');
     return { success: true, message: 'User account and all linked workspace assets cascade deleted successfully!' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to delete user:", error);
-    return { success: false, message: error.message || 'Failed to delete user account.' };
+    const message = error instanceof Error ? error.message : 'Failed to delete user account.';
+    return { success: false, message };
   }
 }
 
@@ -197,7 +205,7 @@ const UserCreationSchema = z.object({
   role: z.enum(['user', 'admin']),
 });
 
-export async function addUserAction(prevState: any, formData: FormData) {
+export async function addUserAction(prevState: unknown, formData: FormData) {
   await dbConnect();
 
   const currentUser = await getSessionUser();
@@ -243,8 +251,140 @@ export async function addUserAction(prevState: any, formData: FormData) {
 
     revalidatePath('/admin');
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to add user:", error);
-    return { message: error.message || 'Failed to create user account' };
+    const message = error instanceof Error ? error.message : 'Failed to create user account';
+    return { message };
+  }
+}
+
+export async function updateUserPlanAction(userId: string, plan: 'hobby' | 'pro' | 'agency') {
+  await dbConnect();
+
+  const currentUser = await getSessionUser();
+  if (!currentUser || currentUser.role !== 'admin') {
+    return { success: false, message: 'Access denied. Administrator privileges required.' };
+  }
+
+  const validPlans = ['hobby', 'pro', 'agency'];
+  if (!validPlans.includes(plan)) {
+    return { success: false, message: 'Invalid plan specified.' };
+  }
+
+  try {
+    await User.findByIdAndUpdate(userId, { plan });
+    console.log(`Admin updated user ${userId} plan to: ${plan}`);
+    revalidatePath('/admin');
+    return { success: true, message: `Plan updated to ${plan} successfully.` };
+  } catch (error) {
+    console.error('Failed to update user plan:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update plan.';
+    return { success: false, message };
+  }
+}
+
+// ─── Admin Password Management ────────────────────────────────────────────────
+
+export async function changeAdminPasswordAction(data: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || user.role !== 'admin') {
+    return { success: false, message: 'Unauthorized' };
+  }
+
+  if (!data.currentPassword || !data.newPassword) {
+    return { success: false, message: 'Both fields are required' };
+  }
+
+  if (data.newPassword.length < 8) {
+    return { success: false, message: 'New password must be at least 8 characters' };
+  }
+
+  await dbConnect();
+  try {
+    const adminUser = await User.findById(user.id || user._id);
+    if (!adminUser) return { success: false, message: 'Admin user not found' };
+
+    // Verify current password against DB hash
+    if (!verifyPassword(data.currentPassword, adminUser.password)) {
+      return { success: false, message: 'Current password is incorrect' };
+    }
+
+    adminUser.password = hashPassword(data.newPassword);
+    await adminUser.save();
+
+    return { success: true, message: 'Password changed successfully!' };
+  } catch (error) {
+    console.error('Change admin password error:', error);
+    return { success: false, message: 'Failed to change password' };
+  }
+}
+
+export async function adminForgotPasswordAction(prevState: unknown, formData: FormData) {
+  const rawEmail = (formData.get('email') as string || '').trim().toLowerCase();
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+
+  // Always return success to prevent email enumeration
+  if (!ADMIN_EMAIL || rawEmail !== ADMIN_EMAIL.trim().toLowerCase()) {
+    return { message: 'success' };
+  }
+
+  await dbConnect();
+  try {
+    const adminUser = await User.findOne({ email: rawEmail, role: 'admin' });
+    if (!adminUser) return { message: 'success' };
+
+    // Generate a secure 256-bit reset token, valid for 1 hour
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3_600_000);
+
+    adminUser.resetPasswordToken = token;
+    adminUser.resetPasswordExpires = expires;
+    await adminUser.save();
+
+    const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const resetLink = `${APP_URL}/admin/reset-password?token=${token}`;
+
+    await sendAdminPasswordResetEmail(rawEmail, resetLink);
+    return { message: 'success' };
+  } catch (error) {
+    console.error('Admin forgot password error:', error);
+    return { message: 'success' }; // Always return success
+  }
+}
+
+export async function adminResetPasswordAction(prevState: unknown, formData: FormData) {
+  const token = (formData.get('token') as string || '').trim();
+  const password = (formData.get('password') as string || '');
+  const confirmPassword = (formData.get('confirmPassword') as string || '');
+
+  if (!token) return { message: 'Reset token is missing or invalid' };
+  if (!password || !confirmPassword) return { message: 'All fields are required' };
+  if (password !== confirmPassword) return { message: 'Passwords do not match' };
+  if (password.length < 8) return { message: 'Password must be at least 8 characters' };
+
+  await dbConnect();
+  try {
+    const adminUser = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+      role: 'admin',
+    });
+
+    if (!adminUser) {
+      return { message: 'Reset link is invalid or has expired. Please request a new one.' };
+    }
+
+    adminUser.password = hashPassword(password);
+    adminUser.resetPasswordToken = null;
+    adminUser.resetPasswordExpires = null;
+    await adminUser.save();
+
+    return { message: 'success' };
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    return { message: 'Failed to reset password. Please try again.' };
   }
 }

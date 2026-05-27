@@ -23,13 +23,13 @@ export default function SectionHeader({
   return (
     <div className={`${centered ? 'text-center max-w-2xl mx-auto' : 'text-left'} mb-16 sm:mb-20 ${className}`}>
       {/* Dynamic Status Pill */}
-      <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 text-slate-650 text-[10px] font-black uppercase tracking-widest mb-4 ${centered ? 'mx-auto' : ''}`}>
-        {BadgeIcon && <BadgeIcon className="h-3.5 w-3.5 text-indigo-600" />} 
+      <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/60 border border-slate-800/80 text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-4 ${centered ? 'mx-auto' : ''}`}>
+        {BadgeIcon && <BadgeIcon className="h-3.5 w-3.5 text-indigo-400" />} 
         {badge}
       </div>
 
       {title && (
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
           {title}
         </h2>
       )}

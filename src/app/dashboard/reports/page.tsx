@@ -6,16 +6,12 @@ import {
   Download,
   TrendingUp,
   DollarSign,
-  Image as ImageIcon,
-  FileBarChart,
   Users,
   Clock,
   CheckCircle2,
   AlertCircle,
   Zap,
   BarChart2,
-  ArrowUpRight,
-  Target,
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
@@ -23,6 +19,8 @@ import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { downloadCSV } from '@/lib/export-utils';
 import { format } from 'date-fns';
 import { useCurrency } from "@/context/CurrencyContext";
+import { Client } from '@/types/client';
+import { Work } from '@/types/work';
 
 export default function ReportsPage() {
   const { formatCurrency, symbol } = useCurrency();
@@ -60,10 +58,10 @@ export default function ReportsPage() {
   const monthLabel = format(now, 'MMMM yyyy');
 
   // Client name → client object lookup
-  const clientMap: Record<string, any> = {};
-  clients.forEach((c: any) => { clientMap[c.name] = c; });
+  const clientMap: Record<string, Client> = {};
+  (clients as Client[]).forEach((c: Client) => { clientMap[c.name] = c; });
 
-  const getPricePerTask = (work: any): number => {
+  const getPricePerTask = (work: Work): number => {
     const c = clientMap[work.client];
     if (!c) return 0;
     if (c.price_per_thumbnail > 0) return c.price_per_thumbnail;
@@ -72,18 +70,18 @@ export default function ReportsPage() {
   };
 
   // All-time completed works
-  const allCompleted = works.filter((w: any) => w.status === 'Completed' || w.status === 'Done');
+  const allCompleted = (works as Work[]).filter((w: Work) => (w.status as string) === 'Completed' || w.status === 'Done');
   const totalDeliveries = allCompleted.length;
-  const totalAllTimeRevenue = allCompleted.reduce((s: number, w: any) => s + getPricePerTask(w), 0);
+  const totalAllTimeRevenue = allCompleted.reduce((s: number, w: Work) => s + getPricePerTask(w), 0);
 
   // This month completed
-  const thisMonthCompleted = allCompleted.filter((w: any) => {
+  const thisMonthCompleted = allCompleted.filter((w: Work) => {
     const dateStr = w.completedAt || w.updatedAt || w.createdAt;
     if (!dateStr) return false;
     const d = new Date(dateStr);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const thisMonthRevenue = thisMonthCompleted.reduce((s: number, w: any) => {
+  const thisMonthRevenue = thisMonthCompleted.reduce((s: number, w: Work) => {
     const c = clientMap[w.client];
     if (!c || c.status === 'Inactive') return s;
     return s + getPricePerTask(w);
@@ -91,8 +89,8 @@ export default function ReportsPage() {
   const thisMonthDeliveries = thisMonthCompleted.length;
 
   // Pending pipeline
-  const pendingWorks = works.filter((w: any) => ['To Do', 'In Progress', 'Review'].includes(w.status));
-  const pendingRevenue = pendingWorks.reduce((s: number, w: any) => {
+  const pendingWorks = (works as Work[]).filter((w: Work) => ['To Do', 'In Progress', 'Review'].includes(w.status));
+  const pendingRevenue = pendingWorks.reduce((s: number, w: Work) => {
     const c = clientMap[w.client];
     if (!c || c.status === 'Inactive') return s;
     return s + getPricePerTask(w);
@@ -103,27 +101,27 @@ export default function ReportsPage() {
   const completionRate = works.length > 0 ? Math.round((totalDeliveries / works.length) * 100) : 0;
 
   // Urgent tasks
-  const urgentCount = works.filter((w: any) => w.priority === 'Urgent' && w.status !== 'Completed' && w.status !== 'Done').length;
+  const urgentCount = (works as Work[]).filter((w: Work) => w.priority === 'Urgent' && (w.status as string) !== 'Completed' && w.status !== 'Done').length;
 
   // Active clients (Active, On Hold, or Completed)
-  const activeClients = clients.filter((c: any) => c.status === 'Active' || c.status === 'On Hold' || c.status === 'Completed');
+  const activeClients = (clients as Client[]).filter((c: Client) => c.status === 'Active' || (c.status as string) === 'On Hold' || (c.status as string) === 'Completed');
 
   // Per-client stats for the breakdown table (excluding Inactive clients)
-  const clientStats = activeClients.map((client: any) => {
-    const cWorks = works.filter((w: any) => w.client === client.name);
+  const clientStats = activeClients.map((client: Client) => {
+    const cWorks = (works as Work[]).filter((w: Work) => w.client === client.name);
     const quota = client.thumbnails_per_month || 8;
     const rate = client.price_per_thumbnail > 0
       ? client.price_per_thumbnail
       : quota > 0 ? (client.monthly_price || 0) / quota : 0;
 
-    const completedThisMonth = cWorks.filter((w: any) => {
-      if (w.status !== 'Completed' && w.status !== 'Done') return false;
+    const completedThisMonth = cWorks.filter((w: Work) => {
+      if ((w.status as string) !== 'Completed' && w.status !== 'Done') return false;
       const dateStr = w.completedAt || w.updatedAt || w.createdAt;
       if (!dateStr) return false;
       const d = new Date(dateStr);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
-    const pending = cWorks.filter((w: any) => ['To Do', 'In Progress', 'Review'].includes(w.status));
+    const pending = cWorks.filter((w: Work) => ['To Do', 'In Progress', 'Review'].includes(w.status));
 
     const earnedThisMonth = completedThisMonth.length * rate;
     const monthlyTarget = client.pricing_model === 'monthly' ? (client.monthly_price || 0) : (quota * rate);
@@ -138,21 +136,21 @@ export default function ReportsPage() {
       earnedThisMonth,
       monthlyTarget,
       progress,
-      totalAllTime: cWorks.filter((w: any) => w.status === 'Completed' || w.status === 'Done').length,
+      totalAllTime: cWorks.filter((w: Work) => (w.status as string) === 'Completed' || w.status === 'Done').length,
     };
-  }).sort((a: any, b: any) => b.earnedThisMonth - a.earnedThisMonth);
+  }).sort((a, b) => b.earnedThisMonth - a.earnedThisMonth);
 
   // Work status distribution
   const statusCounts = {
-    'To Do': works.filter((w: any) => w.status === 'To Do').length,
-    'In Progress': works.filter((w: any) => w.status === 'In Progress').length,
-    'Review': works.filter((w: any) => w.status === 'Review').length,
-    'Completed': works.filter((w: any) => w.status === 'Completed' || w.status === 'Done').length,
+    'To Do': (works as Work[]).filter((w: Work) => w.status === 'To Do').length,
+    'In Progress': (works as Work[]).filter((w: Work) => w.status === 'In Progress').length,
+    'Review': (works as Work[]).filter((w: Work) => w.status === 'Review').length,
+    'Completed': (works as Work[]).filter((w: Work) => (w.status as string) === 'Completed' || w.status === 'Done').length,
   };
   const statusMax = Math.max(...Object.values(statusCounts), 1);
 
   const handleExportCSV = () => {
-    const rows = clientStats.map((s: any) => ({
+    const rows = clientStats.map((s) => ({
       Client: s.client.name,
       Niche: s.client.niche || '',
       [`Monthly Target (${symbol})`]: s.monthlyTarget,
@@ -192,11 +190,11 @@ export default function ReportsPage() {
         }
       />
 
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-10">
 
           {/* ── Top KPI Row ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 label: 'This Month Revenue',
@@ -348,7 +346,7 @@ export default function ReportsPage() {
 
           {/* ── Client Performance Table ── */}
           <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-4 sm:px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Client Performance</h2>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
@@ -373,20 +371,20 @@ export default function ReportsPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50/50">
-                      <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Orders</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate / Delivery</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">This Month</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</th>
-                      <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Orders</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate / Delivery</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">This Month</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</th>
+                      <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {clientStats.map((s: any) => (
+                    {clientStats.map((s) => (
                       <tr key={s.client.id} className="hover:bg-slate-50/60 transition-colors group">
                         {/* Client */}
-                        <td className="px-10 py-5">
+                        <td className="px-4 sm:px-6 py-5">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
                               <span className="text-sm font-black text-indigo-600 group-hover:text-white transition-colors">
@@ -398,16 +396,16 @@ export default function ReportsPage() {
                                 <p className="text-sm font-black text-slate-900">{s.client.name}</p>
                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border select-none ${
                                   s.client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
-                                  s.client.status === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
+                                  (s.client.status as string) === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
                                   s.client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
-                                  s.client.status === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
+                                  (s.client.status as string) === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
                                   'bg-slate-50 text-slate-700 border-slate-200/60'
                                 }`}>
                                   <span className={`h-1 w-1 rounded-full ${
                                     s.client.status === 'Active' ? 'bg-emerald-500' :
-                                    s.client.status === 'On Hold' ? 'bg-amber-500' :
+                                    (s.client.status as string) === 'On Hold' ? 'bg-amber-500' :
                                     s.client.status === 'Inactive' ? 'bg-red-500' :
-                                    s.client.status === 'Completed' ? 'bg-indigo-500' :
+                                    (s.client.status as string) === 'Completed' ? 'bg-indigo-500' :
                                     'bg-slate-400'
                                   }`} />
                                   {s.client.status || 'Active'}

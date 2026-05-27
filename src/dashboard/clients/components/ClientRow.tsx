@@ -1,19 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Mail, Phone, Globe, Trash2, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
+import { Trash2, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrency } from '@/context/CurrencyContext';
 import { ClientAvatar } from './ClientAvatar';
 import { ClientIdentity } from './ClientIdentity';
 import { ClientContactInfo } from './ClientContactInfo';
+import { Client } from '@/types/client';
 
 interface ClientRowProps {
-  client: any;
+  client: Client;
   statusConfig: Record<string, { label: string; dot: string; row: string; badge: string }>;
   tasks: { done: number; active: number };
   deletingId: string | null;
-  onViewProfile?: (client: any) => void;
+  onViewProfile?: (client: Client) => void;
   onDeleteClick: (clientId: string) => void;
 }
 

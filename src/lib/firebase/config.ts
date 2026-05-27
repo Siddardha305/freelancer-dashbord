@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBx0Jr-BOXB1_Ahdbr2XS17YWYBhDLmi-0",
@@ -15,10 +15,10 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Singleton for Firestore
-let db: any;
+let db: Firestore;
 try {
   db = getFirestore(app);
-} catch (e) {
+} catch {
   // If getFirestore fails, try initializeFirestore
   db = initializeFirestore(app, {
     // experimentalForceLongPolling: true 

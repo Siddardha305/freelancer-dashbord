@@ -29,7 +29,7 @@ export default function ActionButton({
 }: ActionButtonProps) {
   const variantStyles = {
     primary: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-100/50 focus:ring-indigo-500',
-    secondary: 'bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-350 shadow-sm focus:ring-slate-400',
+    secondary: 'bg-slate-900/60 border border-slate-800/80 text-slate-300 hover:bg-slate-800/60 hover:text-white shadow-md shadow-slate-950/20 focus:ring-slate-700',
     emerald: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-100/50 focus:ring-emerald-500'
   }[variant];
 

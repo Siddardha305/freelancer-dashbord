@@ -4,11 +4,13 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { ClientProfileView } from './ClientProfileView';
 
+import { Client } from '@/types/client';
+
 interface ClientProfileDrawerProps {
   isOpen: boolean;
-  client: any | null;
+  client: Client | null;
   onClose: () => void;
-  onSuccess: (updatedClient: any | null) => void;
+  onSuccess: (updatedClient: Client | null) => void;
 }
 
 export function ClientProfileDrawer({

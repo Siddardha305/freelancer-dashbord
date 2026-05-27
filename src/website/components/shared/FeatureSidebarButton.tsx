@@ -26,38 +26,38 @@ export default function FeatureSidebarButton({
       onClick={onClick}
       className={`w-full text-left p-5 rounded-[1.5rem] border transition-all duration-300 flex items-start gap-4 cursor-pointer group outline-none focus:ring-1 focus:ring-indigo-500/50 ${
         isActive 
-          ? 'bg-white border-slate-200 shadow-xl shadow-slate-100/50' 
-          : 'bg-transparent border-transparent hover:bg-white/40 hover:border-slate-200/50'
+          ? 'bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-slate-950/40' 
+          : 'bg-transparent border-transparent hover:bg-slate-900/30 hover:border-slate-850'
       }`}
     >
       <div className={`h-11 w-11 shrink-0 rounded-2xl flex items-center justify-center border transition-all ${
         isActive 
-          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
-          : 'bg-white border-slate-200 text-slate-400 group-hover:text-slate-900 group-hover:border-slate-300'
+          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+          : 'bg-slate-950 border-slate-800/80 text-slate-500 group-hover:text-white group-hover:border-slate-700'
       }`}>
         <Icon className="h-5 w-5" />
       </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1 gap-2">
-          <h3 className={`text-sm font-black tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
+          <h3 className={`text-sm font-black tracking-tight ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-200'}`}>
             {title}
           </h3>
           <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-colors shrink-0 ${
             isActive 
-              ? 'bg-indigo-50 border-indigo-100 text-indigo-750' 
-              : 'bg-slate-100/80 border-slate-200 text-slate-400'
+              ? 'bg-indigo-950/40 border-indigo-900/40 text-indigo-400' 
+              : 'bg-slate-950 border-slate-800/80 text-slate-500'
           }`}>
             {badge}
           </span>
         </div>
-        <p className="text-[11px] text-slate-455 text-slate-400 font-bold uppercase tracking-wide leading-relaxed">
+        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wide leading-relaxed">
           {description}
         </p>
       </div>
       
-      <ChevronRight className={`h-4 w-4 shrink-0 self-center text-slate-300 transition-transform ${
-        isActive ? 'translate-x-0.5 text-indigo-600' : 'opacity-0 group-hover:opacity-100'
+      <ChevronRight className={`h-4 w-4 shrink-0 self-center text-slate-500 transition-transform ${
+        isActive ? 'translate-x-0.5 text-indigo-400' : 'opacity-0 group-hover:opacity-100'
       }`} />
     </button>
   );

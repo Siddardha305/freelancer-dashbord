@@ -4,40 +4,55 @@ import { useActionState, useState, useEffect } from 'react'
 import { createClientAction } from '@/dashboard/clients/actions/client-actions'
 import { X, Loader2 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { Client } from '@/types/client'
 
-const initialState = {
+interface FormState {
+  message: string;
+  errors?: Record<string, string[]>;
+  client?: Client;
+}
+
+const initialState: FormState = {
   message: '',
   errors: {},
 }
 
-export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: (client?: any) => void }) {
+interface AddClientModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: (client?: Client) => void;
+}
+
+export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalProps) {
   const { symbol, formatCurrency } = useCurrency();
-  const [state, formAction, isPending] = useActionState(createClientAction, initialState)
+  const [state, formAction, isPending] = useActionState(
+    createClientAction as (state: FormState, formData: FormData) => Promise<FormState>,
+    initialState
+  )
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pricingModel, setPricingModel] = useState('monthly')
   const [thumbnailsCount, setThumbnailsCount] = useState(0)
   const [pricePerUnit, setPricePerUnit] = useState(400)
-  const [totalPrice, setTotalPrice] = useState(0)
 
-  // Auto-calculate total price
-  useEffect(() => {
-    if (pricingModel === 'monthly') {
-      setTotalPrice(thumbnailsCount * pricePerUnit);
-    }
-  }, [thumbnailsCount, pricePerUnit, pricingModel]);
+  // Auto-calculate total price dynamically during render
+  const totalPrice = thumbnailsCount * pricePerUnit;
 
-  // Handle successful submission
+  // Handle successful submission deferredly
   useEffect(() => {
     if (state?.message === 'success' && isOpen) {
-      if (onSuccess) onSuccess(state.client);
-      onClose();
+      const timer = setTimeout(() => {
+        if (onSuccess) onSuccess(state.client);
+        onClose();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [state?.message, state?.client, isOpen, onClose, onSuccess]);
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden relative border border-slate-200 animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-0 sm:p-4">
+      <div className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden relative border border-slate-200 animate-in slide-in-from-bottom sm:zoom-in-95 duration-300">
         <div className="flex justify-between items-center p-8 border-b border-slate-100">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Add New Client</h2>
@@ -48,8 +63,8 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean
           </button>
         </div>
 
-        <form action={formAction} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-2 gap-6">
+        <form action={formAction} className="p-6 sm:p-8 space-y-6 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="name" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Channel / Client Name</label>
               <input 
@@ -110,7 +125,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: { isOpen: boolean
                 </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label htmlFor="thumbnails_per_month" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Deliveries / Month</label>
                 <input 

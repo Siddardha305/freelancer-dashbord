@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface CurrencyContextType {
   currency: string;
@@ -19,6 +19,12 @@ export function CurrencyProvider({
   initialCurrency?: string;
 }) {
   const [currency, setCurrencyState] = useState(initialCurrency);
+  const [prevInitialCurrency, setPrevInitialCurrency] = useState(initialCurrency);
+
+  if (initialCurrency !== prevInitialCurrency) {
+    setPrevInitialCurrency(initialCurrency);
+    setCurrencyState(initialCurrency || 'INR');
+  }
 
   const getSymbol = (code: string) => {
     switch (code) {
@@ -30,16 +36,7 @@ export function CurrencyProvider({
     }
   };
 
-  const [symbol, setSymbol] = useState(getSymbol(initialCurrency));
-
-  // Sync state if initialCurrency updates (e.g. after database hydration on layout)
-  useEffect(() => {
-    setCurrencyState(initialCurrency || 'INR');
-  }, [initialCurrency]);
-
-  useEffect(() => {
-    setSymbol(getSymbol(currency));
-  }, [currency]);
+  const symbol = getSymbol(currency);
 
   const setCurrency = (code: string) => {
     setCurrencyState(code);

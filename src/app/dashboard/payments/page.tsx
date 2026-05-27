@@ -8,8 +8,10 @@ import { PaymentSummaryCards } from "@/dashboard/payments/components/PaymentSumm
 import { getPaymentsAction } from '@/dashboard/payments/actions/payment-actions';
 import { AddPaymentModal } from "@/dashboard/payments/components/AddPaymentModal";
 
+import { Payment } from '@/types/payment';
+
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Prefilled invoice modal states
@@ -56,7 +58,7 @@ export default function PaymentsPage() {
         setIsInvoiceModalOpen(true);
       }} />
 
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-10">
           {/* 4 Financial KPI Summary Cards at the absolute top */}
           <PaymentSummaryCards payments={payments} />

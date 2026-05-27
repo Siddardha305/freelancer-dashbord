@@ -6,10 +6,12 @@ import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
 import { EditClientModal } from "@/dashboard/clients/components/EditClientModal";
 import { ClientCard } from "./ClientCard";
 
+import { Client } from "@/types/client";
+
 interface ClientTableProps {
-  clients?: any[];
+  clients?: Client[];
   onUpdate?: () => void;
-  onViewProfile?: (client: any) => void;
+  onViewProfile?: (client: Client) => void;
 }
 
 export function ClientTable({ 
@@ -17,7 +19,7 @@ export function ClientTable({
   onUpdate,
   onViewProfile
 }: ClientTableProps) {
-  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   // Deduplicate by id — guard against any duplicate entries from polling race conditions
   const uniqueClients = clients.filter(
@@ -31,12 +33,12 @@ export function ClientTable({
       const result = await deleteClientAction(id);
       if (result.message !== 'success') throw new Error(result.message);
       if (onUpdate) onUpdate();
-    } catch (error) {
+    } catch {
       alert("Failed to delete client.");
     }
   };
 
-  const handleEditClick = (client: any) => {
+  const handleEditClick = (client: Client) => {
     setEditingClient(client);
   };
 

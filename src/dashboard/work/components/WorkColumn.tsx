@@ -10,7 +10,7 @@ interface WorkColumnProps {
   color?: "slate" | "indigo" | "amber" | "emerald";
 }
 
-export function WorkColumn({ title, count, tasks, onStatusChange, onDelete, alert = false, color = "slate" }: WorkColumnProps) {
+export function WorkColumn({ title, count, tasks, onStatusChange, onDelete, color = "slate" }: WorkColumnProps) {
   const colorClasses = {
     slate: "text-slate-500 bg-slate-100 border-slate-200",
     indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",

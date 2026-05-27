@@ -6,8 +6,27 @@ import { Database, HardDrive, Layers, CheckCircle2, AlertCircle, Loader2 } from 
 import { WipeDatabaseButton } from "./WipeDatabaseButton";
 import { ResetWorkspaceButton } from "./ResetWorkspaceButton";
 
+interface DiagnosticData {
+  success: boolean;
+  stats?: {
+    dbName: string;
+    collections: number;
+    totalObjects: number;
+    avgObjectSize: string;
+    dataSizeMB: string;
+    storageUsedMB: string;
+    indexSizeMB: string;
+  };
+  counts?: {
+    clients: number;
+    works: number;
+    payments: number;
+  };
+  error?: string;
+}
+
 export function DiagnosticsView() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DiagnosticData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,12 +38,16 @@ export function DiagnosticsView() {
       setError(null);
     } else {
       setError(result.error || "Failed to load diagnostics");
+      setData(null);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchDiagnostics();
+    const timer = setTimeout(() => {
+      fetchDiagnostics();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {

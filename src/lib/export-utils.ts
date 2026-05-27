@@ -1,7 +1,9 @@
+import { Payment } from '@/types/payment';
+
 /**
  * Converts an array of objects into a CSV string
  */
-export function convertToCSV(data: any[]): string {
+export function convertToCSV<T extends Record<string, unknown>>(data: T[]): string {
   if (data.length === 0) return '';
   
   const headers = Object.keys(data[0]);
@@ -20,7 +22,7 @@ export function convertToCSV(data: any[]): string {
 /**
  * Triggers a browser download for a CSV file
  */
-export function downloadCSV(data: any[], filename: string) {
+export function downloadCSV<T extends Record<string, unknown>>(data: T[], filename: string) {
   const csv = convertToCSV(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -39,7 +41,7 @@ export function downloadCSV(data: any[], filename: string) {
 /**
  * Generates a simple, professional HTML invoice
  */
-export function downloadInvoice(payment: any, symbol: string = '₹') {
+export function downloadInvoice(payment: Payment, symbol: string = '₹') {
   const html = `
     <!DOCTYPE html>
     <html>

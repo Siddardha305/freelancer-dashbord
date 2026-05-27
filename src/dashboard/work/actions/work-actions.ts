@@ -5,6 +5,7 @@ import Work from '@/database/models/Work'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getSessionUser } from '@/lib/session'
+import { sendSlackNotification } from '@/lib/slack'
 
 const WorkSchema = z.object({
   client: z.string().min(1, "Client is required"),
@@ -22,6 +23,17 @@ const WorkSchema = z.object({
   tags: z.array(z.string()).default([]),
 })
 
+interface LeanWorkDoc {
+  _id: { toString(): string };
+  client: string;
+  title: string;
+  deadline: string;
+  status: string;
+  priority: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function getWorksAction() {
   const user = await getSessionUser()
   if (!user) return []
@@ -29,7 +41,7 @@ export async function getWorksAction() {
   await dbConnect()
   try {
     const works = await Work.find({ userId: user._id }).sort({ createdAt: -1 }).lean()
-    return JSON.parse(JSON.stringify(works)).map((doc: any) => ({
+    return JSON.parse(JSON.stringify(works)).map((doc: LeanWorkDoc) => ({
       ...doc,
       id: doc._id.toString(),
     }))
@@ -39,12 +51,12 @@ export async function getWorksAction() {
   }
 }
 
-export async function createWorkAction(prevState: any, formData: FormData) {
+export async function createWorkAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
   await dbConnect()
-  const rawData: any = {}
+  const rawData: Record<string, unknown> = {}
   formData.forEach((value, key) => {
     if (key === 'attachments' || key === 'tags') {
       rawData[key] = (value as string).split(',').map(v => v.trim()).filter(v => v)
@@ -69,10 +81,24 @@ export async function createWorkAction(prevState: any, formData: FormData) {
       ...validatedFields.data,
       userId: user._id,
     })
+    // Trigger Slack notification if webhook is configured
+    if (user.slackWebhookUrl) {
+      sendSlackNotification({
+        webhookUrl: user.slackWebhookUrl,
+        title: "📅 New Task Created",
+        text: `A new task *"${newWork.title}"* has been created for client *${newWork.client}*.`,
+        color: "#4f46e5",
+        fields: [
+          { title: "Priority", value: newWork.priority || "Normal", short: true },
+          { title: "Deadline", value: new Date(newWork.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), short: true },
+        ],
+      }).catch(err => console.error("Slack trigger failed:", err));
+    }
+
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success', id: newWork._id.toString() }
-  } catch (error) {
+  } catch {
     return { message: 'Database Error' }
   }
 }
@@ -83,9 +109,9 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
 
   try {
     await dbConnect()
-    const updateData: any = { status: newStatus }
+    const updateData: Record<string, unknown> = { status: newStatus }
     if (newStatus === 'Completed') {
-      updateData.completedAt = new Date()
+      updateData.completedAt = new Date().toISOString()
     }
     
     const updated = await Work.findOneAndUpdate(
@@ -98,15 +124,30 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
       return { message: 'Work task not found' }
     }
 
+    // Trigger Slack notification if webhook is configured
+    if (user.slackWebhookUrl) {
+      const isCompleted = updated.status === 'Completed' || updated.status === 'Done';
+      sendSlackNotification({
+        webhookUrl: user.slackWebhookUrl,
+        title: isCompleted ? "✅ Task Completed" : "🔄 Task Status Updated",
+        text: `The status of task *"${updated.title}"* (Client: *${updated.client}*) has been updated to *${updated.status}*.`,
+        color: isCompleted ? "#10b981" : "#f59e0b",
+        fields: [
+          { title: "New Status", value: updated.status, short: true },
+          { title: "Priority", value: updated.priority || "Normal", short: true },
+        ],
+      }).catch(err => console.error("Slack trigger failed:", err));
+    }
+
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch (error) {
+  } catch {
     return { message: 'Database Error' }
   }
 }
 
-export async function updateWorkAction(id: string, data: any) {
+export async function updateWorkAction(id: string, data: Record<string, unknown>) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
@@ -130,7 +171,7 @@ export async function updateWorkAction(id: string, data: any) {
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch (error) {
+  } catch {
     return { message: 'Database Error' }
   }
 }
@@ -149,7 +190,7 @@ export async function deleteWorkAction(id: string) {
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch (error) {
+  } catch {
     return { message: 'Database Error' }
   }
 }

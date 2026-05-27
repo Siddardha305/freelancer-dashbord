@@ -13,6 +13,16 @@ const PaymentSchema = z.object({
   payment_status: z.string().default("Pending"),
 })
 
+interface LeanPaymentDoc {
+  _id: { toString(): string };
+  client: string;
+  amount: number;
+  due_date: string;
+  payment_status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function getPaymentsAction() {
   const user = await getSessionUser()
   if (!user) return []
@@ -20,7 +30,7 @@ export async function getPaymentsAction() {
   await dbConnect()
   try {
     const payments = await Payment.find({ userId: user._id }).sort({ createdAt: -1 }).lean()
-    return JSON.parse(JSON.stringify(payments)).map((doc: any) => ({
+    return JSON.parse(JSON.stringify(payments)).map((doc: LeanPaymentDoc) => ({
       ...doc,
       id: doc._id.toString(),
       _id: doc._id.toString()
@@ -31,7 +41,7 @@ export async function getPaymentsAction() {
   }
 }
 
-export async function createPaymentAction(prevState: any, formData: FormData) {
+export async function createPaymentAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 

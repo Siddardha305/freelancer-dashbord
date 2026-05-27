@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { MoreHorizontal, User, Edit3, Trash2 } from 'lucide-react';
 
+import { Client } from '@/types/client';
+
 interface ClientActionsDropdownProps {
-  client: any;
-  onViewProfile?: (client: any) => void;
-  onEditClick: (client: any) => void;
+  client: Client;
+  onViewProfile?: (client: Client) => void;
+  onEditClick: (client: Client) => void;
   onDeleteClick: (clientId: string) => void;
   className?: string;
 }

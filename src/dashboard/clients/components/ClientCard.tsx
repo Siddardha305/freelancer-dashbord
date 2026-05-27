@@ -8,10 +8,12 @@ import { ClientChannelButton } from './ClientChannelButton';
 import { ClientContactInfo } from './ClientContactInfo';
 import { ClientPricingDetails } from './ClientPricingDetails';
 
+import { Client } from '@/types/client';
+
 interface ClientCardProps {
-  client: any;
-  onViewProfile?: (client: any) => void;
-  onEditClick: (client: any) => void;
+  client: Client;
+  onViewProfile?: (client: Client) => void;
+  onEditClick: (client: Client) => void;
   onDeleteClick: (clientId: string) => void;
   onStatusChange?: (newStatus: string) => void;
   className?: string;

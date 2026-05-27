@@ -1,10 +1,10 @@
 'use client'
 
-import { useActionState, useState, useEffect } from 'react'
+import { useState } from 'react'
 import { updateClientAction } from '@/dashboard/clients/actions/client-actions'
-import { X, Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, FileText, Calendar, Link as LinkIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { X, Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, Link as LinkIcon } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { Client } from '@/types/client'
 
 export function EditClientModal({ 
   isOpen, 
@@ -14,8 +14,8 @@ export function EditClientModal({
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  client: any;
-  onSuccess?: (updatedClient: any) => void 
+  client: Client;
+  onSuccess?: (updatedClient: Client) => void 
 }) {
   const { symbol } = useCurrency();
   const [pricingModel, setPricingModel] = useState(client.pricing_model || 'monthly')
@@ -30,7 +30,7 @@ export function EditClientModal({
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    const data: any = {}
+    const data: Record<string, unknown> = {}
     formData.forEach((value, key) => {
       if (key === 'tags') {
         data[key] = (value as string).split(',').map(t => t.trim()).filter(t => t)
@@ -41,14 +41,14 @@ export function EditClientModal({
 
     try {
       const result = await updateClientAction(client.id, data)
-      if (result.message === 'success') {
+      if (result.message === 'success' && result.client) {
         if (onSuccess) onSuccess(result.client)
         onClose()
       } else {
         setError(result.message || 'Failed to update client')
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setLoading(false)
     }
@@ -321,7 +321,7 @@ export function EditClientModal({
             Cancel
           </button>
           <button 
-            onClick={() => (document.querySelector('form') as any).requestSubmit()}
+            onClick={() => (document.querySelector('form') as HTMLFormElement).requestSubmit()}
             disabled={loading} 
             className="flex-2 flex items-center justify-center gap-3 bg-indigo-600 text-white px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-100 active:scale-95"
           >

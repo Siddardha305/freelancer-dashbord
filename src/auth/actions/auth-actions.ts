@@ -11,6 +11,7 @@ import { sendUserWelcomeEmail, sendPasswordResetEmail } from '@/emails/mail';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { sendSlackNotification } from '@/lib/slack';
 
 const AuthSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),
@@ -18,7 +19,7 @@ const AuthSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export async function loginAction(prevState: any, formData: FormData) {
+export async function loginAction(prevState: unknown, formData: FormData) {
   await dbConnect();
   
   const rawEmail = formData.get('email') as string;
@@ -44,6 +45,18 @@ export async function loginAction(prevState: any, formData: FormData) {
     if (!isPasswordCorrect) {
       return { message: 'Invalid email or password' };
     }
+
+    // Transparent PBKDF2 upgrade: if password was hashed with old iteration count, re-hash silently
+    const parts = user.password.split(':');
+    if (parts.length === 2) {
+      // Old format (salt:hash with 1000 iterations) — upgrade on login
+      try {
+        const { hashPassword } = await import('@/lib/session');
+        await User.findByIdAndUpdate(user._id, { password: hashPassword(password) });
+      } catch {
+        // Non-blocking: if upgrade fails, user still logs in fine with old hash
+      }
+    }
     
     await createSession(user._id.toString());
     
@@ -51,13 +64,14 @@ export async function loginAction(prevState: any, formData: FormData) {
     // Revalidate dashboard routes
     revalidatePath('/dashboard');
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Login action error:", error);
-    return { message: error.message || 'Authentication failed' };
+    const message = error instanceof Error ? error.message : 'Authentication failed';
+    return { message };
   }
 }
 
-export async function signupAction(prevState: any, formData: FormData) {
+export async function signupAction(prevState: unknown, formData: FormData) {
   await dbConnect();
   
   const name = formData.get('name') as string;
@@ -122,9 +136,10 @@ export async function signupAction(prevState: any, formData: FormData) {
     
     revalidatePath('/dashboard');
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Signup action error:", error);
-    return { message: error.message || 'Registration failed' };
+    const message = error instanceof Error ? error.message : 'Registration failed';
+    return { message };
   }
 }
 
@@ -137,7 +152,7 @@ export async function getCurrentUserAction() {
   return await getSessionUser();
 }
 
-export async function forgotPasswordAction(prevState: any, formData: FormData) {
+export async function forgotPasswordAction(prevState: unknown, formData: FormData) {
   await dbConnect();
   
   const rawEmail = formData.get('email') as string;
@@ -174,13 +189,14 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
     
     // Always return success to prevent user email enumeration security issues
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Forgot password server action failed:", error);
-    return { message: error.message || 'An unexpected error occurred. Please try again.' };
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+    return { message };
   }
 }
 
-export async function resetPasswordAction(prevState: any, formData: FormData) {
+export async function resetPasswordAction(prevState: unknown, formData: FormData) {
   await dbConnect();
   
   const token = formData.get('token') as string;
@@ -229,13 +245,23 @@ export async function resetPasswordAction(prevState: any, formData: FormData) {
     await user.save();
     
     return { message: 'success' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Reset password server action failed:", error);
-    return { message: error.message || 'Failed to update your password. Please try again.' };
+    const message = error instanceof Error ? error.message : 'Failed to update your password. Please try again.';
+    return { message };
   }
 }
 
-export async function updateProfileAction(data: { name: string; email: string; bio?: string; currency?: string }) {
+export async function updateProfileAction(data: { 
+  name: string; 
+  email: string; 
+  bio?: string; 
+  currency?: string;
+  agencyName?: string;
+  agencyLogoUrl?: string;
+  agencyLogoDarkUrl?: string;
+  agencyBrandingMode?: string;
+}) {
   await dbConnect();
   const user = await getSessionUser();
   if (!user) {
@@ -256,6 +282,15 @@ export async function updateProfileAction(data: { name: string; email: string; b
       return { success: false, message: 'Name must be at least 2 characters' };
     }
 
+    // Server-side logo size validation (2MB limit = ~2.73MB base64 string)
+    const MAX_LOGO_SIZE = 2_800_000; // ~2MB binary in base64
+    if (data.agencyLogoUrl && data.agencyLogoUrl.length > MAX_LOGO_SIZE) {
+      return { success: false, message: 'Light logo image exceeds the 2MB size limit' };
+    }
+    if (data.agencyLogoDarkUrl && data.agencyLogoDarkUrl.length > MAX_LOGO_SIZE) {
+      return { success: false, message: 'Dark logo image exceeds the 2MB size limit' };
+    }
+
     // Check email uniqueness if it changed
     if (rawEmail !== user.email.toLowerCase()) {
       const existingUser = await User.findOne({ email: rawEmail });
@@ -269,13 +304,18 @@ export async function updateProfileAction(data: { name: string; email: string; b
       email: rawEmail,
       bio: (data.bio || '').trim(),
       currency: data.currency || 'INR',
+      agencyName: data.agencyName ? data.agencyName.trim() : null,
+      agencyLogoUrl: data.agencyLogoUrl ? data.agencyLogoUrl.trim() : null,
+      agencyLogoDarkUrl: data.agencyLogoDarkUrl ? data.agencyLogoDarkUrl.trim() : null,
+      agencyBrandingMode: data.agencyBrandingMode || 'both',
     });
 
-    revalidatePath('/dashboard');
+    revalidatePath('/dashboard', 'layout');
     return { success: true, message: 'Profile updated successfully' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Update profile error:", error);
-    return { success: false, message: error.message || 'Failed to update profile' };
+    const message = error instanceof Error ? error.message : 'Failed to update profile';
+    return { success: false, message };
   }
 }
 
@@ -311,9 +351,72 @@ export async function updatePasswordAction(data: { currentPassword?: string; new
     await dbUser.save();
 
     return { success: true, message: 'Password updated successfully' };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Update password error:", error);
-    return { success: false, message: error.message || 'Failed to update password' };
+    const message = error instanceof Error ? error.message : 'Failed to update password';
+    return { success: false, message };
   }
 }
+
+export async function updateUserPlanSelfAction() {
+  return { success: false, message: 'Plan changes can only be managed by system administrators in the System Console.' };
+}
+
+export async function updateSlackWebhookAction(webhookUrl: string | null) {
+  await dbConnect();
+  const user = await getSessionUser();
+  if (!user) {
+    return { success: false, message: 'Unauthorized' };
+  }
+
+  // Validate webhook URL if not null
+  if (webhookUrl && !webhookUrl.startsWith("https://hooks.slack.com/services/")) {
+    return { success: false, message: 'Invalid Slack webhook URL format. It must start with https://hooks.slack.com/services/' };
+  }
+
+  try {
+    await User.findByIdAndUpdate(user.id || user._id, { slackWebhookUrl: webhookUrl || null });
+    revalidatePath('/dashboard/settings');
+    return { success: true, message: 'Slack Webhook URL updated successfully.' };
+  } catch (error) {
+    console.error('Failed to update Slack webhook URL:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update webhook URL.';
+    return { success: false, message };
+  }
+}
+
+export async function testSlackWebhookAction(webhookUrl: string) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { success: false, message: 'Unauthorized' };
+  }
+
+  if (!webhookUrl || !webhookUrl.startsWith("https://hooks.slack.com/services/")) {
+    return { success: false, message: 'Invalid Slack webhook URL format.' };
+  }
+
+  try {
+    const res = await sendSlackNotification({
+      webhookUrl,
+      title: "🔌 Slack Integration Test Connection",
+      text: `Hello *${user.name || 'User'}*! Your FreelanceOS Slack Webhook integration is working perfectly!`,
+      color: "#4f46e5",
+      fields: [
+        { title: "Status", value: "Active / Verified", short: true },
+        { title: "Workspace", value: user.email, short: true },
+      ],
+    });
+
+    if (res.success) {
+      return { success: true, message: 'Test message sent to Slack successfully!' };
+    } else {
+      return { success: false, message: res.error || 'Failed to dispatch Slack test message.' };
+    }
+  } catch (error) {
+    console.error('Slack webhook test connection failed:', error);
+    const message = error instanceof Error ? error.message : 'Failed to connect to Slack webhook.';
+    return { success: false, message };
+  }
+}
+
 

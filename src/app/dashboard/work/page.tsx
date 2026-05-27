@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { StatCard } from "@/components/shared/StatCard";
 import { WorkManager } from "@/dashboard/work/components/WorkManager";
 import { WorkHeader } from "@/dashboard/work/components/WorkHeader";
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
+import { Work } from '@/types/work';
 
 export default function WorkPage() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

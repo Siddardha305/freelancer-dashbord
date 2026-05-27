@@ -11,9 +11,12 @@ import {
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { useCurrency } from '@/context/CurrencyContext';
+import { Client } from '@/types/client';
+import { Work } from '@/types/work';
+import { Payment } from '@/types/payment';
 
 interface PaymentSummaryCardsProps {
-  payments: any[];
+  payments: Payment[];
 }
 
 export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps) {
@@ -33,10 +36,10 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
   });
 
   // Real-time Invoice Calculations
-  const totalCollected = payments.filter((p: any) => p.payment_status === "Paid").reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-  const totalPendingInvoices = payments.filter((p: any) => p.payment_status === "Pending").reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+  const totalCollected = payments.filter((p: Payment) => p.payment_status === "Paid").reduce((acc: number, curr: Payment) => acc + Number(curr.amount), 0);
+  const totalPendingInvoices = payments.filter((p: Payment) => p.payment_status === "Pending").reduce((acc: number, curr: Payment) => acc + Number(curr.amount), 0);
   
-  const pendingCount = payments.filter((p: any) => p.payment_status === "Pending").length;
+  const pendingCount = payments.filter((p: Payment) => p.payment_status === "Pending").length;
 
   // Real-time Client Payout Calculations
   const now = new Date();
@@ -44,10 +47,10 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
   let clientBalanceToCollect = 0;
   let clientPipelinePending = 0;
 
-  clients.forEach((client: any) => {
+  (clients as Client[]).forEach((client: Client) => {
     if (client.status === "Inactive") return;
 
-    const clientWorks = works.filter((w: any) => w.client === client.name);
+    const clientWorks = (works as Work[]).filter((w: Work) => w.client === client.name);
 
     // Effective rate per task
     const quota = client.thumbnails_per_month || 8;
@@ -64,8 +67,8 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
         : quota * ratePerTask;
 
     // Completed this month
-    const completedThisMonth = clientWorks.filter((w: any) => {
-      if (w.status !== "Completed" && w.status !== "Done") return false;
+    const completedThisMonth = clientWorks.filter((w: Work) => {
+      if ((w.status as string) !== "Completed" && w.status !== "Done") return false;
       const dateStr = w.completedAt || w.updatedAt || w.createdAt;
       if (!dateStr) return false;
       const d = new Date(dateStr);
@@ -76,7 +79,7 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
     });
 
     // Pending (To Do / In Progress / Review)
-    const pendingWorks = clientWorks.filter((w: any) =>
+    const pendingWorks = clientWorks.filter((w: Work) =>
       ["To Do", "In Progress", "Review"].includes(w.status)
     );
 

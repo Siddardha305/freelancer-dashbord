@@ -115,7 +115,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm font-semibold text-slate-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="text-indigo-600 hover:text-indigo-700 font-bold">
               Sign Up Free
             </Link>
@@ -150,7 +150,7 @@ export default function LoginPage() {
               ))}
             </div>
             <p className="text-xs font-semibold italic text-indigo-100/90 leading-relaxed">
-              "Switching my thumbnail design studio to FreelanceOS transformed my team. Multi-user accounts let my designers visual-map workflows and log bank payments privately in real-time."
+              &quot;Switching my thumbnail design studio to FreelanceOS transformed my team. Multi-user accounts let my designers visual-map workflows and log bank payments privately in real-time.&quot;
             </p>
             <div>
               <p className="text-xs font-bold text-white">Siddardha Reddy</p>

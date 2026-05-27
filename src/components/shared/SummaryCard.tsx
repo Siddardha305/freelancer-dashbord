@@ -1,7 +1,9 @@
+import React from 'react';
+
 interface SummaryCardProps {
   title: string;
   value: string | number;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 export function SummaryCard({ title, value, icon: Icon }: SummaryCardProps) {

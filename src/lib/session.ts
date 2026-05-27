@@ -3,22 +3,44 @@ import { cookies } from 'next/headers';
 import dbConnect from '@/database/mongodb';
 import User from '@/database/models/User';
 
-const SESSION_SECRET = process.env.SESSION_SECRET || '9f8c7b6a5d4e3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b';
+// SESSION_SECRET must be set in .env — no fallback allowed for security
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error(
+    'SECURITY ERROR: SESSION_SECRET environment variable is not set. ' +
+    'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
+  );
+}
+
+const PBKDF2_ITERATIONS = 210_000; // OWASP recommended minimum for SHA-512 (2024)
 const IV_LENGTH = 12; // Standard IV length for AES-GCM
 
-// PBKDF2 Password Hashing
+// PBKDF2 Password Hashing — stores iterations in hash string for forward compatibility
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return `${salt}:${hash}`;
+  const hash = crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, 64, 'sha512').toString('hex');
+  // Format: salt:iterations:hash (iterations stored for backward compat during upgrades)
+  return `${salt}:${PBKDF2_ITERATIONS}:${hash}`;
 }
 
 export function verifyPassword(password: string, storedValue: string): boolean {
   try {
-    const [salt, originalHash] = storedValue.split(':');
-    if (!salt || !originalHash) return false;
-    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-    return hash === originalHash;
+    const parts = storedValue.split(':');
+    if (parts.length === 3) {
+      // New format: salt:iterations:hash
+      const [salt, iterStr, originalHash] = parts;
+      if (!salt || !iterStr || !originalHash) return false;
+      const iterations = parseInt(iterStr, 10);
+      const hash = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString('hex');
+      return hash === originalHash;
+    } else if (parts.length === 2) {
+      // Legacy format: salt:hash (1000 iterations)
+      const [salt, originalHash] = parts;
+      if (!salt || !originalHash) return false;
+      const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+      return hash === originalHash;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -26,7 +48,7 @@ export function verifyPassword(password: string, storedValue: string): boolean {
 
 // AES-256-GCM Session Encryption
 export function encrypt(text: string): string {
-  const key = crypto.scryptSync(SESSION_SECRET, 'salt', 32);
+  const key = crypto.scryptSync(SESSION_SECRET!, 'salt', 32);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   
@@ -39,7 +61,7 @@ export function encrypt(text: string): string {
 
 export function decrypt(cipherText: string): string {
   try {
-    const key = crypto.scryptSync(SESSION_SECRET, 'salt', 32);
+    const key = crypto.scryptSync(SESSION_SECRET!, 'salt', 32);
     const [ivHex, authTagHex, encryptedText] = cipherText.split(':');
     if (!ivHex || !authTagHex || !encryptedText) return '';
     

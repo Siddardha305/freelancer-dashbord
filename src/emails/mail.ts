@@ -3,6 +3,10 @@ import { Resend } from 'resend';
 // Accessing the API key from environment variables
 const resend = new Resend((process.env.RESEND_API_KEY || 're_placeholder').trim());
 
+// Dynamic app url for environments
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+
 export async function sendWelcomeEmail(clientEmail: string, clientName: string) {
   try {
     const { data, error } = await resend.emails.send({
@@ -97,7 +101,7 @@ export async function sendWelcomeEmail(clientEmail: string, clientName: string) 
                 <p style="font-size: 14px; color: #64748b; font-style: italic;">
                   "Turning visions into digital reality with professional precision."
                 </p>
-                <a href="#" class="button">Access Client Portal</a>
+                <a href="${APP_URL}" class="button">Access Client Portal</a>
               </div>
               <div class="footer">
                 <p style="margin: 0 0 8px 0;">&copy; 2024 FreelanceOS Dashboard. All rights reserved.</p>
@@ -239,7 +243,7 @@ export async function sendUserWelcomeEmail(userEmail: string, userName: string) 
                 </p>
                 
                 <center>
-                  <a href="http://localhost:3000/dashboard" class="button">Launch Your Workspace</a>
+                  <a href="${APP_URL}/dashboard" class="button">Launch Your Workspace</a>
                 </center>
               </div>
               <div class="footer">
@@ -265,12 +269,7 @@ export async function sendUserWelcomeEmail(userEmail: string, userName: string) 
 
 export async function sendPasswordResetEmail(userEmail: string, resetToken: string) {
   try {
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
-    
-    console.log("\n========================================================");
-    console.log(`🔑 PASSWORD RESET LINK GENERATED FOR: ${userEmail}`);
-    console.log(`🔗 LINK: ${resetLink}`);
-    console.log("========================================================\n");
+    const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
 
     const { data, error } = await resend.emails.send({
       from: 'FreelanceOS <onboarding@resend.dev>',
@@ -387,3 +386,64 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
   }
 }
 
+export async function sendAdminPasswordResetEmail(adminEmail: string, resetLink: string) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'FreelanceOS <onboarding@resend.dev>',
+      to: [adminEmail],
+      subject: 'FreelanceOS Admin | Password Reset Request',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              .container { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%); padding: 40px; text-align: center; }
+              .content { padding: 40px; color: #1e293b; line-height: 1.6; }
+              .footer { padding: 30px; background-color: #f8fafc; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #f1f5f9; }
+              .button { display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff !important; text-decoration: none; border-radius: 14px; font-weight: bold; margin-top: 24px; }
+              .warning { background-color: #fefce8; border: 1px solid #fef08a; color: #854d0e; border-radius: 16px; padding: 16px; font-size: 13px; margin: 24px 0; }
+              .badge { display: inline-block; padding: 4px 12px; background-color: #ede9fe; color: #5b21b6; border-radius: 100px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+            </style>
+          </head>
+          <body style="background-color: #f8fafc; padding: 40px 0; margin: 0;">
+            <div class="container">
+              <div class="header">
+                <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                  <span style="font-size:24px;font-weight:900;color:#ffffff;">F</span>
+                </div>
+                <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:800;">System Console Security</h1>
+              </div>
+              <div class="content">
+                <div class="badge">Admin Password Reset</div>
+                <h2 style="font-size:22px;margin:16px 0 12px 0;color:#0f172a;font-weight:800;">Reset Admin Password</h2>
+                <p style="font-size:15px;color:#475569;margin-bottom:8px;">
+                  A password reset was requested for the <strong>FreelanceOS System Console</strong> admin account.
+                </p>
+                <p style="font-size:15px;color:#475569;">
+                  Click below to set a new password. This link expires in <strong>1 hour</strong>.
+                </p>
+                <center><a href="${resetLink}" class="button">Reset Admin Password</a></center>
+                <div class="warning">
+                  ⚠️ <strong>Security Notice:</strong> If you did not request this, your current password remains active. Contact your system administrator immediately.
+                </div>
+              </div>
+              <div class="footer">
+                <p style="margin:0 0 6px 0;">© ${new Date().getFullYear()} FreelanceOS. All rights reserved.</p>
+                <p style="margin:0;">FreelanceOS Admin Security Service</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    if (error) {
+      console.error('Admin reset email error:', error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error('Admin password reset email failed:', err);
+    return { success: false, error: err };
+  }
+}

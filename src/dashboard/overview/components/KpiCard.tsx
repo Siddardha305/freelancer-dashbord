@@ -1,3 +1,4 @@
+import React from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { DollarSign } from "lucide-react";
 
@@ -10,7 +11,7 @@ export function KpiCard({
 }: { 
   title: string, 
   value: string | number, 
-  icon: any, 
+  icon: React.ComponentType<{ className?: string }>, 
   trend: string, 
   alert?: boolean 
 }) {

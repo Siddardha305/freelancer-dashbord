@@ -41,7 +41,7 @@ export default function FeatureTour() {
   const [activeSlide, setActiveSlide] = useState(0);
 
   return (
-    <section className="py-28 px-6 sm:px-12 max-w-7xl mx-auto bg-slate-50/50">
+    <section className="py-28 px-6 sm:px-12 max-w-7xl mx-auto bg-transparent">
       
       {/* Standardized Section Header */}
       <SectionHeader 

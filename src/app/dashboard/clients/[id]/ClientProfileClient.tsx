@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { ClientProfileView } from "@/dashboard/clients/components/ClientProfileView";
 
-export function ClientProfileClient({ initialClient }: { initialClient: any }) {
+import { Client } from "@/types/client";
+
+export function ClientProfileClient({ initialClient }: { initialClient: Client }) {
   const [client, setClient] = useState(initialClient);
 
   return (

@@ -28,7 +28,7 @@ export default function FaqSection() {
   ];
 
   return (
-    <section id="faq" className="py-32 border-t border-slate-200 px-6 sm:px-12 max-w-5xl mx-auto">
+    <section id="faq" className="py-32 border-t border-slate-900/60 px-6 sm:px-12 max-w-5xl mx-auto">
       {/* Dynamic standardized header */}
       <SectionHeader 
         badge="FAQ"

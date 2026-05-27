@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const ClientSchema = new Schema({
   name: {
@@ -82,6 +82,26 @@ const ClientSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     index: true,
+  },
+  portalSlug: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true,
+  },
+  portalToken: {
+    type: String,
+  },
+  portalLogoUrl: {
+    type: String,
+  },
+  portalPrimaryColor: {
+    type: String,
+    default: '#4f46e5',
+  },
+  portalActive: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: true,

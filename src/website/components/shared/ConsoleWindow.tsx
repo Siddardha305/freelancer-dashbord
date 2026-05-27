@@ -30,17 +30,17 @@ export default function ConsoleWindow({
   }[aspectRatio];
 
   return (
-    <div className={`w-full rounded-[2rem] bg-white p-3 border border-slate-200/80 shadow-2xl shadow-slate-200/50 relative overflow-hidden group ${className}`}>
+    <div className={`w-full rounded-[2rem] bg-slate-900/40 p-3 border border-slate-800/60 shadow-2xl shadow-slate-950/50 relative overflow-hidden group ${className}`}>
       
       {/* Simulated Window Control Bar */}
-      <div className={`h-9 border-b border-slate-200/80 px-4 flex items-center justify-between rounded-t-2xl ${isTerminal ? 'bg-slate-950 border-slate-800' : 'bg-slate-50/80'}`}>
+      <div className={`h-9 border-b border-slate-800/60 px-4 flex items-center justify-between rounded-t-2xl ${isTerminal ? 'bg-slate-950 border-slate-800' : 'bg-slate-950/40'}`}>
         <div className="flex items-center gap-1.5">
-          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-rose-500/80' : 'bg-slate-200'}`} />
-          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-amber-500/80' : 'bg-slate-200'}`} />
-          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-emerald-500/80' : 'bg-slate-200'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-rose-500/80' : 'bg-slate-800'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-amber-500/80' : 'bg-slate-800'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isTerminal ? 'bg-emerald-500/80' : 'bg-slate-800'}`} />
         </div>
         
-        <span className={`font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${isTerminal ? 'text-slate-500' : 'text-slate-400'}`}>
+        <span className={`font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${isTerminal ? 'text-slate-500' : 'text-slate-500'}`}>
           {isTerminal && <Terminal className="h-3 w-3 text-indigo-500" />}
           {title}
         </span>
@@ -49,7 +49,7 @@ export default function ConsoleWindow({
       </div>
 
       {/* Screen area */}
-      <div className={`relative w-full rounded-b-[1.3rem] overflow-hidden border-t border-slate-200 ${aspectClass} ${isTerminal ? 'bg-slate-900 border-slate-800' : 'bg-slate-100'}`}>
+      <div className={`relative w-full rounded-b-[1.3rem] overflow-hidden border-t border-slate-800/60 ${aspectClass} ${isTerminal ? 'bg-slate-950 border-slate-800' : 'bg-slate-950'}`}>
         {imageSrc ? (
           <Image 
             src={imageSrc} 

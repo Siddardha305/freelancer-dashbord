@@ -1,12 +1,37 @@
-'use client'
-
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Lock } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AddWorkModal } from "./AddWorkModal";
+import { usePlan } from "@/context/PlanContext";
+import { useQuery } from "@tanstack/react-query";
+import { getWorksAction } from "@/dashboard/work/actions/work-actions";
+import { Work } from "@/types/work";
+import { UpgradeModal } from "@/components/shared/UpgradeModal";
+import { cn } from "@/lib/utils";
 
 export function WorkHeader() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  
+  const { limits, canAddTask } = usePlan();
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['works'],
+    queryFn: getWorksAction,
+  });
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  const monthlyTasksCount = (tasks as Work[]).filter((t: Work) => {
+    if (!t.createdAt) return false;
+    const d = new Date(t.createdAt);
+    return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+  }).length;
+
+  const atTaskLimit = !canAddTask(monthlyTasksCount);
+  const taskLimitText = limits.maxTasksPerMonth === Infinity ? 'Unlimited' : String(limits.maxTasksPerMonth);
 
   return (
     <>
@@ -14,15 +39,33 @@ export function WorkHeader() {
         title="Monthly Work"
         action={
           <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+            onClick={() => {
+              if (atTaskLimit) {
+                setIsUpgradeModalOpen(true);
+              } else {
+                setIsModalOpen(true);
+              }
+            }}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-200 shadow-lg active:scale-95",
+              atTaskLimit 
+                ? "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 hover:shadow-amber-100" 
+                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100"
+            )}
           >
-            <Plus className="h-4 w-4" />
+            {atTaskLimit ? <Lock className="h-4 w-4 text-amber-600" /> : <Plus className="h-4 w-4" />}
             New Task
           </button>
         }
       />
       <AddWorkModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <UpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+        limitName="Monthly Tasks limit"
+        currentLimitText={`${monthlyTasksCount} / ${taskLimitText} tasks used`}
+        upgradeToPlanName="Pro"
+      />
     </>
   );
 }

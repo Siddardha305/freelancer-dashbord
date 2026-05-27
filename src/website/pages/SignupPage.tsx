@@ -191,7 +191,7 @@ export default function SignupPage() {
               ))}
             </div>
             <p className="text-xs font-semibold italic text-indigo-100/90 leading-relaxed">
-              "As a new user, starting with a clean slate allowed me to model my thumbnail pipeline perfectly. The diagnostics system makes testing and wiping tasks completely stress-free!"
+              &quot;As a new user, starting with a clean slate allowed me to model my thumbnail pipeline perfectly. The diagnostics system makes testing and wiping tasks completely stress-free!&quot;
             </p>
             <div>
               <p className="text-xs font-bold text-white">Ananya Sharma</p>

@@ -5,6 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
 import { ClientRow } from "./ClientRow";
 
+import { Client } from "@/types/client";
+import { Work } from "@/types/work";
+
 const statusConfig: Record<string, { label: string; dot: string; row: string; badge: string }> = {
   Active: {
     label: "Active",
@@ -33,8 +36,8 @@ const statusConfig: Record<string, { label: string; dot: string; row: string; ba
 };
 
 interface ClientListProps {
-  clients?: any[];
-  onViewProfile?: (client: any) => void;
+  clients?: Client[];
+  onViewProfile?: (client: Client) => void;
 }
 
 export function ClientList({ 
@@ -62,7 +65,7 @@ export function ClientList({
     setDeletingId(id);
     try {
       await deleteClientAction(id);
-    } catch (error) {
+    } catch {
       alert("Failed to delete client.");
     } finally {
       setDeletingId(null);
@@ -71,10 +74,10 @@ export function ClientList({
 
   // Per-client task counts
   const getTaskCounts = (clientName: string) => {
-    const cWorks = (works as any[]).filter((w: any) => w.client === clientName);
+    const cWorks = (works as Work[]).filter((w: Work) => w.client === clientName);
     return {
-      done: cWorks.filter((w: any) => w.status === "Completed" || w.status === "Done").length,
-      active: cWorks.filter((w: any) => ["To Do", "In Progress", "Review"].includes(w.status)).length,
+      done: cWorks.filter((w: Work) => (w.status as string) === "Completed" || w.status === "Done").length,
+      active: cWorks.filter((w: Work) => ["To Do", "In Progress", "Review"].includes(w.status)).length,
       total: cWorks.length,
     };
   };

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import React from "react";
 import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw, Trash2 } from "lucide-react";
 import { formatDistanceToNow, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,6 @@ interface WorkCardProps {
 
 export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
   const isUrgent = task.priority === 'Urgent';
-  const isHigh = task.priority === 'High';
   const isCompleted = task.status === 'Completed';
   
   let deadlineDate = parseISO(task.deadline);

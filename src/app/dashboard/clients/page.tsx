@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Zap } from 'lucide-react';
+import { Plus, Search, Zap, Lock, ArrowRight } from 'lucide-react';
 import { ClientTable } from '@/dashboard/clients/components/ClientTable';
 import { ClientList } from '@/dashboard/clients/components/ClientList';
 import { AddClientModal } from '@/dashboard/clients/components/AddClientModal';
@@ -10,9 +10,13 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
 import { ClientFilterControls } from '@/dashboard/clients/components/ClientFilterControls';
 import { ClientProfileDrawer } from '@/dashboard/clients/components/ClientProfileDrawer';
+import { Client } from '@/types/client';
+import { usePlan } from '@/context/PlanContext';
+import Link from 'next/link';
 
 export default function ClientsPage() {
   const queryClient = useQueryClient();
+  const { planName, limits, canAddClient } = usePlan();
   
   // Persist View Mode
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -23,7 +27,7 @@ export default function ClientsPage() {
   });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [drawerClient, setDrawerClient] = useState<any | null>(null);
+  const [drawerClient, setDrawerClient] = useState<Client | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Search & Filter State with LocalStorage Persistence
@@ -75,7 +79,7 @@ export default function ClientsPage() {
     localStorage.setItem('clients_sortBy', sortBy);
   }, [sortBy]);
 
-  const openDrawer = (client: any) => {
+  const openDrawer = (client: Client) => {
     setDrawerClient(client);
     setTimeout(() => setIsDrawerOpen(true), 50);
   };
@@ -92,13 +96,17 @@ export default function ClientsPage() {
     refetchInterval: 8000,
   });
 
-  const refreshData = async (_newClient?: any) => {
+  const totalClients = (clients as Client[]).length;
+  const atClientLimit = !canAddClient(totalClients);
+  const clientLimitText = limits.maxClients === Infinity ? 'Unlimited' : String(limits.maxClients);
+
+  const refreshData = async () => {
     queryClient.invalidateQueries({ queryKey: ["clients"] });
   };
 
   // Filter and Sort logic
-  const filteredClients = clients
-    .filter((client: any) => {
+  const filteredClients = (clients as Client[])
+    .filter((client: Client) => {
       // 1. Search Query
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -115,7 +123,7 @@ export default function ClientsPage() {
 
       return matchesSearch && matchesStatus && matchesPriority;
     })
-    .sort((a: any, b: any) => {
+    .sort((a: Client, b: Client) => {
       switch (sortBy) {
         case 'newest':
           return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
@@ -154,19 +162,45 @@ export default function ClientsPage() {
         title="Clients"
         description="Manage your client base and projects"
         action={
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all duration-200 shadow-lg shadow-indigo-100"
-          >
-            <Plus className="h-4 w-4" />
-            Add New Client
-          </button>
+          atClientLimit ? (
+            <Link
+              href="/pricing"
+              className="flex items-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 px-6 py-3 rounded-2xl text-sm font-bold cursor-pointer hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all duration-200 group"
+              title={`${planName} plan limit: ${clientLimitText} clients`}
+            >
+              <Lock className="h-4 w-4 group-hover:text-amber-600" />
+              Upgrade to Add More
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all duration-200 shadow-lg shadow-indigo-100"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Client
+            </button>
+          )
         }
       />
 
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-8 animate-in fade-in duration-500">
-          
+
+          {/* Plan limit warning banner */}
+          {atClientLimit && (
+            <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4">
+              <div className="flex items-center gap-3">
+                <Lock className="h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-xs font-bold text-amber-800">
+                  You&apos;ve reached the <span className="font-black">{planName}</span> plan limit of <span className="font-black">{clientLimitText} clients</span>. Upgrade to add more.
+                </p>
+              </div>
+              <Link href="/pricing" className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-amber-200 transition-all shrink-0">
+                View Plans →
+              </Link>
+            </div>
+          )}
           {/* Reusable Client Filter & Sort Controls */}
           <ClientFilterControls 
             searchQuery={searchQuery}
@@ -201,7 +235,7 @@ export default function ClientsPage() {
                 <Search className="h-6 w-6 text-indigo-600 animate-pulse" />
               </div>
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">No matches found</h3>
-              <p className="text-[10px] text-slate-400 font-bold max-w-xs mx-auto mb-6 uppercase tracking-widest leading-relaxed">We couldn't find any clients matching your active filters or search terms.</p>
+              <p className="text-[10px] text-slate-400 font-bold max-w-xs mx-auto mb-6 uppercase tracking-widest leading-relaxed">We couldn&apos;t find any clients matching your active filters or search terms.</p>
               <button
                 onClick={() => {
                   setSearchQuery('');

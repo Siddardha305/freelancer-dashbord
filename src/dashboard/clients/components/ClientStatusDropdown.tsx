@@ -52,7 +52,7 @@ export function ClientStatusDropdown({
       if (onStatusChange) {
         onStatusChange(status);
       }
-    } catch (error) {
+    } catch {
       alert("Failed to update status.");
     }
   };

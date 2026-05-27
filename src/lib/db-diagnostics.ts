@@ -48,9 +48,9 @@ export async function getDatabaseDiagnostics() {
         payments: paymentCount,
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Diagnostic error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -77,9 +77,9 @@ export async function wipeDatabaseAction() {
     revalidatePath('/dashboard/diagnostics')
     
     return { success: true, message: 'Your workspace data has been successfully wiped.' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Wipe error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -107,8 +107,8 @@ export async function resetWorkspaceAction() {
     revalidatePath('/dashboard/diagnostics')
     
     return { success: true, message: 'Tasks and Payments cleared for your account. Clients preserved.' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Reset error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

@@ -25,6 +25,11 @@ export interface Client {
   referredBy?: string;
   thumbnails_per_month: number;
   price_per_thumbnail: number;
+  portalSlug?: string;
+  portalToken?: string;
+  portalLogoUrl?: string;
+  portalPrimaryColor?: string;
+  portalActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }

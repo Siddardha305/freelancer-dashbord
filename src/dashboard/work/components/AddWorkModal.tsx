@@ -5,6 +5,7 @@ import { createWorkAction } from '@/dashboard/work/actions/work-actions'
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
 import { X, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Client } from '@/types/client'
 
 const initialState = {
   message: '',
@@ -23,7 +24,7 @@ export function AddWorkModal({
   initialDeadline?: string;
 }) {
   const [state, formAction, isPending] = useActionState(createWorkAction, initialState)
-  const [clients, setClients] = useState<any[]>([])
+  const [clients, setClients] = useState<Client[]>([])
 
   useEffect(() => {
     if (isOpen) {
@@ -40,7 +41,7 @@ export function AddWorkModal({
   if (state?.message === 'success') {
     if (onSuccess) onSuccess();
     onClose();
-    state.message = ''; 
+    Object.assign(state, { message: '' });
   }
 
   return (
