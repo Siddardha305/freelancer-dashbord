@@ -5,19 +5,37 @@ import { Mail, Check, Cpu } from 'lucide-react';
 import SectionHeader from '../shared/SectionHeader';
 import ConsoleWindow from '../shared/ConsoleWindow';
 import ActionButton from '../shared/ActionButton';
+import { submitContactAction } from '../../actions/contact-actions';
 
 export default function ContactSection() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactMsg, setContactMsg] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [logTime, setLogTime] = useState('');
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (contactEmail && contactName) {
+      setErrorMsg('');
+      setIsSubmitting(false); // Reset to ensure toggle works
       setLogTime(new Date().toLocaleTimeString());
-      setIsSubmitted(true);
+      setIsSubmitting(true);
+      
+      try {
+        const res = await submitContactAction(contactName, contactEmail, contactMsg);
+        if (res.success) {
+          setIsSubmitted(true);
+        } else {
+          setErrorMsg(res.message || 'Transmission failed.');
+        }
+      } catch (err) {
+        setErrorMsg('Network error, pipeline closed.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -26,6 +44,7 @@ export default function ContactSection() {
     setContactEmail('');
     setContactName('');
     setContactMsg('');
+    setErrorMsg('');
   };
 
   return (
@@ -54,7 +73,7 @@ export default function ContactSection() {
                 <input 
                   type="text" 
                   required
-                  disabled={isSubmitted}
+                  disabled={isSubmitted || isSubmitting}
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Siddardha Chitturi"
@@ -66,7 +85,7 @@ export default function ContactSection() {
                 <input 
                   type="email" 
                   required
-                  disabled={isSubmitted}
+                  disabled={isSubmitted || isSubmitting}
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   placeholder="sid@freelanceos.com"
@@ -78,7 +97,8 @@ export default function ContactSection() {
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Message</label>
               <textarea 
                 rows={4}
-                disabled={isSubmitted}
+                required
+                disabled={isSubmitted || isSubmitting}
                 value={contactMsg}
                 onChange={(e) => setContactMsg(e.target.value)}
                 placeholder="Tell us about your freelance business and what you're looking for..."
@@ -92,9 +112,10 @@ export default function ContactSection() {
                 variant="primary"
                 icon={Mail}
                 iconPosition="left"
-                className="w-full py-4 text-[10px] rounded-xl shadow-lg shadow-indigo-600/15"
+                disabled={isSubmitting}
+                className="w-full py-4 text-[10px] rounded-xl shadow-lg shadow-indigo-600/15 disabled:opacity-50"
               >
-                Send Message
+                {isSubmitting ? 'Sending...' : 'Send Message'}
               </ActionButton>
             ) : (
               <ActionButton
@@ -118,11 +139,20 @@ export default function ContactSection() {
             className="lg:col-span-5 border border-slate-800/80 shadow-2xl"
           >
             <div className="p-5 font-mono text-[10px] leading-relaxed min-h-[220px] text-slate-350 space-y-2 select-all selection:bg-indigo-650 selection:text-white">
-              {!isSubmitted ? (
+              {isSubmitting ? (
+                <>
+                  <p className="text-indigo-400">{"// Connecting to secure gateway..."}</p>
+                  <p className="text-slate-500">[{logTime}] PIPELINE: INITIALIZING</p>
+                  <p className="text-slate-450 animate-pulse text-[9px]">▋ TRANSMITTING DATA</p>
+                </>
+              ) : !isSubmitted ? (
                 <>
                   <p className="text-slate-600">{"// Ready to receive message..."}</p>
                   <p className="text-slate-550">&gt; system_status: ACTIVE</p>
                   <p className="text-slate-550">&gt; secure_connection: READY</p>
+                  {errorMsg && (
+                    <p className="text-rose-500 font-bold">&gt; DISPATCH ERROR: {errorMsg}</p>
+                  )}
                   <p className="text-slate-450 animate-pulse text-[9px]">▋ LINE OPEN</p>
                 </>
               ) : (

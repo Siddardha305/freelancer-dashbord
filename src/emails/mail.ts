@@ -447,3 +447,61 @@ export async function sendAdminPasswordResetEmail(adminEmail: string, resetLink:
     return { success: false, error: err };
   }
 }
+
+export async function sendContactReplyEmail(userEmail: string, userName: string, originalMessage: string, replyText: string) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'FreelanceOS <onboarding@resend.dev>',
+      to: [userEmail],
+      subject: 'FreelanceOS Support | Response to your message',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              .container { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 40px; text-align: center; }
+              .content { padding: 40px; color: #1e293b; line-height: 1.6; }
+              .footer { padding: 30px; background-color: #f8fafc; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #f1f5f9; }
+              .original-message { background-color: #f8fafc; border-left: 4px solid #cbd5e1; padding: 16px; margin: 20px 0; font-style: italic; font-size: 14px; color: #475569; }
+              .reply-text { font-size: 16px; color: #0f172a; margin-top: 20px; font-weight: 500; }
+            </style>
+          </head>
+          <body style="background-color: #f8fafc; padding: 40px 0; margin: 0;">
+            <div class="container">
+              <div class="header">
+                <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:800;">FreelanceOS Support</h1>
+              </div>
+              <div class="content">
+                <h2 style="font-size:20px;margin:0 0 16px 0;color:#0f172a;font-weight:800;">Hello ${userName},</h2>
+                <p style="font-size:15px;color:#475569;">
+                  Thank you for reaching out to us. We have reviewed your message and our team has sent the following response:
+                </p>
+                <div class="reply-text">
+                  ${replyText.replace(/\n/g, '<br />')}
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; tracking-wider;">Your Original Inquiry</h4>
+                <div class="original-message">
+                  "${originalMessage}"
+                </div>
+              </div>
+              <div class="footer">
+                <p style="margin:0 0 6px 0;">© ${new Date().getFullYear()} FreelanceOS. All rights reserved.</p>
+                <p style="margin:0;">Sent via FreelanceOS Help Desk</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    if (error) {
+      console.error('Contact reply email error:', error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error('Contact reply email failed:', err);
+    return { success: false, error: err };
+  }
+}

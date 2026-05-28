@@ -43,7 +43,66 @@ export default function HeroSection() {
         </div>
 
         {/* Premium Dashboard Application Frame Window */}
-        <div id="features-tabs" className="w-full z-10">
+        <div id="features-tabs" className="w-full z-10 relative mt-6">
+          <style>{`
+            @keyframes float-slow {
+              0%, 100% { transform: translateY(0px) rotate(-1.5deg); }
+              50% { transform: translateY(-15px) rotate(0.5deg); }
+            }
+            @keyframes float-reverse {
+              0%, 100% { transform: translateY(0px) rotate(1.5deg); }
+              50% { transform: translateY(15px) rotate(-0.5deg); }
+            }
+            .animate-float-1 {
+              animation: float-slow 6s ease-in-out infinite;
+            }
+            .animate-float-2 {
+              animation: float-reverse 7s ease-in-out infinite;
+            }
+          `}</style>
+
+          {/* Left Floating Card: Revision task */}
+          <div 
+            className="hidden lg:block absolute -left-12 top-1/4 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-1"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-black uppercase tracking-wider">
+                Revision Requested
+              </span>
+              <span className="text-[9px] font-bold text-slate-500">v3</span>
+            </div>
+            <h4 className="text-xs font-bold text-white mb-2">Video Thumbnail Asset</h4>
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-900/60">
+              <div className="h-6 w-6 rounded-full bg-slate-850 flex items-center justify-center text-[9px] font-extrabold text-slate-400 border border-slate-800">
+                SK
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-200">Siddardha K.</p>
+                <p className="text-[8px] font-semibold text-slate-505">Video Producer</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Floating Card: Payout Summary */}
+          <div 
+            className="hidden lg:block absolute -right-12 top-1/3 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-2"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-405 text-[8px] font-black uppercase tracking-wider">
+                Payout Settled
+              </span>
+              <span className="text-[9px] font-bold text-slate-500">Ledger</span>
+            </div>
+            <p className="text-lg font-black text-emerald-400 tracking-tight">₹45,000</p>
+            <p className="text-[9px] font-bold text-slate-400 mt-0.5">Approved Milestone payment</p>
+            <div className="flex items-center gap-2 pt-2.5 mt-2.5 border-t border-slate-900/60">
+              <div className="h-6 w-6 rounded-full bg-slate-850 flex items-center justify-center text-[9px] font-extrabold text-slate-450 border border-slate-800">
+                AS
+              </div>
+              <p className="text-[10px] font-bold text-slate-200">Aryan Sharma</p>
+            </div>
+          </div>
+
           <ConsoleWindow 
             title="freelanceos_workspace_v1.1" 
             imageSrc="/dashbord pics/maindashbord.png" 
@@ -53,8 +112,9 @@ export default function HeroSection() {
       </section>
 
       {/* Premium Segmented Dashboard Metrics Row */}
-      <section className="bg-slate-950/20 border-y border-slate-800/60 py-12 px-6 sm:px-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="bg-slate-950/20 border-y border-slate-900/60 py-12 px-6 sm:px-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(99,102,241,0.03),transparent)] pointer-events-none" />
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
           {[
             { label: 'Client CRM', value: 'Smart Hub', desc: 'Manage unlimited clients & rates', icon: Shield },
             { label: 'Visual Kanban', value: 'Intuitive Boards', desc: 'Track task stages and timelines', icon: Layers },

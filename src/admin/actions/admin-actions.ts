@@ -6,10 +6,11 @@ import User from '@/database/models/User';
 import Client from '@/database/models/Client';
 import Work from '@/database/models/Work';
 import Payment from '@/database/models/Payment';
+import ContactMessage from '@/database/models/ContactMessage';
 import { hashPassword, verifyPassword, createSession, getSessionUser, destroySession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { sendUserWelcomeEmail, sendAdminPasswordResetEmail } from '@/emails/mail';
+import { sendUserWelcomeEmail, sendAdminPasswordResetEmail, sendContactReplyEmail } from '@/emails/mail';
 
 export async function adminLoginAction(prevState: unknown, formData: FormData) {
   await dbConnect();
@@ -147,6 +148,19 @@ export async function getAdminOverviewAction() {
       });
     }
 
+    // Fetch and structure all contact messages
+    const rawContactMessages = await ContactMessage.find({}).sort({ createdAt: -1 }).lean();
+    const contactMessages = rawContactMessages.map((m: any) => ({
+      id: m._id.toString(),
+      name: m.name || '',
+      email: m.email || '',
+      message: m.message || '',
+      replied: !!m.replied,
+      replyText: m.replyText || '',
+      repliedAt: m.repliedAt ? new Date(m.repliedAt).toISOString() : '',
+      createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : '',
+    }));
+
     return {
       stats: {
         totalUsers,
@@ -157,6 +171,7 @@ export async function getAdminOverviewAction() {
       },
       userRegistry,
       emailLogs,
+      contactMessages,
     };
   } catch (error) {
     console.error("Failed to gather platform metrics:", error);
@@ -386,5 +401,49 @@ export async function adminResetPasswordAction(prevState: unknown, formData: For
   } catch (error) {
     console.error('Admin reset password error:', error);
     return { message: 'Failed to reset password. Please try again.' };
+  }
+}
+
+export async function replyToContactMessageAction(messageId: string, replyText: string) {
+  const currentUser = await getSessionUser();
+  if (!currentUser || currentUser.role !== 'admin') {
+    return { success: false, message: 'Access denied. Administrator privileges required.' };
+  }
+
+  if (!replyText || !replyText.trim()) {
+    return { success: false, message: 'Reply text cannot be empty.' };
+  }
+
+  await dbConnect();
+  try {
+    const contactMsg = await ContactMessage.findById(messageId);
+    if (!contactMsg) {
+      return { success: false, message: 'Message not found.' };
+    }
+
+    // Send the email response via Resend
+    const emailRes = await sendContactReplyEmail(
+      contactMsg.email,
+      contactMsg.name,
+      contactMsg.message,
+      replyText.trim()
+    );
+
+    if (!emailRes.success) {
+      return { success: false, message: 'Failed to send reply email. Verify Resend config.' };
+    }
+
+    // Update the database record
+    contactMsg.replied = true;
+    contactMsg.replyText = replyText.trim();
+    contactMsg.repliedAt = new Date();
+    await contactMsg.save();
+
+    revalidatePath('/admin');
+    return { success: true, message: 'Reply email sent and logged successfully!' };
+  } catch (error) {
+    console.error('Failed to reply to contact message:', error);
+    const msg = error instanceof Error ? error.message : 'Error sending reply.';
+    return { success: false, message: msg };
   }
 }

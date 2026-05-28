@@ -2,27 +2,18 @@
 
 import React, { useState } from 'react';
 import { Check, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
 import SectionHeader from '../shared/SectionHeader';
 import { InteractiveHoverButton, InteractiveHoverButtonOutline } from '../ui/InteractiveHoverButton';
 
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [deliveriesCount, setDeliveriesCount] = useState<number>(20);
 
   // INR Prices
   const prices = {
     pro:    { monthly: 2499,  yearly: 1999  },
     agency: { monthly: 7499,  yearly: 5999  },
   };
-
-  // Estimate monthly value based on slider
-  const getEstimatedPlan = (count: number) => {
-    if (count <= 5)  return { name: "Hobby",  price: 0 };
-    if (count <= 30) return { name: "Pro",    price: prices.pro[billingCycle] };
-    return              { name: "Agency", price: prices.agency[billingCycle] };
-  };
-
-  const currentPlanEstimate = getEstimatedPlan(deliveriesCount);
 
   // Format INR with Indian comma grouping (e.g. 2,499 / 7,499)
   const formatINR = (amount: number) =>
@@ -42,6 +33,8 @@ export default function PricingSection() {
       ],
       cta: "Get Started Free",
       popular: false,
+      glow: "from-purple-500/5",
+      badgeColor: "bg-purple-500/10 border-purple-500/20 text-purple-400",
       href: "/signup?plan=hobby"
     },
     {
@@ -58,6 +51,8 @@ export default function PricingSection() {
       ],
       cta: "Start 14-Day Free Trial",
       popular: true,
+      glow: "from-indigo-500/10",
+      badgeColor: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
       href: "/signup?plan=pro"
     },
     {
@@ -75,6 +70,8 @@ export default function PricingSection() {
       ],
       cta: "Upgrade to Agency",
       popular: false,
+      glow: "from-emerald-500/5",
+      badgeColor: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
       href: "/signup?plan=agency"
     }
   ];
@@ -82,7 +79,7 @@ export default function PricingSection() {
   return (
     <section id="pricing" className="py-32 border-t border-slate-900/60 max-w-7xl mx-auto px-6 sm:px-12 relative overflow-hidden">
       {/* Glow flares */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[140px] pointer-events-none" />
 
       <SectionHeader
         badge="SaaS Pricing"
@@ -92,51 +89,44 @@ export default function PricingSection() {
         centered={true}
       />
 
-      {/* Monthly/Yearly Toggle */}
-      <div className="flex justify-center items-center gap-4 mb-16 z-10 relative">
-        <span className={`text-xs font-black uppercase tracking-widest ${billingCycle === 'monthly' ? 'text-indigo-400' : 'text-slate-400'}`}>Monthly</span>
-        <button
-          onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-          className="w-14 h-8 bg-slate-800 rounded-full p-1 transition-all duration-300 relative focus:outline-none border border-slate-700/60"
-        >
-          <div className={`w-5 h-5 rounded-full bg-indigo-500 transition-all duration-300 ${billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-0'}`} />
-        </button>
-        <span className={`text-xs font-black uppercase tracking-widest ${billingCycle === 'yearly' ? 'text-indigo-400' : 'text-slate-400'} flex items-center gap-1.5`}>
-          Yearly <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400 text-[8px] font-bold tracking-normal">SAVE 20%</span>
-        </span>
-      </div>
-
-      {/* Plan Value Calculator */}
-      <div className="max-w-3xl mx-auto bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-[2rem] p-8 sm:p-10 mb-20 shadow-xl relative z-10">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <div className="space-y-2 flex-1 w-full min-w-0">
-            <h4 className="text-sm font-bold text-slate-100 uppercase tracking-wider">Dynamic Plan Estimator</h4>
-            <p className="text-xs text-slate-400 font-semibold leading-relaxed">Drag the slider to input your typical monthly deliveries count:</p>
-
-            <div className="pt-4 flex items-center gap-4">
-              <input
-                type="range"
-                min="2"
-                max="80"
-                value={deliveriesCount}
-                onChange={(e) => setDeliveriesCount(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+      {/* Monthly/Yearly sliding toggle */}
+      <div className="flex justify-center items-center gap-4 mb-20 z-10 relative">
+        <div className="bg-slate-950/80 backdrop-blur-md p-1.5 rounded-full border border-slate-800/80 flex items-center relative">
+          <button
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest relative transition-colors duration-300 cursor-pointer ${
+              billingCycle === 'monthly' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {billingCycle === 'monthly' && (
+              <motion.div
+                layoutId="activeBillingCycle"
+                className="absolute inset-0 bg-indigo-500 rounded-full -z-10 shadow-lg shadow-indigo-500/25"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
-              <span className="text-sm font-black text-slate-100 shrink-0 select-none bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700/40">
-                {deliveriesCount} Deliveries
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/80 border border-slate-800/85 p-6 rounded-2xl text-center shrink-0 w-full md:w-56 space-y-2">
-            <span className="text-[9px] font-extrabold text-indigo-400 uppercase tracking-widest">Recommended Plan</span>
-            <h5 className="text-xl font-black text-white">{currentPlanEstimate.name}</h5>
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-xs font-black text-slate-400">₹</span>
-              <span className="text-2xl font-black text-white">{formatINR(currentPlanEstimate.price)}</span>
-              <span className="text-[10px] text-slate-500 font-bold">/ mo</span>
-            </div>
-          </div>
+            )}
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingCycle('yearly')}
+            className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest relative transition-colors duration-300 cursor-pointer flex items-center gap-1.5 ${
+              billingCycle === 'yearly' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {billingCycle === 'yearly' && (
+              <motion.div
+                layoutId="activeBillingCycle"
+                className="absolute inset-0 bg-indigo-500 rounded-full -z-10 shadow-lg shadow-indigo-500/25"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+            Yearly
+            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black tracking-normal transition-colors ${
+              billingCycle === 'yearly' ? 'bg-indigo-950 text-indigo-300 border border-indigo-900/30' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+            }`}>
+              SAVE 20%
+            </span>
+          </button>
         </div>
       </div>
 
@@ -145,12 +135,15 @@ export default function PricingSection() {
         {plans.map((plan, idx) => (
           <div
             key={idx}
-            className={`rounded-[2.5rem] p-8 sm:p-10 border transition-all duration-300 flex flex-col justify-between relative group ${
+            className={`rounded-[2.5rem] p-8 sm:p-10 border transition-all duration-500 flex flex-col justify-between relative overflow-hidden group ${
               plan.popular
-                ? 'bg-slate-950/90 border-indigo-500/80 shadow-2xl shadow-indigo-500/5 -translate-y-2'
-                : 'bg-slate-900/30 border-slate-800/80 shadow-lg hover:border-slate-700/60'
+                ? 'bg-slate-950/90 border-indigo-500/70 shadow-2xl shadow-indigo-500/5 md:-translate-y-2'
+                : 'bg-slate-900/30 border-slate-800/80 shadow-lg hover:border-indigo-500/30 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/5'
             }`}
           >
+            {/* Glowing background accent on hover */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${plan.glow} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10`} />
+
             {plan.popular && (
               <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[9px] font-black tracking-widest uppercase px-5 py-1.5 rounded-full shadow-lg shadow-indigo-500/10 flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 fill-white" /> Recommended Tier
@@ -158,22 +151,34 @@ export default function PricingSection() {
             )}
 
             <div className="space-y-6">
-              <div>
+              <div className="flex items-center justify-between">
                 <h4 className="text-lg font-black text-white uppercase tracking-wider">{plan.name}</h4>
-                <p className="text-xs font-semibold text-slate-400 leading-relaxed mt-2">{plan.description}</p>
+                <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-colors shrink-0 ${plan.badgeColor}`}>
+                  {plan.name === 'Hobby' ? 'Hobbyist' : plan.name === 'Pro' ? 'Freelancer' : 'Agency'}
+                </span>
               </div>
+              <p className="text-xs font-semibold text-slate-400 leading-relaxed">{plan.description}</p>
 
-              <div className="flex items-baseline gap-1 pt-2">
+              <div className="flex items-baseline gap-1 pt-2 h-14">
                 {plan.price === 0 ? (
                   <span className="text-4xl font-black text-white tracking-tighter">Free</span>
                 ) : (
                   <>
                     <span className="text-xl font-black text-slate-400 self-start mt-1">₹</span>
-                    <span className="text-4xl font-black text-white tracking-tighter">{formatINR(plan.price)}</span>
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={plan.price}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15 }}
+                        className="text-4xl font-black text-white tracking-tighter inline-block"
+                      >
+                        {formatINR(plan.price)}
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="text-xs font-bold text-slate-500 ml-1">/ month</span>
                   </>
-                )}
-                {plan.price > 0 && (
-                  <span className="text-xs font-bold text-slate-500">/ month</span>
                 )}
               </div>
 
@@ -192,7 +197,7 @@ export default function PricingSection() {
 
               <ul className="space-y-3.5">
                 {plan.features.map((feature, fIdx) => (
-                  <li key={fIdx} className="flex items-center gap-3 text-xs text-slate-300 font-semibold leading-normal">
+                  <li key={fIdx} className="flex items-center gap-3 text-xs text-slate-350 font-semibold leading-normal group-hover:text-slate-200 transition-colors">
                     <div className="h-4.5 w-4.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center shrink-0">
                       <Check className="h-3 w-3 text-indigo-400" />
                     </div>
@@ -216,11 +221,6 @@ export default function PricingSection() {
           </div>
         ))}
       </div>
-
-      {/* INR note */}
-      <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-12">
-        All prices in Indian Rupees (₹) · GST applicable as per Indian tax regulations · Cancel anytime
-      </p>
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { LayoutDashboard, Users, Kanban, CreditCard, Compass } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import SectionHeader from '../shared/SectionHeader';
 import ConsoleWindow from '../shared/ConsoleWindow';
 import FeatureSidebarButton from '../shared/FeatureSidebarButton';
@@ -41,7 +42,9 @@ export default function FeatureTour() {
   const [activeSlide, setActiveSlide] = useState(0);
 
   return (
-    <section className="py-28 px-6 sm:px-12 max-w-7xl mx-auto bg-transparent">
+    <section className="py-28 px-6 sm:px-12 max-w-7xl mx-auto bg-transparent relative">
+      {/* Premium ambient glow flare behind the showcase */}
+      <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[130px] pointer-events-none -z-10" />
       
       {/* Standardized Section Header */}
       <SectionHeader 
@@ -69,13 +72,23 @@ export default function FeatureTour() {
           ))}
         </div>
 
-        {/* Right side live screenshot console window utilizing shared subcomponent */}
+        {/* Right side live screenshot console window with transition animations */}
         <div className="lg:col-span-7">
-          <ConsoleWindow 
-            title={`${screenshots[activeSlide].title.toLowerCase().replace(/ /g, '_')}_view`}
-            imageSrc={screenshots[activeSlide].path}
-            imageAlt={screenshots[activeSlide].title}
-          />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSlide}
+              initial={{ opacity: 0, y: 15, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.995 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              <ConsoleWindow 
+                title={`${screenshots[activeSlide].title.toLowerCase().replace(/ /g, '_')}_view`}
+                imageSrc={screenshots[activeSlide].path}
+                imageAlt={screenshots[activeSlide].title}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
       </div>
