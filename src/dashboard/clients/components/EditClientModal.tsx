@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateClientAction } from '@/dashboard/clients/actions/client-actions'
 import { X, Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, Link as LinkIcon } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 
 export function EditClientModal({ 
@@ -18,6 +19,7 @@ export function EditClientModal({
   onSuccess?: (updatedClient: Client) => void 
 }) {
   const { symbol } = useCurrency();
+  const { terms } = useWorkspace();
   const [pricingModel, setPricingModel] = useState(client.pricing_model || 'monthly')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -201,7 +203,7 @@ export function EditClientModal({
                   className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
                 >
                   <option value="monthly">Retainer (Monthly)</option>
-                  <option value="per_thumbnail">Pay Per Delivery</option>
+                  <option value="per_thumbnail">{terms.perUnitText}</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -217,7 +219,7 @@ export function EditClientModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Deliveries Quota</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly {terms.plural} Quota</label>
                 <input 
                   type="number" 
                   name="thumbnails_per_month" 
@@ -227,7 +229,7 @@ export function EditClientModal({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate Per Delivery ({symbol})</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rate Per {terms.singular} ({symbol})</label>
                 <input 
                   type="number" 
                   name="price_per_thumbnail" 

@@ -33,7 +33,8 @@ export function ClientTable({
       const result = await deleteClientAction(id);
       if (result.message !== 'success') throw new Error(result.message);
       if (onUpdate) onUpdate();
-    } catch {
+    } catch (error) {
+      console.error("Failed to delete client from card table:", error);
       alert("Failed to delete client.");
     }
   };

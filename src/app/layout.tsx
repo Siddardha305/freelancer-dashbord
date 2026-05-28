@@ -28,7 +28,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${plusJakarta.variable} ${inter.variable} antialiased`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `
+        <script dangerouslySetInnerHTML={{
+          __html: `
           (function() {
             try {
               var theme = localStorage.getItem('theme') || localStorage.getItem('admin-theme') || 'light';

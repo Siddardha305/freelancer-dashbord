@@ -32,6 +32,7 @@ interface LeanWorkDoc {
   priority: string;
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
 }
 
 export async function getWorksAction() {
@@ -98,7 +99,8 @@ export async function createWorkAction(prevState: unknown, formData: FormData) {
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success', id: newWork._id.toString() }
-  } catch {
+  } catch (error) {
+    console.error("Error creating work task:", error);
     return { message: 'Database Error' }
   }
 }
@@ -110,8 +112,10 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
   try {
     await dbConnect()
     const updateData: Record<string, unknown> = { status: newStatus }
-    if (newStatus === 'Completed') {
+    if (newStatus === 'Completed' || newStatus === 'Done') {
       updateData.completedAt = new Date().toISOString()
+    } else {
+      updateData.completedAt = null
     }
     
     const updated = await Work.findOneAndUpdate(
@@ -142,7 +146,8 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch {
+  } catch (error) {
+    console.error("Error updating work status:", error);
     return { message: 'Database Error' }
   }
 }
@@ -171,7 +176,8 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch {
+  } catch (error) {
+    console.error("Error updating work task:", error);
     return { message: 'Database Error' }
   }
 }
@@ -190,7 +196,8 @@ export async function deleteWorkAction(id: string) {
     revalidatePath('/dashboard/work')
     revalidatePath('/dashboard')
     return { message: 'success' }
-  } catch {
+  } catch (error) {
+    console.error("Error deleting work task:", error);
     return { message: 'Database Error' }
   }
 }

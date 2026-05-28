@@ -11,6 +11,7 @@ import {
   ChevronRight 
 } from "lucide-react";
 import { Client } from "@/types/client";
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 interface ClientPayoutCardProps {
   client: Client;
@@ -41,6 +42,7 @@ export function ClientPayoutCard({
   formatCurrency,
   onCreateInvoice
 }: ClientPayoutCardProps) {
+  const { terms } = useWorkspace();
   return (
     <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
       {/* Card Top — Client identity + progress bar */}
@@ -78,7 +80,7 @@ export function ClientPayoutCard({
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
                 {client.niche || "General"} ·{" "}
                 {client.pricing_model === "per_thumbnail"
-                  ? "Per Delivery"
+                  ? terms.perUnitText
                   : "Monthly Retainer"}
               </p>
             </div>
@@ -167,7 +169,7 @@ export function ClientPayoutCard({
         {/* Rate per task */}
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-            <TrendingUp className="h-3 w-3" /> Rate / Delivery
+            <TrendingUp className="h-3 w-3" /> Rate / {terms.singular}
           </span>
           <span className="text-xs font-black text-slate-700">
             {formatCurrency(ratePerTask)}

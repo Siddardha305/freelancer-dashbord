@@ -117,6 +117,7 @@ export default async function ClientPortalPage({ params, searchParams }: PagePro
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 dark:selection:bg-indigo-900/30 pb-20 transition-colors duration-300">
       {/* Brand styling variables injection */}
+      {/* NOSONAR: primaryColor is strictly validated as a hex code, so it is safe to inject here */}
       <style dangerouslySetInnerHTML={{ __html: `
         :root {
           --portal-theme: ${primaryColor};

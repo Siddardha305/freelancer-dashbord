@@ -24,7 +24,8 @@ export function WipeDatabaseButton() {
       } else {
         setStatus("error");
       }
-    } catch {
+    } catch (error) {
+      console.error("Database wipe failed:", error);
       setStatus("error");
     } finally {
       setIsWiping(false);

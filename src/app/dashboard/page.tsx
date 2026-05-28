@@ -3,12 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
-import { getPaymentsAction } from '@/dashboard/payments/actions/payment-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 import { useCurrency } from "@/context/CurrencyContext";
 import { Client } from '@/types/client';
 import { Work } from '@/types/work';
-import { Payment } from '@/types/payment';
 
 // Modular Sub-Components
 import { DashboardHeader } from "@/dashboard/overview/components/DashboardHeader";
@@ -21,23 +19,19 @@ export default function Home() {
   const { formatCurrency } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [clientsData, worksData, paymentsData, userData] = await Promise.all([
+        const [clientsData, worksData, userData] = await Promise.all([
           getClientsAction(),
           getWorksAction(),
-          getPaymentsAction(),
           getCurrentUserAction()
         ]);
         setClients(clientsData);
         setWorks(worksData);
-        setPayments(paymentsData);
         setCurrentUser(userData);
       } catch (error) {
         console.error("Error loading dashboard data:", error);

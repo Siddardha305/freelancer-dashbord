@@ -59,6 +59,7 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
       if (isNaN(d.getTime())) return '';
       return getLocalDateString(d);
     } catch {
+      // Return empty string on invalid/malformed date formats
       return '';
     }
   };
@@ -233,7 +234,7 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
             if (taskDateStr === dateStr) return true;
             
             // Overdue tasks rollover: If not completed, show on subsequent calendar cells up to today
-            const isCompleted = task.status === "Done";
+            const isCompleted = (task.status as string) === "Completed" || task.status === "Done";
             return !isCompleted && taskDateStr < dateStr && dateStr <= todayStr;
           });
 

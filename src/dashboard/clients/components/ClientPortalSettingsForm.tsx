@@ -64,7 +64,8 @@ export function ClientPortalSettingsForm({ client, onSuccess }: ClientPortalSett
       } else {
         toast.error(res.message || "Failed to update portal settings");
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to save portal settings:", error);
       toast.error("An unexpected error occurred");
     } finally {
       setIsUpdatingPortal(false);
@@ -85,7 +86,8 @@ export function ClientPortalSettingsForm({ client, onSuccess }: ClientPortalSett
       } else {
         toast.error(res.message || "Failed to regenerate token");
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to regenerate portal token:", error);
       toast.error("An error occurred");
     } finally {
       setIsRegeneratingToken(false);

@@ -65,7 +65,8 @@ export function ClientList({
     setDeletingId(id);
     try {
       await deleteClientAction(id);
-    } catch {
+    } catch (error) {
+      console.error("Failed to delete client:", error);
       alert("Failed to delete client.");
     } finally {
       setDeletingId(null);

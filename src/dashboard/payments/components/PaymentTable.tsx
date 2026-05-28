@@ -38,7 +38,8 @@ export function PaymentTable({ initialPayments = [] }: { initialPayments?: Payme
     try {
       const result = await updatePaymentStatusAction(id, newStatus);
       if (result.message !== 'success') throw new Error();
-    } catch {
+    } catch (error) {
+      console.error("Payment status update failed, rolling back:", error);
       setPayments(previousPayments);
     }
   };

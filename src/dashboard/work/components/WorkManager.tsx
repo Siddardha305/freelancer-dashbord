@@ -31,8 +31,6 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [prefilledDeadline, setPrefilledDeadline] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   const { data: tasks = initialTasks, isLoading } = useQuery({
@@ -68,7 +66,11 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       await queryClient.cancelQueries({ queryKey: ['works'] });
       const previousTasks = queryClient.getQueryData(['works']);
       queryClient.setQueryData(['works'], (old: Work[] | undefined) => 
-        old?.map((t: Work) => t.id === id ? { ...t, status: status as Work["status"] } : t)
+        old?.map((t: Work) => t.id === id ? { 
+          ...t, 
+          status: status as Work["status"],
+          completedAt: (status === 'Completed' || status === 'Done') ? new Date().toISOString() : undefined
+        } : t)
       );
       return { previousTasks };
     },
@@ -155,10 +157,27 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           task.client.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
-      const matchesStatus = statusFilter === "All" || task.status === statusFilter;
-      return matchesSearch && matchesPriority && matchesStatus;
+      return matchesSearch && matchesPriority;
     });
-  }, [tasks, searchTerm, priorityFilter, statusFilter]);
+  }, [tasks, searchTerm, priorityFilter]);
+
+  const activeTasksForBoardAndList = useMemo(() => {
+    return filteredTasks.filter((task: Work) => {
+      const isCompleted = (task.status as string) === "Completed" || task.status === "Done";
+      if (!isCompleted) return true;
+      
+      // For completed tasks, only show on board/list if deadline is today or in the future
+      try {
+        const deadlineDate = new Date(task.deadline);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        deadlineDate.setHours(0,0,0,0);
+        return deadlineDate >= today;
+      } catch {
+        return true;
+      }
+    });
+  }, [filteredTasks]);
 
   // Workload Analysis
   const weekStart = startOfWeek(now);
@@ -255,7 +274,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       ) : view === "board" ? (
         /* Board Kanban View */
         <WorkBoardView 
-          filteredTasks={filteredTasks}
+          filteredTasks={activeTasksForBoardAndList}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteTask}
         />
@@ -270,7 +289,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       ) : (
         /* List spreadsheet Activity view */
         <WorkListView 
-          filteredTasks={filteredTasks}
+          filteredTasks={activeTasksForBoardAndList}
           onStatusChange={handleStatusChange}
           onDeleteClick={(id) => setTaskToDelete(id)}
         />

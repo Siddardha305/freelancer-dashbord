@@ -4,6 +4,7 @@ import React from 'react';
 import { Trash2, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrency } from '@/context/CurrencyContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import { ClientAvatar } from './ClientAvatar';
 import { ClientIdentity } from './ClientIdentity';
 import { ClientContactInfo } from './ClientContactInfo';
@@ -27,6 +28,7 @@ export function ClientRow({
   onDeleteClick,
 }: ClientRowProps) {
   const { formatCurrency } = useCurrency();
+  const { terms } = useWorkspace();
   const sc = statusConfig[client.status] ?? statusConfig["Inactive"];
 
   return (
@@ -61,11 +63,11 @@ export function ClientRow({
           {formatCurrency(client.monthly_price || 0)}
         </p>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-          {client.pricing_model === "per_thumbnail" ? "Per delivery" : "Per month"}
+          {client.pricing_model === "per_thumbnail" ? `Per ${terms.unitShort}` : "Per month"}
         </p>
         {client.thumbnails_per_month > 0 && (
           <p className="text-[9px] font-bold text-indigo-400 mt-0.5">
-            {client.thumbnails_per_month} / mo
+            {client.thumbnails_per_month} {client.thumbnails_per_month === 1 ? terms.singular.toLowerCase() : terms.plural.toLowerCase()} / mo
           </p>
         )}
       </div>

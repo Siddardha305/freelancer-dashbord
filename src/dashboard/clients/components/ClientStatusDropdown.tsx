@@ -52,7 +52,8 @@ export function ClientStatusDropdown({
       if (onStatusChange) {
         onStatusChange(status);
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to update client status:", error);
       alert("Failed to update status.");
     }
   };

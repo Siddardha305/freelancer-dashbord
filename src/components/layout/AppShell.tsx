@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { CurrencyProvider } from '@/context/CurrencyContext'
 import { PlanProvider } from '@/context/PlanContext'
+import { WorkspaceProvider } from '@/context/WorkspaceContext'
 import { Menu, X } from 'lucide-react'
 import { AnimatedThemeToggler } from '@/components/shared/AnimatedThemeToggler'
 
@@ -20,6 +21,7 @@ interface AppShellProps {
     agencyLogoUrl?: string
     agencyLogoDarkUrl?: string;
     agencyBrandingMode?: string;
+    workspaceType?: string;
   } | null
 }
 
@@ -56,7 +58,8 @@ export function AppShell({ children, user }: AppShellProps) {
   return (
     <PlanProvider plan={user?.plan ?? 'hobby'}>
       <CurrencyProvider initialCurrency={user?.currency}>
-        <div className="flex flex-col lg:flex-row h-screen w-full bg-gray-50/50 dark:bg-black overflow-hidden">
+        <WorkspaceProvider initialWorkspaceType={user?.workspaceType}>
+          <div className="flex flex-col lg:flex-row h-screen w-full bg-gray-50/50 dark:bg-black overflow-hidden">
           
           {/* Mobile Header Bar */}
           <div className="lg:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
@@ -127,9 +130,9 @@ export function AppShell({ children, user }: AppShellProps) {
               {children}
             </main>
           </div>
-        </div>
+          </div>
+        </WorkspaceProvider>
       </CurrencyProvider>
     </PlanProvider>
   )
 }
-

@@ -5,6 +5,7 @@ import { createWorkAction } from '@/dashboard/work/actions/work-actions'
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
 import { X, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 
 const initialState = {
@@ -25,6 +26,7 @@ export function AddWorkModal({
 }) {
   const [state, formAction, isPending] = useActionState(createWorkAction, initialState)
   const [clients, setClients] = useState<Client[]>([])
+  const { terms } = useWorkspace()
 
   useEffect(() => {
     if (isOpen) {
@@ -70,7 +72,7 @@ export function AddWorkModal({
                 name="title" 
                 required
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
-                placeholder="e.g. GTA 5 Mod Thumbnail" 
+                placeholder={`e.g. ${terms.placeholderTask}`} 
               />
               {state?.errors?.title && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.title[0]}</p>}
             </div>

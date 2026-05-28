@@ -24,7 +24,8 @@ export function ResetWorkspaceButton() {
       } else {
         setStatus("error");
       }
-    } catch {
+    } catch (error) {
+      console.error("Workspace reset failed:", error);
       setStatus("error");
     } finally {
       setIsResetting(false);

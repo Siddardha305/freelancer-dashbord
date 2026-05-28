@@ -4,6 +4,7 @@ import { useActionState, useState, useEffect } from 'react'
 import { createClientAction } from '@/dashboard/clients/actions/client-actions'
 import { X, Loader2 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 
 interface FormState {
@@ -25,12 +26,11 @@ interface AddClientModalProps {
 
 export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalProps) {
   const { symbol, formatCurrency } = useCurrency();
+  const { terms } = useWorkspace();
   const [state, formAction, isPending] = useActionState(
     createClientAction as (state: FormState, formData: FormData) => Promise<FormState>,
     initialState
   )
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [pricingModel, setPricingModel] = useState('monthly')
   const [thumbnailsCount, setThumbnailsCount] = useState(0)
   const [pricePerUnit, setPricePerUnit] = useState(400)
 
@@ -118,16 +118,15 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                   name="pricing_model" 
                   className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[10px] font-bold text-slate-600 focus:outline-none"
                   defaultValue="monthly"
-                  onChange={(e) => setPricingModel(e.target.value)}
                 >
                   <option value="monthly">Retainer (Monthly)</option>
-                  <option value="per_thumbnail">Pay Per Delivery</option>
+                  <option value="per_thumbnail">{terms.perUnitText}</option>
                 </select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label htmlFor="thumbnails_per_month" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Deliveries / Month</label>
+                <label htmlFor="thumbnails_per_month" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{terms.plural} / Month</label>
                 <input 
                   type="number" 
                   id="thumbnails_per_month" 
@@ -138,7 +137,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="price_per_thumbnail" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Rate / Delivery ({symbol})</label>
+                <label htmlFor="price_per_thumbnail" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Rate / {terms.singular} ({symbol})</label>
                 <input 
                   type="number" 
                   id="price_per_thumbnail" 

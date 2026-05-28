@@ -64,6 +64,11 @@ const UserSchema = new Schema({
     enum: ['logo', 'text', 'both'],
     default: 'both',
   },
+  workspaceType: {
+    type: String,
+    enum: ['video_editing', 'digital_marketing', 'photography', 'general'],
+    default: 'video_editing',
+  },
 }, {
   timestamps: true,
 });

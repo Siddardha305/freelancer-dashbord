@@ -261,6 +261,7 @@ export async function updateProfileAction(data: {
   agencyLogoUrl?: string;
   agencyLogoDarkUrl?: string;
   agencyBrandingMode?: string;
+  workspaceType?: string;
 }) {
   await dbConnect();
   const user = await getSessionUser();
@@ -308,6 +309,7 @@ export async function updateProfileAction(data: {
       agencyLogoUrl: data.agencyLogoUrl ? data.agencyLogoUrl.trim() : null,
       agencyLogoDarkUrl: data.agencyLogoDarkUrl ? data.agencyLogoDarkUrl.trim() : null,
       agencyBrandingMode: data.agencyBrandingMode || 'both',
+      workspaceType: data.workspaceType || 'video_editing',
     });
 
     revalidatePath('/dashboard', 'layout');

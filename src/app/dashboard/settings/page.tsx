@@ -10,6 +10,7 @@ import { cn, resizeAndCompressLogo } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useWorkspace, WorkspaceType } from "@/context/WorkspaceContext";
 import { usePlan } from "@/context/PlanContext";
 import { PlanId } from "@/lib/plans";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import { ClientPortalSettingsForm } from "@/dashboard/clients/components/ClientP
 export default function SettingsPage() {
   const router = useRouter();
   const { setCurrency: setGlobalCurrency } = useCurrency();
+  const { setWorkspaceType: setGlobalWorkspaceType } = useWorkspace();
   const [activeTab, setActiveTab] = useState<"general" | "portals" | "pricing" | "diagnostics">(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -34,13 +36,14 @@ export default function SettingsPage() {
   });
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string; plan?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string; plan?: string; workspaceType?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [currency, setCurrency] = useState("INR");
+  const [workspaceType, setWorkspaceType] = useState<"video_editing" | "digital_marketing" | "photography" | "general">("video_editing");
   const [agencyName, setAgencyName] = useState("");
   const [agencyLogoUrl, setAgencyLogoUrl] = useState("");
   const [agencyLogoDarkUrl, setAgencyLogoDarkUrl] = useState("");
@@ -88,6 +91,7 @@ export default function SettingsPage() {
           setEmail(user.email || "");
           setBio(user.bio || "");
           setCurrency(user.currency || "INR");
+          setWorkspaceType((user.workspaceType as WorkspaceType) || "video_editing");
           setAgencyName(user.agencyName || "");
           setAgencyLogoUrl(user.agencyLogoUrl || "");
           setAgencyLogoDarkUrl(user.agencyLogoDarkUrl || "");
@@ -120,6 +124,7 @@ export default function SettingsPage() {
         email, 
         bio, 
         currency,
+        workspaceType,
         agencyName: agencyName.trim() || undefined,
         agencyLogoUrl: agencyLogoUrl.trim() || undefined,
         agencyLogoDarkUrl: agencyLogoDarkUrl.trim() || undefined,
@@ -128,6 +133,7 @@ export default function SettingsPage() {
       if (res.success) {
         toast.success(res.message);
         setGlobalCurrency(currency);
+        setGlobalWorkspaceType(workspaceType);
         // Refresh local details
         const updatedUser = await getCurrentUserAction();
         setCurrentUser(updatedUser);
@@ -349,27 +355,46 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-end justify-end">
-                        <button 
-                          type="button"
-                          onClick={handleSaveProfile}
-                          disabled={profileSaving}
-                          className="w-full md:w-auto px-8 py-4 text-[10px] font-black text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest"
-                        >
-                          {profileSaving ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              <span>Saving Profile...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4" />
-                              <span>Save Profile Settings</span>
-                            </>
-                          )}
-                        </button>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Workspace Niche / Type</label>
+                        <div className="relative">
+                          <select 
+                            value={workspaceType} 
+                            onChange={(e) => setWorkspaceType(e.target.value as WorkspaceType)}
+                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer"
+                          >
+                            <option value="video_editing">Video Editing & Design (Thumbnails)</option>
+                            <option value="photography">Photography & Media (Shoots)</option>
+                            <option value="digital_marketing">Digital Marketing (Campaigns)</option>
+                            <option value="general">General Freelancing (Deliverables)</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                      <button 
+                        type="button"
+                        onClick={handleSaveProfile}
+                        disabled={profileSaving}
+                        className="w-full md:w-auto px-8 py-4 text-[10px] font-black text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest"
+                      >
+                        {profileSaving ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Saving Profile...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4" />
+                            <span>Save Profile Settings</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

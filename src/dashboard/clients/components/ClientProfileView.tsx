@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -53,8 +53,7 @@ export function ClientProfileView({
     refetchInterval: 10000,
   });
 
-  // eslint-disable-next-line react-hooks/purity
-  const currentTimestamp = useMemo(() => Date.now(), []);
+  const [currentTimestamp] = useState(() => Date.now());
 
   const clientTasks = (tasks as Work[]).filter((t: Work) => t.client === client.name);
 
@@ -120,7 +119,8 @@ export function ClientProfileView({
       } else {
         toast.error(result.message || "Failed to delete client");
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to delete client from profile view:", error);
       toast.error("An unexpected error occurred");
     } finally {
       setIsDeleting(false);

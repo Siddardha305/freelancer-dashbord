@@ -3,6 +3,7 @@
 import React from 'react';
 import { AlertCircle } from "lucide-react";
 import { Client } from "@/types/client";
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 interface ClientInfoPaneProps {
   client: Client;
@@ -15,6 +16,7 @@ export function ClientInfoPane({
   isExpiringSoon,
   formatCurrency
 }: ClientInfoPaneProps) {
+  const { terms } = useWorkspace();
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Contract & Revenue */}
@@ -32,7 +34,7 @@ export function ClientInfoPane({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pricing Model</p>
-            <p className="text-xs sm:text-sm font-bold text-slate-900">{client.pricing_model === 'per_thumbnail' ? 'Per Thumbnail' : 'Monthly Retainer'}</p>
+            <p className="text-xs sm:text-sm font-bold text-slate-900">{client.pricing_model === 'per_thumbnail' ? `Per ${terms.singular}` : 'Monthly Retainer'}</p>
           </div>
           <div>
             <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rate</p>
