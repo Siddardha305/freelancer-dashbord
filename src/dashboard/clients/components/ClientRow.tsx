@@ -59,10 +59,10 @@ export function ClientRow({
 
       {/* Pricing / Plan details */}
       <div>
-        <p className="text-sm font-black text-slate-900">
+        <p className="text-sm font-black text-slate-900 dark:text-slate-100">
           {formatCurrency(client.monthly_price || 0)}
         </p>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
           {client.pricing_model === "per_thumbnail" ? `Per ${terms.unitShort}` : "Per month"}
         </p>
         {client.thumbnails_per_month > 0 && (

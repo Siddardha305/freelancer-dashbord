@@ -270,13 +270,11 @@ export default function ClientsPage() {
         </div>
       </main>
 
-      {isAddModalOpen && (
-        <AddClientModal 
-          isOpen={isAddModalOpen} 
-          onClose={() => setIsAddModalOpen(false)} 
-          onSuccess={refreshData}
-        />
-      )}
+      <AddClientModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={refreshData}
+      />
 
       {/* Reusable slide-over Client Profile Drawer Component */}
       <ClientProfileDrawer 

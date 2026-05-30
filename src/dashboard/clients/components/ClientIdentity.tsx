@@ -3,9 +3,9 @@
 import React from 'react';
 
 const priorityColor: Record<string, string> = {
-  High: "text-red-600 bg-red-50 border-red-100",
-  Medium: "text-amber-600 bg-amber-50 border-amber-100",
-  Low: "text-emerald-600 bg-emerald-50 border-emerald-100",
+  High: "text-red-600 bg-red-50 border-red-100 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/30",
+  Medium: "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30",
+  Low: "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30",
 };
 
 interface ClientIdentityProps {
@@ -20,7 +20,7 @@ export function ClientIdentity({ name, niche = 'General', priority, className = 
 
   return (
     <div className={`min-w-0 ${className}`}>
-      <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+      <h3 className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
         {name}
       </h3>
       <div className="flex items-center gap-2 mt-0.5">

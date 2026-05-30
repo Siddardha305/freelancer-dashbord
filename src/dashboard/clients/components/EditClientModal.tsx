@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updateClientAction } from '@/dashboard/clients/actions/client-actions'
-import { X, Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, Link as LinkIcon } from 'lucide-react'
+import { Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, Link as LinkIcon } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
+import { RadixDialog, RadixSelect } from '@/components/ui/RadixAnimate'
 
 export function EditClientModal({ 
   isOpen, 
@@ -15,16 +16,26 @@ export function EditClientModal({
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  client: Client;
+  client: Client | null;
   onSuccess?: (updatedClient: Client) => void 
 }) {
   const { symbol } = useCurrency();
   const { terms } = useWorkspace();
-  const [pricingModel, setPricingModel] = useState(client.pricing_model || 'monthly')
+  const [pricingModel, setPricingModel] = useState('monthly')
+  const [status, setStatus] = useState('Active')
+  const [priority, setPriority] = useState('Medium')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  if (!isOpen || !client) return null
+  useEffect(() => {
+    if (client) {
+      setPricingModel(client.pricing_model || 'monthly');
+      setStatus(client.status || 'Active');
+      setPriority(client.priority || 'Medium');
+    }
+  }, [client]);
+
+  if (!client) return null
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -57,22 +68,16 @@ export function EditClientModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 p-4">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden relative border border-slate-200 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="flex justify-between items-center p-8 border-b border-slate-100 shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Client Profile</h2>
-            <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Update information for {client.name}</p>
-          </div>
-          <button onClick={onClose} className="p-2.5 bg-slate-50 rounded-2xl text-slate-400 hover:text-slate-600 transition-all active:scale-90">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
+    <RadixDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Client Profile"
+      description={`Update information for ${client.name}`}
+      sizeClassName="max-w-2xl"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden max-h-[75vh]">
+        {/* Form Body Scroll Area */}
+        <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
           
           {/* Basic Information Section */}
           <section className="space-y-6">
@@ -160,7 +165,7 @@ export function EditClientModal({
                     type="text" 
                     name="timezone" 
                     defaultValue={client.timezone}
-                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold" 
+                    className="w-full pl-12 pr-5 py-4 bg-slate-55 border border-slate-205 rounded-2xl text-sm font-bold" 
                   />
                 </div>
               </div>
@@ -172,39 +177,44 @@ export function EditClientModal({
             <div className="flex items-center justify-between">
                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Pricing & Status</h3>
                <div className="flex gap-2">
-                 <select 
+                 <RadixSelect 
                     name="status" 
-                    defaultValue={client.status}
-                    className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[10px] font-bold text-slate-600"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                  <select 
+                    value={status}
+                    onValueChange={setStatus}
+                    options={[
+                      { value: "Active", label: "Active" },
+                      { value: "On Hold", label: "On Hold" },
+                      { value: "Completed", label: "Completed" }
+                    ]}
+                    className="!px-3 !py-1.5 bg-white rounded-xl text-[10px] font-bold text-slate-650 focus:ring-0 focus:border-slate-200 w-auto"
+                  />
+                  <RadixSelect 
                     name="priority" 
-                    defaultValue={client.priority}
-                    className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[10px] font-bold text-slate-600"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
+                    value={priority}
+                    onValueChange={setPriority}
+                    options={[
+                      { value: "High", label: "High" },
+                      { value: "Medium", label: "Medium" },
+                      { value: "Low", label: "Low" }
+                    ]}
+                    className="!px-3 !py-1.5 bg-white rounded-xl text-[10px] font-bold text-slate-650 focus:ring-0 focus:border-slate-200 w-auto"
+                  />
                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pricing Model</label>
-                <select 
+                <RadixSelect 
                   name="pricing_model" 
-                  defaultValue={pricingModel}
-                  onChange={(e) => setPricingModel(e.target.value)}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
-                >
-                  <option value="monthly">Retainer (Monthly)</option>
-                  <option value="per_thumbnail">{terms.perUnitText}</option>
-                </select>
+                  value={pricingModel}
+                  onValueChange={setPricingModel}
+                  options={[
+                    { value: "monthly", label: "Retainer (Monthly)" },
+                    { value: "per_thumbnail", label: terms.perUnitText }
+                  ]}
+                  className="bg-white w-full border border-slate-200 rounded-2xl text-sm font-bold px-5 py-4"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monthly Rate / Price ({symbol})</label>
@@ -265,7 +275,7 @@ export function EditClientModal({
           {/* Social & Notes Section */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-8 w-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+              <div className="h-8 w-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-650">
                 <LinkIcon className="h-4 w-4" />
               </div>
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Additional Details</h3>
@@ -311,10 +321,10 @@ export function EditClientModal({
                {error}
             </div>
           )}
-        </form>
+        </div>
 
-        {/* Footer */}
-        <div className="p-8 border-t border-slate-100 flex gap-4 shrink-0">
+        {/* Footer (Sticky within Modal form) */}
+        <div className="p-8 border-t border-slate-100 flex gap-4 shrink-0 bg-white">
           <button 
             type="button" 
             onClick={onClose} 
@@ -323,7 +333,7 @@ export function EditClientModal({
             Cancel
           </button>
           <button 
-            onClick={() => (document.querySelector('form') as HTMLFormElement).requestSubmit()}
+            type="submit"
             disabled={loading} 
             className="flex-2 flex items-center justify-center gap-3 bg-indigo-600 text-white px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-100 active:scale-95"
           >
@@ -331,7 +341,7 @@ export function EditClientModal({
             Save Changes
           </button>
         </div>
-      </div>
-    </div>
+      </form>
+    </RadixDialog>
   )
 }

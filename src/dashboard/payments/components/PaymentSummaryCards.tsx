@@ -1,15 +1,12 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { 
   CheckCircle2, 
   Clock, 
   ArrowUpRight, 
   TrendingUp 
 } from 'lucide-react';
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
-import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { useCurrency } from '@/context/CurrencyContext';
 import { Client } from '@/types/client';
 import { Work } from '@/types/work';
@@ -17,23 +14,16 @@ import { Payment } from '@/types/payment';
 
 interface PaymentSummaryCardsProps {
   payments: Payment[];
+  clients?: Client[];
+  works?: Work[];
 }
 
-export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps) {
+export function PaymentSummaryCards({ 
+  payments = [],
+  clients = [],
+  works = []
+}: PaymentSummaryCardsProps) {
   const { formatCurrency, symbol } = useCurrency();
-
-  // Fetch real-time active client payouts and pipeline status
-  const { data: clients = [] } = useQuery({
-    queryKey: ["clients"],
-    queryFn: getClientsAction,
-    refetchInterval: 8000,
-  });
-
-  const { data: works = [] } = useQuery({
-    queryKey: ["works"],
-    queryFn: getWorksAction,
-    refetchInterval: 8000,
-  });
 
   // Real-time Invoice Calculations
   const totalCollected = payments.filter((p: Payment) => p.payment_status === "Paid").reduce((acc: number, curr: Payment) => acc + Number(curr.amount), 0);
@@ -66,16 +56,44 @@ export function PaymentSummaryCards({ payments = [] }: PaymentSummaryCardsProps)
         ? client.monthly_price || 0
         : quota * ratePerTask;
 
-    // Completed this month
+    // Rolling task start date calculation based on paid/unpaid invoice history
+    const clientPayments = payments.filter(p => p.client === client.name);
+    const unpaidPayments = clientPayments.filter(p => p.payment_status === "Pending" || p.payment_status === "Overdue");
+    
+    let taskStartDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0); // Default to start of current month
+    
+    if (unpaidPayments.length > 0) {
+      // If there are unpaid invoices, roll over and include all tasks since the earliest unpaid invoice month
+      let earliestUnpaidDate = new Date();
+      unpaidPayments.forEach(p => {
+        const d = p.invoiceDate ? new Date(p.invoiceDate) : (p.createdAt ? new Date(p.createdAt) : new Date());
+        if (d < earliestUnpaidDate) {
+          earliestUnpaidDate = d;
+        }
+      });
+      taskStartDate = new Date(earliestUnpaidDate.getFullYear(), earliestUnpaidDate.getMonth(), 1, 0, 0, 0, 0);
+    } else {
+      // If fully paid, only count tasks completed after the latest paid invoice date
+      const paidPayments = clientPayments.filter(p => p.payment_status === "Paid");
+      if (paidPayments.length > 0) {
+        let latestPaidDate = new Date(0);
+        paidPayments.forEach(p => {
+          const d = p.invoiceDate ? new Date(p.invoiceDate) : (p.createdAt ? new Date(p.createdAt) : new Date(0));
+          if (d > latestPaidDate) {
+            latestPaidDate = d;
+          }
+        });
+        taskStartDate = latestPaidDate;
+      }
+    }
+
+    // Completed tasks for current billing period
     const completedThisMonth = clientWorks.filter((w: Work) => {
       if ((w.status as string) !== "Completed" && w.status !== "Done") return false;
       const dateStr = w.completedAt || w.updatedAt || w.createdAt;
       if (!dateStr) return false;
       const d = new Date(dateStr);
-      return (
-        d.getMonth() === now.getMonth() &&
-        d.getFullYear() === now.getFullYear()
-      );
+      return d > taskStartDate;
     });
 
     // Pending (To Do / In Progress / Review)

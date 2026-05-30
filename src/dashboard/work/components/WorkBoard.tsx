@@ -19,10 +19,10 @@ export function WorkBoard() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start pb-8">
-      <WorkColumn title="To Do" count={1} tasks={tasks.filter(t => t.status === "To Do")} onStatusChange={handleStatusChange} onDelete={handleDelete} />
-      <WorkColumn title="In Progress" count={1} tasks={tasks.filter(t => t.status === "In Progress")} onStatusChange={handleStatusChange} onDelete={handleDelete} />
-      <WorkColumn title="Review/Revision" count={1} tasks={tasks.filter(t => t.status === "Review")} onStatusChange={handleStatusChange} onDelete={handleDelete} alert />
-      <WorkColumn title="Completed" count={1} tasks={tasks.filter(t => t.status === "Completed")} onStatusChange={handleStatusChange} onDelete={handleDelete} />
+      <WorkColumn title="To Do" count={1} tasks={tasks.filter(t => t.status === "To Do")} onStatusChange={handleStatusChange} onDelete={handleDelete} clients={[]} />
+      <WorkColumn title="In Progress" count={1} tasks={tasks.filter(t => t.status === "In Progress")} onStatusChange={handleStatusChange} onDelete={handleDelete} clients={[]} />
+      <WorkColumn title="Review/Revision" count={1} tasks={tasks.filter(t => t.status === "Review")} onStatusChange={handleStatusChange} onDelete={handleDelete} clients={[]} alert />
+      <WorkColumn title="Completed" count={1} tasks={tasks.filter(t => t.status === "Completed")} onStatusChange={handleStatusChange} onDelete={handleDelete} clients={[]} />
     </div>
   );
 }

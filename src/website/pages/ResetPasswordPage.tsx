@@ -156,6 +156,8 @@ function ResetPasswordForm() {
   );
 }
 
+import { motion } from 'framer-motion';
+
 export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden">
@@ -164,7 +166,12 @@ export default function ResetPasswordPage() {
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto w-full max-w-md z-10 px-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="sm:mx-auto w-full max-w-md z-10 px-4"
+      >
         <Link href="/login" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-8 group">
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Sign In
@@ -187,7 +194,7 @@ export default function ResetPasswordPage() {
             <ResetPasswordForm />
           </Suspense>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

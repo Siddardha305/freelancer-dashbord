@@ -1,13 +1,12 @@
 'use client'
 
 import React from 'react';
-import { useQuery } from "@tanstack/react-query";
-import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
-import { getWorksAction } from "@/dashboard/work/actions/work-actions";
 import { format } from "date-fns";
 import { useCurrency } from "@/context/CurrencyContext";
 import { Client } from "@/types/client";
 import { Work } from "@/types/work";
+import { Payment } from "@/types/payment";
+import { useState } from "react";
 
 // Modular Sub-Components
 import { PayoutHeader } from "./PayoutHeader";
@@ -15,24 +14,34 @@ import { ClientPayoutCard } from "./ClientPayoutCard";
 
 interface MonthlyPayoutSummaryProps {
   onCreateInvoice?: (clientName: string, amount: number) => void;
+  onSuccess?: () => void;
+  clients?: Client[];
+  works?: Work[];
+  payments?: Payment[];
 }
 
-export function MonthlyPayoutSummary({ onCreateInvoice }: MonthlyPayoutSummaryProps) {
+export function MonthlyPayoutSummary({ 
+  onCreateInvoice, 
+  onSuccess,
+  clients = [],
+  works = [],
+  payments = []
+}: MonthlyPayoutSummaryProps) {
   const { formatCurrency } = useCurrency();
-  const { data: clients = [] } = useQuery({
-    queryKey: ["clients"],
-    queryFn: getClientsAction,
-    refetchInterval: 8000,
-  });
 
-  const { data: works = [] } = useQuery({
-    queryKey: ["works"],
-    queryFn: getWorksAction,
-    refetchInterval: 8000,
-  });
+  const [timeframe, setTimeframe] = useState<'this_month' | 'last_month' | 'last_3m' | 'last_year'>('this_month');
 
   const now = new Date();
-  const monthLabel = format(now, "MMMM yyyy");
+  
+  let monthLabel = format(now, "MMMM yyyy");
+  if (timeframe === 'last_month') {
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    monthLabel = format(lastMonthDate, "MMMM yyyy");
+  } else if (timeframe === 'last_3m') {
+    monthLabel = "Last 3 Months";
+  } else if (timeframe === 'last_year') {
+    monthLabel = "Last Year";
+  }
 
   const clientPayouts = (clients as Client[])
     .map((client: Client) => {
@@ -54,16 +63,56 @@ export function MonthlyPayoutSummary({ onCreateInvoice }: MonthlyPayoutSummaryPr
           ? client.monthly_price || 0
           : quota * ratePerTask;
 
-      // Completed this month
+      // Rolling task start date calculation based on paid/unpaid invoice history
+      const clientPayments = payments.filter(p => p.client === client.name);
+      
+      let taskStartDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0); // Default to start of current month
+      let taskEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999); // End of current month
+      
+      if (timeframe === 'this_month') {
+        const unpaidPayments = clientPayments.filter(p => p.payment_status === "Pending" || p.payment_status === "Overdue");
+        if (unpaidPayments.length > 0) {
+          // If there are unpaid invoices, roll over and include all tasks since the earliest unpaid invoice month
+          let earliestUnpaidDate = new Date();
+          unpaidPayments.forEach(p => {
+            const d = p.invoiceDate ? new Date(p.invoiceDate) : (p.createdAt ? new Date(p.createdAt) : new Date());
+            if (d < earliestUnpaidDate) {
+              earliestUnpaidDate = d;
+            }
+          });
+          taskStartDate = new Date(earliestUnpaidDate.getFullYear(), earliestUnpaidDate.getMonth(), 1, 0, 0, 0, 0);
+        } else {
+          // If fully paid, only count tasks completed after the latest paid invoice date
+          const paidPayments = clientPayments.filter(p => p.payment_status === "Paid");
+          if (paidPayments.length > 0) {
+            let latestPaidDate = new Date(0);
+            paidPayments.forEach(p => {
+              const d = p.invoiceDate ? new Date(p.invoiceDate) : (p.createdAt ? new Date(p.createdAt) : new Date(0));
+              if (d > latestPaidDate) {
+                latestPaidDate = d;
+              }
+            });
+            taskStartDate = latestPaidDate;
+          }
+        }
+      } else if (timeframe === 'last_month') {
+        taskStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+        taskEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      } else if (timeframe === 'last_3m') {
+        taskStartDate = new Date(now.getFullYear(), now.getMonth() - 3, 1, 0, 0, 0, 0);
+        taskEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      } else if (timeframe === 'last_year') {
+        taskStartDate = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0, 0);
+        taskEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      }
+
+      // Completed tasks for current billing period
       const completedThisMonth = clientWorks.filter((w: Work) => {
         if ((w.status as string) !== "Completed" && w.status !== "Done") return false;
         const dateStr = w.completedAt || w.updatedAt || w.createdAt;
         if (!dateStr) return false;
         const d = new Date(dateStr);
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear()
-        );
+        return d > taskStartDate && d <= taskEndDate;
       });
 
       // Pending (To Do / In Progress / Review)
@@ -115,6 +164,8 @@ export function MonthlyPayoutSummary({ onCreateInvoice }: MonthlyPayoutSummaryPr
         totalPayoutDue={totalPayoutDue}
         totalPending={totalPending}
         formatCurrency={formatCurrency}
+        timeframe={timeframe}
+        setTimeframe={setTimeframe}
       />
 
       {/* Responsive Client Payout Grid */}

@@ -260,6 +260,7 @@ export async function updateProfileAction(data: {
   agencyName?: string;
   agencyLogoUrl?: string;
   agencyLogoDarkUrl?: string;
+  agencyScannerUrl?: string;
   agencyBrandingMode?: string;
   workspaceType?: string;
 }) {
@@ -291,6 +292,9 @@ export async function updateProfileAction(data: {
     if (data.agencyLogoDarkUrl && data.agencyLogoDarkUrl.length > MAX_LOGO_SIZE) {
       return { success: false, message: 'Dark logo image exceeds the 2MB size limit' };
     }
+    if (data.agencyScannerUrl && data.agencyScannerUrl.length > MAX_LOGO_SIZE) {
+      return { success: false, message: 'Scanner QR image exceeds the 2MB size limit' };
+    }
 
     // Check email uniqueness if it changed
     if (rawEmail !== user.email.toLowerCase()) {
@@ -308,6 +312,7 @@ export async function updateProfileAction(data: {
       agencyName: data.agencyName ? data.agencyName.trim() : null,
       agencyLogoUrl: data.agencyLogoUrl ? data.agencyLogoUrl.trim() : null,
       agencyLogoDarkUrl: data.agencyLogoDarkUrl ? data.agencyLogoDarkUrl.trim() : null,
+      agencyScannerUrl: data.agencyScannerUrl ? data.agencyScannerUrl.trim() : null,
       agencyBrandingMode: data.agencyBrandingMode || 'both',
       workspaceType: data.workspaceType || 'video_editing',
     });

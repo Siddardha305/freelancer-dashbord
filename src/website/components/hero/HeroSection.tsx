@@ -1,17 +1,19 @@
 'use client'
 
-import React from 'react';
+import { motion } from 'framer-motion';
 import { Sparkles, Shield, Cpu, RefreshCw, Layers } from 'lucide-react';
 import TechBadge from '../shared/TechBadge';
 import ConsoleWindow from '../shared/ConsoleWindow';
 import MetricsCard from '../shared/MetricsCard';
 import { InteractiveHoverButton, InteractiveHoverButtonOutline } from '../ui/InteractiveHoverButton';
+import { AnimatedBackground } from '../ui/AnimateUI';
 
 export default function HeroSection() {
   return (
     <>
       {/* Subtle flares for premium background depth */}
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <AnimatedBackground className="opacity-50" />
 
       {/* Hero Section */}
       <section className="pt-40 pb-24 px-6 sm:px-12 max-w-7xl mx-auto flex flex-col items-center text-center relative">
@@ -62,8 +64,10 @@ export default function HeroSection() {
           `}</style>
 
           {/* Left Floating Card: Revision task */}
-          <div 
-            className="hidden lg:block absolute -left-12 top-1/4 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-1"
+          <motion.div 
+            whileHover={{ scale: 1.05, y: -5, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            className="hidden lg:block absolute -left-12 top-1/4 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-1 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-black uppercase tracking-wider">
@@ -81,11 +85,13 @@ export default function HeroSection() {
                 <p className="text-[8px] font-semibold text-slate-505">Video Producer</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Floating Card: Payout Summary */}
-          <div 
-            className="hidden lg:block absolute -right-12 top-1/3 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-2"
+          <motion.div 
+            whileHover={{ scale: 1.05, y: 5, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            className="hidden lg:block absolute -right-12 top-1/3 z-20 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 p-4.5 rounded-2xl shadow-2xl w-56 text-left animate-float-2 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-405 text-[8px] font-black uppercase tracking-wider">
@@ -101,7 +107,7 @@ export default function HeroSection() {
               </div>
               <p className="text-[10px] font-bold text-slate-200">Aryan Sharma</p>
             </div>
-          </div>
+          </motion.div>
 
           <ConsoleWindow 
             title="freelanceos_workspace_v1.1" 

@@ -1,4 +1,4 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model, models } from 'mongoose';
 
 const UserSchema = new Schema({
   name: {
@@ -59,6 +59,10 @@ const UserSchema = new Schema({
     type: String,
     default: null,
   },
+  agencyScannerUrl: {
+    type: String,
+    default: null,
+  },
   agencyBrandingMode: {
     type: String,
     enum: ['logo', 'text', 'both'],
@@ -72,6 +76,14 @@ const UserSchema = new Schema({
 }, {
   timestamps: true,
 });
+
+// Clear stale cached model if it lacks the recently added agencyScannerUrl field
+if (models.User && !models.User.schema.paths.agencyScannerUrl) {
+  delete (models as any).User;
+  if (mongoose.modelNames().includes('User')) {
+    mongoose.deleteModel('User');
+  }
+}
 
 const User = models.User || model('User', UserSchema);
 

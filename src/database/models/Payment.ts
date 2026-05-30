@@ -65,11 +65,19 @@ const PaymentSchema = new Schema({
     ref: 'User',
     index: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
 }, {
   timestamps: true,
 });
 
-const Payment = models.Payment || model('Payment', PaymentSchema);
+if (models.Payment) {
+  delete (models as any).Payment;
+}
+const Payment = model('Payment', PaymentSchema);
 
 export default Payment;
 

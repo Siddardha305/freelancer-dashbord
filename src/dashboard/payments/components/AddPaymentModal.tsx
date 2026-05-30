@@ -10,6 +10,9 @@ import { useCurrency } from '@/context/CurrencyContext'
 import { format } from 'date-fns'
 import { Client } from '@/types/client'
 import { Payment } from '@/types/payment'
+import { Work } from '@/types/work'
+import { getCurrentUserAction } from '@/auth/actions/auth-actions'
+import { getWorksAction } from '@/dashboard/work/actions/work-actions'
 
 interface FormState {
   message: string;
@@ -43,7 +46,9 @@ export function AddPaymentModal({
     initialState
   )
   const [clients, setClients] = useState<Client[]>([])
+  const [works, setWorks] = useState<Work[]>([])
   const [showSuccess, setShowSuccess] = useState(false)
+  const [currentUser, setCurrentUser] = useState<{ agencyName?: string; agencyLogoUrl?: string; agencyLogoDarkUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null>(null);
 
   // Prefill states
   const [selectedClient, setSelectedClient] = useState(initialClient);
@@ -62,11 +67,19 @@ export function AddPaymentModal({
 
   useEffect(() => {
     if (isOpen) {
-      async function loadClients() {
+      async function loadClientsAndUser() {
         const data = await getClientsAction();
         setClients(data);
+        try {
+          const user = await getCurrentUserAction();
+          setCurrentUser(user);
+          const worksData = await getWorksAction();
+          setWorks(worksData);
+        } catch (e) {
+          console.error("Failed to load user branding details:", e);
+        }
       }
-      loadClients();
+      loadClientsAndUser();
 
       const timer = setTimeout(() => {
         const defaultDate = new Date();
@@ -101,7 +114,44 @@ export function AddPaymentModal({
           
           <div className="w-full flex flex-col gap-3 px-2">
             <button 
-              onClick={() => state.payment && downloadInvoice(state.payment, symbol)}
+              onClick={() => {
+                if (!state.payment) return;
+
+                const clientObj = clients.find(c => c.name === selectedClient);
+                const quota = clientObj?.thumbnails_per_month || 8;
+                const ratePerTask = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
+                  ? clientObj.price_per_thumbnail
+                  : (quota > 0 ? (clientObj?.monthly_price || 0) / quota : 0);
+
+                const today = new Date();
+                const start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+                const end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+                const completedTasks = works.filter((w) => {
+                  if (w.client !== selectedClient) return false;
+                  if ((w.status as string) !== 'Completed' && (w.status as string) !== 'Done') return false;
+                  const dateStr = w.completedAt || w.updatedAt || w.createdAt;
+                  if (!dateStr) return false;
+                  const d = new Date(dateStr);
+                  return d >= start && d <= end;
+                });
+
+                const lineItems = completedTasks.map(w => ({
+                  title: w.title,
+                  amount: ratePerTask
+                }));
+
+                downloadInvoice(
+                  state.payment, 
+                  symbol,
+                  currentUser?.agencyName,
+                  currentUser?.agencyLogoUrl,
+                  currentUser?.agencyBrandingMode || "both",
+                  lineItems,
+                  ratePerTask,
+                  currentUser?.agencyScannerUrl
+                );
+              }}
               className="flex items-center justify-center gap-3 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
             >
               <Download className="h-4 w-4" />

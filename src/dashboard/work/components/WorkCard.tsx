@@ -1,6 +1,7 @@
 'use client'
 
 import React from "react";
+import { Client } from "@/types/client";
 import { Clock, CheckCircle2, AlertCircle, Play, Search, Check, RefreshCcw, Trash2 } from "lucide-react";
 import { formatDistanceToNow, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -22,13 +23,18 @@ export interface Task {
 
 interface WorkCardProps {
   task: Task;
+  clients: Client[];
   onStatusChange: (id: string, newStatus: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
+export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardProps) {
   const isUrgent = task.priority === 'Urgent';
   const isCompleted = task.status === 'Completed';
+
+  const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
+  const channelLink = clientObj?.channel_link;
+  const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
   
   let deadlineDate = parseISO(task.deadline);
   if (isNaN(deadlineDate.getTime())) {
@@ -89,7 +95,19 @@ export function WorkCard({ task, onStatusChange, onDelete }: WorkCardProps) {
       </div>
 
       <h4 className="font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors line-clamp-1">{task.title}</h4>
-      <p className="text-[10px] text-slate-400 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
+      {channelLink ? (
+        <a 
+          href={cleanUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-widest hover:text-indigo-650 dark:hover:text-indigo-400 hover:underline transition-colors cursor-pointer inline-block"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {task.client}
+        </a>
+      ) : (
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
+      )}
       
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
         <div className="flex items-center justify-between">

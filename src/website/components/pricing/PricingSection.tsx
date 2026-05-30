@@ -5,6 +5,7 @@ import { Check, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import SectionHeader from '../shared/SectionHeader';
 import { InteractiveHoverButton, InteractiveHoverButtonOutline } from '../ui/InteractiveHoverButton';
+import { AnimatedCard } from '../ui/AnimateUI';
 
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -64,7 +65,6 @@ export default function PricingSection() {
         "Unlimited task deliveries",
         "10 collaborative team seats",
         "Role-based workspace permissions",
-        "White-label client access portals",
         "Custom domain sending verified",
         "Priority Slack integrations"
       ],
@@ -133,16 +133,15 @@ export default function PricingSection() {
       {/* Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
         {plans.map((plan, idx) => (
-          <div
+          <AnimatedCard
             key={idx}
-            className={`rounded-[2.5rem] p-8 sm:p-10 border transition-all duration-500 flex flex-col justify-between relative overflow-hidden group ${
+            glowColor={plan.popular ? "rgba(99, 102, 241, 0.22)" : "rgba(99, 102, 241, 0.12)"}
+            className={`rounded-[2.5rem] p-8 sm:p-10 border transition-all duration-500 flex flex-col justify-between group ${
               plan.popular
                 ? 'bg-slate-950/90 border-indigo-500/70 shadow-2xl shadow-indigo-500/5 md:-translate-y-2'
                 : 'bg-slate-900/30 border-slate-800/80 shadow-lg hover:border-indigo-500/30 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/5'
             }`}
           >
-            {/* Glowing background accent on hover */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${plan.glow} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10`} />
 
             {plan.popular && (
               <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[9px] font-black tracking-widest uppercase px-5 py-1.5 rounded-full shadow-lg shadow-indigo-500/10 flex items-center gap-1.5">
@@ -218,7 +217,7 @@ export default function PricingSection() {
                 </InteractiveHoverButtonOutline>
               )}
             </div>
-          </div>
+          </AnimatedCard>
         ))}
       </div>
     </section>

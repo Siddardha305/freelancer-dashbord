@@ -18,18 +18,17 @@ import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
 import { getWorksAction } from "@/dashboard/work/actions/work-actions";
 import { Client } from "@/types/client";
 import { Work } from "@/types/work";
-import { ClientPortalSettingsForm } from "@/dashboard/clients/components/ClientPortalSettingsForm";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { setCurrency: setGlobalCurrency } = useCurrency();
   const { setWorkspaceType: setGlobalWorkspaceType } = useWorkspace();
-  const [activeTab, setActiveTab] = useState<"general" | "portals" | "pricing" | "diagnostics">(() => {
+  const [activeTab, setActiveTab] = useState<"general" | "pricing" | "diagnostics">(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'pricing' || tab === 'diagnostics' || tab === 'general' || tab === 'portals') {
-        return tab as "general" | "portals" | "pricing" | "diagnostics";
+      if (tab === 'pricing' || tab === 'diagnostics' || tab === 'general') {
+        return tab as "general" | "pricing" | "diagnostics";
       }
     }
     return "general";
@@ -47,6 +46,7 @@ export default function SettingsPage() {
   const [agencyName, setAgencyName] = useState("");
   const [agencyLogoUrl, setAgencyLogoUrl] = useState("");
   const [agencyLogoDarkUrl, setAgencyLogoDarkUrl] = useState("");
+  const [agencyScannerUrl, setAgencyScannerUrl] = useState("");
   const [agencyBrandingMode, setAgencyBrandingMode] = useState<"logo" | "text" | "both">("both");
   const [profileSaving, setProfileSaving] = useState(false);
   const [brandingResetting, setBrandingResetting] = useState(false);
@@ -95,6 +95,7 @@ export default function SettingsPage() {
           setAgencyName(user.agencyName || "");
           setAgencyLogoUrl(user.agencyLogoUrl || "");
           setAgencyLogoDarkUrl(user.agencyLogoDarkUrl || "");
+          setAgencyScannerUrl(user.agencyScannerUrl || "");
           setAgencyBrandingMode((user.agencyBrandingMode as "logo" | "text" | "both") || "both");
         }
       } catch (error) {
@@ -128,6 +129,7 @@ export default function SettingsPage() {
         agencyName: agencyName.trim() || undefined,
         agencyLogoUrl: agencyLogoUrl.trim() || undefined,
         agencyLogoDarkUrl: agencyLogoDarkUrl.trim() || undefined,
+        agencyScannerUrl: agencyScannerUrl.trim() || undefined,
         agencyBrandingMode: agencyBrandingMode || "both",
       });
       if (res.success) {
@@ -163,6 +165,7 @@ export default function SettingsPage() {
         agencyName: undefined,
         agencyLogoUrl: undefined,
         agencyLogoDarkUrl: undefined,
+        agencyScannerUrl: undefined,
         agencyBrandingMode: "both",
       });
       if (res.success) {
@@ -170,6 +173,7 @@ export default function SettingsPage() {
         setAgencyName("");
         setAgencyLogoUrl("");
         setAgencyLogoDarkUrl("");
+        setAgencyScannerUrl("");
         setAgencyBrandingMode("both");
         const updatedUser = await getCurrentUserAction();
         setCurrentUser(updatedUser);
@@ -252,16 +256,7 @@ export default function SettingsPage() {
               <Settings className="h-4 w-4" />
               General
             </button>
-            <button 
-              onClick={() => setActiveTab("portals")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer",
-                activeTab === "portals" ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              )}
-            >
-              <Globe className="h-4 w-4" />
-              White-Label Portals
-            </button>
+
             <button 
               onClick={() => setActiveTab("pricing")}
               className={cn(
@@ -632,6 +627,60 @@ export default function SettingsPage() {
                       )}
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Payment QR Scanner Code</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={agencyScannerUrl} 
+                            onChange={(e) => setAgencyScannerUrl(e.target.value)}
+                            className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all min-w-0"
+                            placeholder="QR scanner image URL or Base64 data"
+                          />
+                          <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
+                            <Upload className="h-4 w-4 mr-1.5" />
+                            <span>Upload</span>
+                            <input 
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 2 * 1024 * 1024) {
+                                  toast.error("File is too large (max 2MB)");
+                                  return;
+                                }
+                                try {
+                                  const compressed = await resizeAndCompressLogo(file);
+                                  setAgencyScannerUrl(compressed);
+                                  toast.success("QR scanner uploaded and optimized!");
+                                } catch (err) {
+                                  toast.error("Failed to process image");
+                                  console.error(err);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      {agencyScannerUrl && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Scanner QR Preview</label>
+                          <div className="h-16 w-16 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={agencyScannerUrl} 
+                              alt="Scanner QR Preview" 
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
                       <button 
                         type="button"
@@ -672,92 +721,6 @@ export default function SettingsPage() {
 
                 {/* Reset Workspace action available to standard users under General tab */}
                 <ResetWorkspaceButton />
-              </div>
-            )}
-
-            {activeTab === "portals" && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                {/* Check subscription eligibility */}
-                {!limits.whitelabelPortals ? (
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-10 shadow-sm text-center max-w-xl mx-auto space-y-6">
-                    <div className="mx-auto h-16 w-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                      <Globe className="h-8 w-8 text-indigo-650 animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                      <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
-                        <Lock className="h-5 w-5 text-indigo-500" />
-                        Unlock White-Label Portals
-                      </h2>
-                      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Host custom-branded, read-only live pipelines for your clients under your own colors and logos.
-                        Upgrade to the <strong className="text-indigo-600 dark:text-indigo-400">Agency Plan</strong> to unlock this feature.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("pricing")}
-                      className="inline-flex items-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all active:scale-[0.98] cursor-pointer"
-                    >
-                      <Zap className="h-4 w-4" /> View Pricing Options
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Header Info */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 sm:p-8 shadow-sm dark:shadow-none space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-                          <Globe className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">White-Label Portals Hub</h2>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Select a client below to configure their branded portal dashboard.</p>
-                        </div>
-                      </div>
-
-                      {/* Dropdown client selector */}
-                      <div className="space-y-2 pt-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Choose Client Workspace</label>
-                        {clients.length > 0 ? (
-                          <div className="relative max-w-md">
-                            <select
-                              value={selectedClientId || ""}
-                              onChange={(e) => setSelectedClientId(e.target.value)}
-                              className="w-full px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all appearance-none cursor-pointer"
-                            >
-                              <option value="">-- Choose a Client Workspace --</option>
-                              {clients.map((c: Client) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name} {c.portalActive ? ' (Active)' : ' (Disabled)'}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-500">
-                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs font-bold text-slate-450 italic">No clients registered. Create a client first under the Clients panel.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Render Portal settings if client is selected */}
-                    {selectedClientId && (() => {
-                      const selectedClient = (clients as Client[]).find((c) => c.id === selectedClientId);
-                      return selectedClient ? (
-                        <div className="animate-in fade-in zoom-in-95 duration-200">
-                          <ClientPortalSettingsForm
-                            key={selectedClient.id}
-                            client={selectedClient} 
-                            onSuccess={() => {
-                              toast.success("Client portal synchronized");
-                            }}
-                          />
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
               </div>
             )}
 
@@ -881,7 +844,6 @@ export default function SettingsPage() {
                           "Unlimited task deliveries",
                           "10 collaborative team seats",
                           "Role-based workspace permissions",
-                          "White-label client access portals",
                           "Custom domain sending verified",
                           "Priority Slack integrations"
                         ],

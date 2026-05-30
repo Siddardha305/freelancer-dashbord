@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signupAction } from '@/auth/actions/auth-actions';
 import { KeyRound, Mail, User, ArrowRight, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AnimatedBackground, AnimatedCard } from '../components/ui/AnimateUI';
 
 const initialState = {
   message: '',
@@ -39,7 +41,12 @@ export default function SignupPage() {
           </Link>
         </div>
 
-        <div className="mx-auto w-full max-w-sm space-y-8 pt-10 pb-6">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mx-auto w-full max-w-sm space-y-8 pt-10 pb-6"
+        >
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Get Started</h1>
             <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Create your professional space</p>
@@ -161,7 +168,7 @@ export default function SignupPage() {
               Sign In
             </Link>
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Right side: Beautiful visual brand card panel */}
@@ -169,6 +176,7 @@ export default function SignupPage() {
         {/* Decorative Grid Overlay & Light blobs */}
         <div className="absolute inset-0 bg-[radial-gradient(#4f46e5_1px,transparent_1px)] [background-size:24px_24px] opacity-15" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl" />
+        <AnimatedBackground className="opacity-30" />
         
         <div className="relative max-w-md text-white text-center space-y-8 z-10">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 shadow-xl mb-4">
@@ -184,7 +192,7 @@ export default function SignupPage() {
           </p>
 
           {/* Micro-testimonial element */}
-          <div className="p-6 rounded-[2rem] bg-indigo-950/40 border border-indigo-800/40 text-left space-y-3 backdrop-blur-sm">
+          <AnimatedCard className="p-6 rounded-[2rem] bg-indigo-950/40 border border-indigo-800/40 text-left space-y-3 backdrop-blur-sm">
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) => (
                 <Sparkles key={i} className="h-4.5 w-4.5 text-amber-400 fill-amber-400 shrink-0" />
@@ -197,7 +205,7 @@ export default function SignupPage() {
               <p className="text-xs font-bold text-white">Ananya Sharma</p>
               <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-0.5">Independent Animator</p>
             </div>
-          </div>
+          </AnimatedCard>
         </div>
       </div>
     </div>

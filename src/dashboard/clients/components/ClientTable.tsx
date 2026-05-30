@@ -19,7 +19,8 @@ export function ClientTable({
   onUpdate,
   onViewProfile
 }: ClientTableProps) {
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [activeEditClient, setActiveEditClient] = useState<Client | null>(null);
 
   // Deduplicate by id — guard against any duplicate entries from polling race conditions
   const uniqueClients = clients.filter(
@@ -40,7 +41,8 @@ export function ClientTable({
   };
 
   const handleEditClick = (client: Client) => {
-    setEditingClient(client);
+    setActiveEditClient(client);
+    setIsEditOpen(true);
   };
 
   const handleStatusChange = () => {
@@ -71,17 +73,15 @@ export function ClientTable({
         )}
       </div>
 
-      {editingClient && (
-        <EditClientModal
-          isOpen={editingClient !== null}
-          onClose={() => setEditingClient(null)}
-          client={editingClient}
-          onSuccess={() => {
-            setEditingClient(null);
-            if (onUpdate) onUpdate();
-          }}
-        />
-      )}
+      <EditClientModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        client={activeEditClient}
+        onSuccess={() => {
+          setIsEditOpen(false);
+          if (onUpdate) onUpdate();
+        }}
+      />
     </>
   );
 }

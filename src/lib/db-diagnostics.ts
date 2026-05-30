@@ -25,7 +25,7 @@ export async function getDatabaseDiagnostics() {
     // Get document counts specifically for this logged-in user
     const clientCount = await Client.countDocuments({ userId: user._id });
     const workCount = await Work.countDocuments({ userId: user._id });
-    const paymentCount = await Payment.countDocuments({ userId: user._id });
+    const paymentCount = await Payment.countDocuments({ userId: user._id, isDeleted: { $ne: true } });
 
     // Format storage (usually Atlas free tier is 512MB)
     const storageUsedMB = (stats.storageSize / (1024 * 1024)).toFixed(2);

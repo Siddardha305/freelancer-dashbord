@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react';
-import { Search, LayoutGrid, List as ListIcon, Plus, Filter, Calendar } from "lucide-react";
+import { Search, LayoutGrid, List as ListIcon, Plus, Filter, Calendar, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WorkFilterTabsProps {
-  view: "board" | "list" | "calendar";
-  setView: (v: "board" | "list" | "calendar") => void;
+  view: "board" | "list" | "calendar" | "history";
+  setView: (v: "board" | "list" | "calendar" | "history") => void;
   priorityFilter: string;
   setPriorityFilter: (p: string) => void;
   searchTerm: string;
@@ -26,12 +26,14 @@ export function WorkFilterTabs({
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pt-4">
       <div className="flex items-center gap-6">
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+        <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
           <button 
             onClick={() => setView("board")}
             className={cn(
               "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300",
-              view === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              view === 'board' 
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             )}
           >
             <LayoutGrid className="h-4 w-4" />
@@ -41,7 +43,9 @@ export function WorkFilterTabs({
             onClick={() => setView("list")}
             className={cn(
               "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300",
-              view === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              view === 'list' 
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             )}
           >
             <ListIcon className="h-4 w-4" />
@@ -51,11 +55,25 @@ export function WorkFilterTabs({
             onClick={() => setView("calendar")}
             className={cn(
               "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300",
-              view === 'calendar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              view === 'calendar' 
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             )}
           >
             <Calendar className="h-4 w-4" />
             Calendar
+          </button>
+          <button 
+            onClick={() => setView("history")}
+            className={cn(
+              "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300",
+              view === 'history' 
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            )}
+          >
+            <History className="h-4 w-4" />
+            History
           </button>
         </div>
 
@@ -88,7 +106,7 @@ export function WorkFilterTabs({
         </div>
         <button 
           onClick={onAddTaskClick}
-          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-100 hover:shadow-indigo-200 active:scale-95"
+          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-100 dark:shadow-indigo-950/40 hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">New Task</span>

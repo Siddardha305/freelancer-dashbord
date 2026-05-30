@@ -20,12 +20,13 @@ import { WorkStatistics } from "./WorkStatistics";
 import { WorkFilterTabs } from "./WorkFilterTabs";
 import { WorkBoardView } from "./WorkBoardView";
 import { WorkListView } from "./WorkListView";
+import { WorkHistoryView } from "./WorkHistoryView";
 
 export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const { formatCurrency } = useCurrency();
   const queryClient = useQueryClient();
   const { planName, limits, canAddTask } = usePlan();
-  const [view, setView] = useState<"board" | "list" | "calendar">("board");
+  const [view, setView] = useState<"board" | "list" | "calendar" | "history">("board");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -212,6 +213,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
 
   const pendingTasksCount = (tasks as Work[]).filter((t: Work) => t.status === "To Do").length;
   const inProgressTasksCount = (tasks as Work[]).filter((t: Work) => t.status === "In Progress").length;
+  const pendingOverallCount = (tasks as Work[]).filter((t: Work) => (t.status as string) !== "Completed" && t.status !== "Done").length;
 
   const stats = {
     total: tasks.length,
@@ -231,6 +233,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         earnedToday={earnedToday}
         pendingTasksCount={pendingTasksCount}
         inProgressTasksCount={inProgressTasksCount}
+        pendingOverallCount={pendingOverallCount}
         formatCurrency={formatCurrency}
       />
 
@@ -275,6 +278,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         /* Board Kanban View */
         <WorkBoardView 
           filteredTasks={activeTasksForBoardAndList}
+          clients={clients}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteTask}
         />
@@ -286,10 +290,18 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           onAddTask={handleQuickAddTask}
           onStatusChange={handleStatusChange}
         />
+      ) : view === "history" ? (
+        /* History day-by-day View */
+        <WorkHistoryView 
+          tasks={filteredTasks}
+          clients={clients}
+          formatCurrency={formatCurrency}
+        />
       ) : (
         /* List spreadsheet Activity view */
         <WorkListView 
           filteredTasks={activeTasksForBoardAndList}
+          clients={clients}
           onStatusChange={handleStatusChange}
           onDeleteClick={(id) => setTaskToDelete(id)}
         />

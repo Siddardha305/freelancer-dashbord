@@ -22,9 +22,10 @@ export default function FeatureSidebarButton({
   onClick
 }: FeatureSidebarButtonProps) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
+      whileHover="hover"
       className="w-full text-left p-5 rounded-[1.8rem] border border-transparent transition-all duration-300 flex items-start gap-4 cursor-pointer group outline-none focus:ring-1 focus:ring-indigo-500/50 relative overflow-hidden"
     >
       {/* Framer Motion Shared Active Background */}
@@ -49,7 +50,16 @@ export default function FeatureSidebarButton({
             ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' 
             : 'bg-slate-950/80 border-slate-850 text-slate-500 group-hover:text-slate-200 group-hover:border-slate-700'
         }`}>
-          <Icon className="h-5 w-5" />
+          <motion.div
+            variants={{
+              hover: { rotate: 8, scale: 1.15 }
+            }}
+            whileHover="hover"
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            className="flex items-center justify-center"
+          >
+            <Icon className="h-5 w-5" />
+          </motion.div>
         </div>
         
         <div className="flex-1 min-w-0">
@@ -74,6 +84,6 @@ export default function FeatureSidebarButton({
           isActive ? 'translate-x-0.5 text-indigo-400' : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
         }`} />
       </div>
-    </button>
+    </motion.button>
   );
 }

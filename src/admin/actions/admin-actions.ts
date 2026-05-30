@@ -7,6 +7,7 @@ import Client from '@/database/models/Client';
 import Work from '@/database/models/Work';
 import Payment from '@/database/models/Payment';
 import ContactMessage from '@/database/models/ContactMessage';
+import SupportTicket from '@/database/models/SupportTicket';
 import { hashPassword, verifyPassword, createSession, getSessionUser, destroySession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -90,7 +91,7 @@ export async function getAdminOverviewAction() {
       User.countDocuments({}),
       Client.countDocuments({}),
       Work.countDocuments({}),
-      Payment.find({}).lean(),
+      Payment.find({ isDeleted: { $ne: true } }).lean(),
     ]);
 
     // Sum global revenue
@@ -113,7 +114,7 @@ export async function getAdminOverviewAction() {
       const [clientCount, taskCount, paymentCount] = await Promise.all([
         Client.countDocuments({ userId: u._id }),
         Work.countDocuments({ userId: u._id }),
-        Payment.countDocuments({ userId: u._id }),
+        Payment.countDocuments({ userId: u._id.toString(), isDeleted: { $ne: true } }),
       ]);
       
       return {
@@ -161,6 +162,22 @@ export async function getAdminOverviewAction() {
       createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : '',
     }));
 
+    // Fetch and structure all support tickets
+    const rawSupportTickets = await SupportTicket.find({}).sort({ createdAt: -1 }).lean();
+    const supportTickets = rawSupportTickets.map((t: any) => ({
+      id: t._id.toString(),
+      userId: t.userId.toString(),
+      userName: t.userName,
+      userEmail: t.userEmail,
+      title: t.title,
+      description: t.description,
+      category: t.category,
+      priority: t.priority,
+      status: t.status,
+      adminReply: t.adminReply || '',
+      createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : '',
+    }));
+
     return {
       stats: {
         totalUsers,
@@ -172,6 +189,7 @@ export async function getAdminOverviewAction() {
       userRegistry,
       emailLogs,
       contactMessages,
+      supportTickets,
     };
   } catch (error) {
     console.error("Failed to gather platform metrics:", error);

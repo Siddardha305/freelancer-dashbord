@@ -17,7 +17,6 @@ import { ClientProfileHeader } from "./ClientProfileHeader";
 import { ClientMetricsGrid } from "./ClientMetricsGrid";
 import { ClientInfoPane } from "./ClientInfoPane";
 import { ClientActivitySidebar } from "./ClientActivitySidebar";
-import { ClientPortalSettingsForm } from "./ClientPortalSettingsForm";
 
 interface ClientProfileViewProps {
   initialClient: Client;
@@ -39,7 +38,7 @@ export function ClientProfileView({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'portal'>('overview');
+
 
   const [prevInitialClient, setPrevInitialClient] = useState(initialClient);
   if (initialClient !== prevInitialClient) {
@@ -148,79 +147,44 @@ export function ClientProfileView({
           priorityColors={priorityColors}
         />
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center border-b border-card-border/80 pb-px gap-6">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`pb-4 text-sm font-bold tracking-tight border-b-2 cursor-pointer transition-all ${
-              activeTab === 'overview'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-500'
-                : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
-            }`}
-          >
-            Overview & Metrics
-          </button>
-          <button
-            onClick={() => setActiveTab('portal')}
-            className={`pb-4 text-sm font-bold tracking-tight border-b-2 cursor-pointer transition-all ${
-              activeTab === 'portal'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-500'
-                : 'border-transparent text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
-            }`}
-          >
-            Client Portal Settings
-          </button>
-        </div>
-
-        {activeTab === 'overview' ? (
-          <div className={`grid grid-cols-1 ${isDrawerMode ? 'gap-6' : 'lg:grid-cols-3 gap-8'}`}>
+        <div className={`grid grid-cols-1 ${isDrawerMode ? 'gap-6' : 'lg:grid-cols-3 gap-8'}`}>
+          
+          {/* Main Info Column */}
+          <div className={`${isDrawerMode ? 'space-y-6' : 'lg:col-span-2 space-y-8'}`}>
             
-            {/* Main Info Column */}
-            <div className={`${isDrawerMode ? 'space-y-6' : 'lg:col-span-2 space-y-8'}`}>
-              
-              {/* Quick Actions & Billing trackers */}
-              <ClientMetricsGrid 
-                client={client}
-                now={now}
-                earnedThisMonth={earnedThisMonth}
-                pendingAmount={pendingAmount}
-                amountBalance={amountBalance}
-                monthlyPrice={monthlyPrice}
-                deliveriesUsed={deliveriesUsed}
-                monthlyQuota={monthlyQuota}
-                deliveriesBalance={deliveriesBalance}
-                pendingCount={pendingCount}
-                formatCurrency={formatCurrency}
-              />
-
-              {/* Contract & Revenue pane details */}
-              <ClientInfoPane 
-                client={client}
-                isExpiringSoon={isExpiringSoon}
-                formatCurrency={formatCurrency}
-              />
-
-            </div>
-
-            {/* Sidebar Info Column */}
-            <ClientActivitySidebar 
+            {/* Quick Actions & Billing trackers */}
+            <ClientMetricsGrid 
               client={client}
-              healthScore={healthScore}
-              clientTasks={clientTasks}
-              currentTimestamp={currentTimestamp}
+              now={now}
+              earnedThisMonth={earnedThisMonth}
+              pendingAmount={pendingAmount}
+              amountBalance={amountBalance}
+              monthlyPrice={monthlyPrice}
+              deliveriesUsed={deliveriesUsed}
+              monthlyQuota={monthlyQuota}
+              deliveriesBalance={deliveriesBalance}
+              pendingCount={pendingCount}
+              formatCurrency={formatCurrency}
+            />
+
+            {/* Contract & Revenue pane details */}
+            <ClientInfoPane 
+              client={client}
+              isExpiringSoon={isExpiringSoon}
+              formatCurrency={formatCurrency}
             />
 
           </div>
-        ) : (
-          <ClientPortalSettingsForm
-            key={client.id}
-            client={client} 
-            onSuccess={(updatedClient) => {
-              setClient(updatedClient);
-              if (onSuccess) onSuccess(updatedClient);
-            }} 
+
+          {/* Sidebar Info Column */}
+          <ClientActivitySidebar 
+            client={client}
+            healthScore={healthScore}
+            clientTasks={clientTasks}
+            currentTimestamp={currentTimestamp}
           />
-        )}
+
+        </div>
 
         {/* Edit Modal */}
         <EditClientModal 

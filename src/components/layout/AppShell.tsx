@@ -28,6 +28,20 @@ interface AppShellProps {
 export function AppShell({ children, user }: AppShellProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     const checkTheme = () => {
@@ -78,7 +92,7 @@ export function AppShell({ children, user }: AppShellProps) {
               )}
               
               {showText && (
-                <span className="text-md font-bold tracking-tight text-slate-900 dark:text-slate-50 truncate" title={sidebarTitle}>{sidebarTitle}</span>
+                <span className="text-md font-bold tracking-tight text-slate-900 dark:text-slate-55 truncate" title={sidebarTitle}>{sidebarTitle}</span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -95,7 +109,7 @@ export function AppShell({ children, user }: AppShellProps) {
 
           {/* Desktop Sidebar */}
           <div className="hidden lg:block h-full shrink-0">
-            <Sidebar user={user} />
+            <Sidebar user={user} isCollapsed={isCollapsed} onToggleCollapse={toggleCollapse} />
           </div>
 
           {/* Mobile Sidebar Slide-Over Drawer */}
@@ -112,7 +126,7 @@ export function AppShell({ children, user }: AppShellProps) {
                 <div className="absolute top-5 right-4 z-10">
                   <button 
                     onClick={() => setIsMobileSidebarOpen(false)}
-                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all cursor-pointer"
+                    className="p-1.5 text-slate-400 dark:text-slate-505 hover:text-slate-655 dark:hover:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all cursor-pointer"
                     aria-label="Close menu"
                   >
                     <X className="h-5 w-5" />
@@ -120,7 +134,7 @@ export function AppShell({ children, user }: AppShellProps) {
                 </div>
                 
                 {/* Sidebar in drawer */}
-                <Sidebar user={user} onLinkClick={() => setIsMobileSidebarOpen(false)} />
+                <Sidebar user={user} onLinkClick={() => setIsMobileSidebarOpen(false)} isCollapsed={false} />
               </div>
             </div>
           )}

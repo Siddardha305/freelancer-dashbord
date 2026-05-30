@@ -9,23 +9,26 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ userName }: DashboardHeaderProps) {
   return (
-    <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-8 py-3 sm:py-4 flex-wrap">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-50 text-indigo-600">
-          <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
+    <header className="flex min-h-[4.5rem] shrink-0 items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-slate-950/40 backdrop-blur-md px-6 sm:px-12 py-4 flex-wrap">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/20 shadow-xs">
+          <LayoutDashboard className="h-4.5 w-4.5" />
         </div>
-        <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+        <h1 className="text-xs sm:text-sm font-black uppercase tracking-widest text-slate-900 dark:text-slate-100">
+          Dashboard Overview
+        </h1>
       </div>
       
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:flex flex-col items-end mr-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Signed in as</span>
-          <span className="text-sm font-semibold text-slate-900">{userName}</span>
+      <div className="flex items-center gap-3.5">
+        <div className="hidden sm:flex flex-col items-end mr-0.5">
+          <span className="text-[9px] font-black text-slate-450 dark:text-slate-550 uppercase tracking-widest">Signed in as</span>
+          <span className="text-xs font-black text-slate-900 dark:text-slate-100">{userName}</span>
         </div>
-        <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-200 font-bold text-slate-700 text-sm">
-          {userName.charAt(0).toUpperCase() || 'A'}
+        <div className="h-10 w-10 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800/80 font-black text-slate-700 dark:text-slate-350 text-xs shadow-xs uppercase">
+          {userName.charAt(0) || 'A'}
         </div>
       </div>
     </header>
   );
 }
+

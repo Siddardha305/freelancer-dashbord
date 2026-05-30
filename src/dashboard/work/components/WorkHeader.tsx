@@ -50,7 +50,7 @@ export function WorkHeader() {
               "flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-200 shadow-lg active:scale-95",
               atTaskLimit 
                 ? "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 hover:shadow-amber-100" 
-                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100"
+                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100 dark:shadow-indigo-950/50"
             )}
           >
             {atTaskLimit ? <Lock className="h-4 w-4 text-amber-600" /> : <Plus className="h-4 w-4" />}

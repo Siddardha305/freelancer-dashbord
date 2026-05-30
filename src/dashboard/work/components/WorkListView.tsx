@@ -5,15 +5,18 @@ import { Search, Clock, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Work } from "@/types/work";
+import { Client } from "@/types/client";
 
 interface WorkListViewProps {
   filteredTasks: Work[];
+  clients: Client[];
   onStatusChange: (taskId: string, newStatus: string) => void;
   onDeleteClick: (taskId: string) => void;
 }
 
 export function WorkListView({
   filteredTasks,
+  clients = [],
   onStatusChange,
   onDeleteClick
 }: WorkListViewProps) {
@@ -41,7 +44,23 @@ export function WorkListView({
                   </div>
                 </td>
                 <td className="px-10 py-8">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{task.client}</span>
+                  {(() => {
+                    const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
+                    const channelLink = clientObj?.channel_link;
+                    const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
+                    return channelLink ? (
+                      <a 
+                        href={cleanUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-slate-500 hover:text-indigo-650 dark:hover:text-indigo-400 hover:underline transition-colors uppercase tracking-wider cursor-pointer"
+                      >
+                        {task.client}
+                      </a>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{task.client}</span>
+                    );
+                  })()}
                 </td>
                 <td className="px-10 py-8">
                   <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit mx-auto">

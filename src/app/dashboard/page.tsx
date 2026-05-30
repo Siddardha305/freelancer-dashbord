@@ -76,6 +76,7 @@ export default function Home() {
     (acc: number, w: Work) => acc + getPricePerTask(w), 0
   );
 
+
   // PENDING: tasks still To Do / In Progress / Review
   const pendingWorks = works.filter((w: Work) =>
     ["To Do", "In Progress", "Review"].includes(w.status)
@@ -126,7 +127,8 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Revenue Analytics */}
             <RevenuePerformanceChart 
-              thisMonthRevenue={thisMonthRevenue}
+              works={works}
+              clients={clients}
               formatCurrency={formatCurrency}
             />
 

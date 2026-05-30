@@ -7,6 +7,8 @@ import SectionHeader from '../shared/SectionHeader';
 import TestimonialCard from '../shared/TestimonialCard';
 import { InteractiveHoverButton, InteractiveHoverButtonOutline } from '../ui/InteractiveHoverButton';
 
+import { AnimatedCard } from '../ui/AnimateUI';
+
 const quickLinks = [
   {
     icon: Compass,
@@ -102,34 +104,33 @@ export default function SocialProofSection() {
                 <Link
                   key={idx}
                   href={item.href}
-                  className={`group bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[2.2rem] p-8 flex flex-col justify-between hover:border-indigo-500/35 hover:bg-slate-905/70 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-0.5 relative overflow-hidden ${spanClass}`}
+                  className={`${spanClass} block`}
                 >
-                  {/* Glowing background accent on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  
-                  <div className={idx === 3 ? 'flex-1 md:flex md:items-center md:justify-between w-full' : ''}>
-                    <div className={idx === 3 ? 'md:flex md:items-center md:gap-6 md:max-w-2xl' : ''}>
-                      <div className={`w-12 h-12 rounded-2xl ${item.glow} flex items-center justify-center mb-6 md:mb-0 shrink-0 group-hover:scale-110 transition-transform`}>
-                        <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                  <AnimatedCard className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[2.2rem] p-8 flex flex-col justify-between hover:bg-slate-905/70 hover:-translate-y-0.5 h-full relative overflow-hidden">
+                    <div className={idx === 3 ? 'flex-1 md:flex md:items-center md:justify-between w-full' : ''}>
+                      <div className={idx === 3 ? 'md:flex md:items-center md:gap-6 md:max-w-2xl' : ''}>
+                        <div className={`w-12 h-12 rounded-2xl ${item.glow} flex items-center justify-center mb-6 md:mb-0 shrink-0 group-hover:scale-110 transition-transform`}>
+                          <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                        </div>
+                        <div className={idx === 3 ? 'mt-4 md:mt-0' : ''}>
+                          <h3 className="text-base font-black text-white tracking-tight mb-2 flex items-center gap-2">
+                            {item.title}
+                            {idx === 0 && <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[8px] font-black uppercase">Live Tour</span>}
+                          </h3>
+                          <p className="text-xs text-slate-400 font-semibold leading-relaxed">{item.description}</p>
+                        </div>
                       </div>
-                      <div className={idx === 3 ? 'mt-4 md:mt-0' : ''}>
-                        <h3 className="text-base font-black text-white tracking-tight mb-2 flex items-center gap-2">
-                          {item.title}
-                          {idx === 0 && <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[8px] font-black uppercase">Live Tour</span>}
-                        </h3>
-                        <p className="text-xs text-slate-400 font-semibold leading-relaxed">{item.description}</p>
-                      </div>
-                    </div>
 
-                    <div className={`mt-6 md:mt-0 flex items-center justify-between shrink-0 ${idx === 3 ? 'md:gap-6' : ''}`}>
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${item.glow} ${item.iconColor} border-current/20`}>
-                        {item.badge}
-                      </span>
-                      <div className="h-8 w-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:border-indigo-500/40 group-hover:bg-indigo-950/20 transition-all">
-                        <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                      <div className={`mt-6 md:mt-0 flex items-center justify-between shrink-0 ${idx === 3 ? 'md:gap-6' : ''}`}>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${item.glow} ${item.iconColor} border-current/20`}>
+                          {item.badge}
+                        </span>
+                        <div className="h-8 w-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:border-indigo-500/40 group-hover:bg-indigo-950/20 transition-all">
+                          <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </AnimatedCard>
                 </Link>
               );
             })}
