@@ -124,10 +124,26 @@ export async function getSessionUser() {
     const user = await User.findById(payload.userId).lean();
     if (!user) return null;
     
+    let parentUser = null;
+    if (user.parentUserId) {
+      parentUser = await User.findById(user.parentUserId).lean();
+    }
+    
+    const workspaceId = user.parentUserId ? user.parentUserId.toString() : user._id.toString();
+    const teamRole = user.teamRole || 'owner';
+    
     return JSON.parse(JSON.stringify({
       ...user,
       id: user._id.toString(),
       _id: user._id.toString(),
+      workspaceId,
+      teamRole,
+      plan: parentUser ? parentUser.plan : (user.plan || 'hobby'),
+      agencyName: parentUser ? parentUser.agencyName : user.agencyName,
+      agencyLogoUrl: parentUser ? parentUser.agencyLogoUrl : user.agencyLogoUrl,
+      agencyLogoDarkUrl: parentUser ? parentUser.agencyLogoDarkUrl : user.agencyLogoDarkUrl,
+      agencyScannerUrl: parentUser ? parentUser.agencyScannerUrl : user.agencyScannerUrl,
+      agencyBrandingMode: parentUser ? parentUser.agencyBrandingMode : user.agencyBrandingMode,
     }));
   } catch (error) {
     console.error("Failed to get session user:", error);

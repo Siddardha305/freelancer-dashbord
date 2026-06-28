@@ -3,10 +3,13 @@
 import { useActionState, useEffect, useState } from 'react'
 import { createWorkAction } from '@/dashboard/work/actions/work-actions'
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
+import { getTeamMembersAction } from '@/dashboard/settings/actions/team-actions'
 import { X, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '@/context/WorkspaceContext'
+import { usePlan } from '@/context/PlanContext'
 import { Client } from '@/types/client'
+import { CustomSelect } from '@/components/ui/CustomSelect'
 
 const initialState = {
   message: '',
@@ -26,7 +29,14 @@ export function AddWorkModal({
 }) {
   const [state, formAction, isPending] = useActionState(createWorkAction, initialState)
   const [clients, setClients] = useState<Client[]>([])
+  const [editors, setEditors] = useState<any[]>([])
+  const [selectedClient, setSelectedClient] = useState('')
+  const [selectedPriority, setSelectedPriority] = useState('Normal')
+  const [selectedStatus, setSelectedStatus] = useState('To Do')
+  const [selectedEditor, setSelectedEditor] = useState('')
   const { terms } = useWorkspace()
+  const { plan } = usePlan()
+  const isAgency = plan === 'agency'
 
   useEffect(() => {
     if (isOpen) {
@@ -35,8 +45,21 @@ export function AddWorkModal({
         setClients(data);
       }
       loadClients();
+
+      if (isAgency) {
+        async function loadEditors() {
+          try {
+            const data = await getTeamMembersAction();
+            const list = data.filter((m: any) => m.teamRole === 'editor' || m.teamRole === 'admin');
+            setEditors(list);
+          } catch (e) {
+            console.error("Failed to load editors:", e);
+          }
+        }
+        loadEditors();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isAgency]);
 
   if (!isOpen) return null
 
@@ -79,17 +102,15 @@ export function AddWorkModal({
 
             <div className="space-y-3">
               <label htmlFor="client" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign Client</label>
-              <select 
+              <CustomSelect 
                 id="client" 
                 name="client" 
                 required
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold appearance-none"
-              >
-                <option value="">Select a client...</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.name}>{client.name}</option>
-                ))}
-              </select>
+                value={selectedClient}
+                onChange={setSelectedClient}
+                placeholder="Select a client..."
+                options={clients.map(c => ({ value: c.name, label: c.name }))}
+              />
               {state?.errors?.client && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.client[0]}</p>}
             </div>
           </div>
@@ -102,6 +123,17 @@ export function AddWorkModal({
               rows={3}
               className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold resize-none" 
               placeholder="Detailed instructions for this task..." 
+            />
+          </div>
+
+          <div className="space-y-3">
+            <label htmlFor="videoLink" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video / Footage Link</label>
+            <input 
+              type="url" 
+              id="videoLink" 
+              name="videoLink" 
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
+              placeholder="e.g. Google Drive link, Dropbox, Frame.io footage link..." 
             />
           </div>
 
@@ -121,23 +153,54 @@ export function AddWorkModal({
 
             <div className="space-y-3">
               <label htmlFor="priority" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
-              <select id="priority" name="priority" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold appearance-none">
-                <option value="Normal">Normal</option>
-                <option value="Urgent">Urgent 🔥</option>
-                <option value="High">High</option>
-                <option value="Low">Low</option>
-              </select>
+              <CustomSelect
+                id="priority"
+                name="priority"
+                value={selectedPriority}
+                onChange={setSelectedPriority}
+                options={[
+                  { value: 'Normal', label: 'Normal' },
+                  { value: 'Urgent', label: 'Urgent 🔥' },
+                  { value: 'High', label: 'High' },
+                  { value: 'Low', label: 'Low' },
+                ]}
+              />
             </div>
           </div>
 
-          <div className="space-y-3">
-             <label htmlFor="status" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Initial Status</label>
-             <select id="status" name="status" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold appearance-none">
-                <option value="To Do">To Do</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Review">Review</option>
-                <option value="Completed">Completed</option>
-             </select>
+          <div className={cn("grid grid-cols-1 gap-8", isAgency ? "md:grid-cols-2" : "w-full")}>
+            <div className="space-y-3">
+               <label htmlFor="status" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Initial Status</label>
+               <CustomSelect
+                 id="status"
+                 name="status"
+                 value={selectedStatus}
+                 onChange={setSelectedStatus}
+                 options={[
+                   { value: 'To Do', label: 'To Do' },
+                   { value: 'In Progress', label: 'In Progress' },
+                   { value: 'Review', label: 'Review' },
+                   { value: 'Completed', label: 'Completed' },
+                 ]}
+               />
+            </div>
+
+            {isAgency && (
+              <div className="space-y-3">
+                <label htmlFor="assignedTo" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign Editor</label>
+                <CustomSelect
+                  id="assignedTo"
+                  name="assignedTo"
+                  value={selectedEditor}
+                  onChange={setSelectedEditor}
+                  placeholder="Unassigned"
+                  options={[
+                    { value: '', label: 'Unassigned' },
+                    ...editors.map(editor => ({ value: editor.id, label: `${editor.name} (${editor.teamRole})` }))
+                  ]}
+                />
+              </div>
+            )}
           </div>
 
           {state?.message && state.message !== 'success' && (

@@ -6,13 +6,16 @@ interface WorkColumnProps {
   count: number;
   tasks: Task[];
   clients: Client[];
+  teamMembers?: any[];
   onStatusChange: (id: string, newStatus: string) => void;
   onDelete: (id: string) => void;
   alert?: boolean;
   color?: "slate" | "indigo" | "amber" | "emerald";
+  isEditor?: boolean;
+  onEditClick?: (task: Task) => void;
 }
 
-export function WorkColumn({ title, count, tasks, clients, onStatusChange, onDelete, color = "slate" }: WorkColumnProps) {
+export function WorkColumn({ title, count, tasks, clients, teamMembers = [], onStatusChange, onDelete, color = "slate", isEditor = false, onEditClick }: WorkColumnProps) {
   const colorClasses = {
     slate: "text-slate-500 bg-slate-100 border-slate-200",
     indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
@@ -39,7 +42,7 @@ export function WorkColumn({ title, count, tasks, clients, onStatusChange, onDel
       </div>
       <div className="space-y-4 min-h-[150px]">
         {tasks.map(task => (
-          <WorkCard key={task.id} task={task} clients={clients} onStatusChange={onStatusChange} onDelete={onDelete} />
+          <WorkCard key={task.id} task={task} clients={clients} teamMembers={teamMembers} onStatusChange={onStatusChange} onDelete={onDelete} isEditor={isEditor} onEditClick={onEditClick} />
         ))}
         {tasks.length === 0 && (
           <div className="h-32 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center">

@@ -7,6 +7,7 @@ import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 import { useCurrency } from "@/context/CurrencyContext";
 import { Client } from '@/types/client';
 import { Work } from '@/types/work';
+import { useRouter } from 'next/navigation';
 
 // Modular Sub-Components
 import { DashboardHeader } from "@/dashboard/overview/components/DashboardHeader";
@@ -16,10 +17,11 @@ import { SystemEfficiencyCircle } from "@/dashboard/overview/components/SystemEf
 import { RecentActivityTable } from "@/dashboard/overview/components/RecentActivityTable";
 
 export default function Home() {
+  const router = useRouter();
   const { formatCurrency } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string; teamRole?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +32,12 @@ export default function Home() {
           getWorksAction(),
           getCurrentUserAction()
         ]);
+        
+        if (userData?.teamRole === 'editor') {
+          router.replace('/dashboard/work');
+          return;
+        }
+
         setClients(clientsData);
         setWorks(worksData);
         setCurrentUser(userData);

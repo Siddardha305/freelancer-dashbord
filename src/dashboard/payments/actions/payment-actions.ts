@@ -4,6 +4,7 @@ import dbConnect from '@/database/mongodb'
 import Payment from '@/database/models/Payment'
 import Client from '@/database/models/Client'
 import Work from '@/database/models/Work'
+import { Work as WorkType } from '@/types/work'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getSessionUser } from '@/lib/session'
@@ -108,7 +109,7 @@ async function autoGenerateInvoices(userId: string) {
         });
 
         // Filter tasks completed between taskStartDate and target end date
-        const completedTasks = allClientWorks.filter((w: any) => {
+        const completedTasks = (allClientWorks as unknown as WorkType[]).filter((w) => {
           const dateVal = w.completedAt || w.updatedAt || w.createdAt;
           if (!dateVal) return false;
           const d = new Date(dateVal);
@@ -166,10 +167,17 @@ export async function getPaymentsAction() {
   const user = await getSessionUser()
   if (!user) return []
 
+  // Strict RBAC: Block Editors/Viewers from accessing billing/payments
+  if (user.teamRole === 'editor' || user.teamRole === 'viewer') return [];
+
   await dbConnect()
   try {
-    await autoGenerateInvoices(user._id);
-    const payments = await Payment.find({ userId: user._id, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).lean()
+    // Run auto-generation asynchronously in the background to prevent page load blocking
+    autoGenerateInvoices(user.workspaceId).catch(err => {
+      console.error("Async invoice generation failed:", err);
+    });
+
+    const payments = await Payment.find({ userId: user.workspaceId, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).lean()
     return JSON.parse(JSON.stringify(payments)).map((doc: LeanPaymentDoc) => ({
       ...doc,
       id: doc._id.toString(),
@@ -184,6 +192,11 @@ export async function getPaymentsAction() {
 export async function createPaymentAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
+
+  // Strict RBAC: Block Editors/Viewers from creating payments/billing
+  if (user.teamRole === 'editor' || user.teamRole === 'viewer') {
+    return { message: 'Your permission level does not authorize accessing billing or payments.' }
+  }
 
   const rawData = {
     client: formData.get('client'),
@@ -203,9 +216,19 @@ export async function createPaymentAction(prevState: unknown, formData: FormData
 
   try {
     await dbConnect()
+    
+    // Generate a unique invoice number for manual invoice creation to prevent duplicate key database errors
+    const today = new Date();
+    const yy = String(today.getFullYear()).substring(2);
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const invoiceNumber = `INV-${yy}${mm}-${randomSuffix}`;
+
     const newPayment = await Payment.create({
       ...validatedFields.data,
-      userId: user._id,
+      invoiceNumber,
+      invoiceDate: today,
+      userId: user.workspaceId,
     })
 
     revalidatePath('/dashboard/payments')
@@ -231,10 +254,15 @@ export async function updatePaymentStatusAction(id: string, newStatus: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // Strict RBAC: Block Editors/Viewers from updating billing
+  if (user.teamRole === 'editor' || user.teamRole === 'viewer') {
+    return { message: 'Your permission level does not authorize accessing billing or payments.' }
+  }
+
   try {
     await dbConnect()
     const updated = await Payment.findOneAndUpdate(
-      { _id: id, userId: user._id },
+      { _id: id, userId: user.workspaceId },
       { payment_status: newStatus },
       { new: true }
     )
@@ -256,11 +284,16 @@ export async function deletePaymentAction(id: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // Strict RBAC: Block Editors/Viewers from deleting billing
+  if (user.teamRole === 'editor' || user.teamRole === 'viewer') {
+    return { message: 'Your permission level does not authorize accessing billing or payments.' }
+  }
+
   try {
     await dbConnect()
     
     const paymentObjectId = new mongoose.Types.ObjectId(id)
-    const userObjectId = new mongoose.Types.ObjectId(user._id)
+    const userObjectId = new mongoose.Types.ObjectId(user.workspaceId)
 
     const result = await Payment.collection.updateOne(
       { _id: paymentObjectId, userId: userObjectId },
@@ -269,7 +302,7 @@ export async function deletePaymentAction(id: string) {
     
     if (result.matchedCount === 0) {
       await Payment.collection.updateOne(
-        { id: id, userId: user._id },
+        { id: id, userId: user.workspaceId },
         { $set: { isDeleted: true } }
       )
     }
@@ -287,9 +320,14 @@ export async function generateAllInvoicesAction() {
   const user = await getSessionUser()
   if (!user) return { success: false, message: 'Unauthorized' }
 
+  // Strict RBAC: Block Editors/Viewers from generating billing
+  if (user.teamRole === 'editor' || user.teamRole === 'viewer') {
+    return { success: false, message: 'Your permission level does not authorize accessing billing or payments.' }
+  }
+
   await dbConnect()
   try {
-    const activeClients = await Client.find({ userId: user._id, status: 'Active' });
+    const activeClients = await Client.find({ userId: user.workspaceId, status: 'Active' });
     if (!activeClients || activeClients.length === 0) {
       return { success: true, message: 'No active clients found', count: 0 };
     }
@@ -304,7 +342,7 @@ export async function generateAllInvoicesAction() {
     for (const client of activeClients) {
       // Check if an active (non-deleted) invoice already exists for this client in the current month
       const existingInvoice = await Payment.findOne({
-        userId: user._id,
+        userId: user.workspaceId,
         client: client.name,
         invoiceDate: { $gte: start, $lte: end },
         isDeleted: { $ne: true }
@@ -316,7 +354,7 @@ export async function generateAllInvoicesAction() {
       
       // Calculate taskStartDate dynamically using rolling billing logic
       const clientPayments = await Payment.find({
-        userId: user._id,
+        userId: user.workspaceId,
         client: client.name,
         isDeleted: { $ne: true }
       });
@@ -350,13 +388,13 @@ export async function generateAllInvoicesAction() {
 
       // Fetch completed tasks for this client
       const allClientWorks = await Work.find({
-        userId: user._id,
+        userId: user.workspaceId,
         client: client.name,
         status: { $in: ['Completed', 'Done'] }
       });
 
       // Filter tasks in memory using taskStartDate
-      const completedTasks = allClientWorks.filter((w: any) => {
+      const completedTasks = (allClientWorks as unknown as WorkType[]).filter((w) => {
         const dateVal = w.completedAt || w.updatedAt || w.createdAt;
         if (!dateVal) return false;
         const d = new Date(dateVal);
@@ -391,7 +429,7 @@ export async function generateAllInvoicesAction() {
         const invoiceNumber = `INV-${yy}${mm}-${randomSuffix}`;
         
         await Payment.create({
-          userId: user._id,
+          userId: user.workspaceId,
           client: client.name,
           amount: String(amount),
           invoiceNumber,

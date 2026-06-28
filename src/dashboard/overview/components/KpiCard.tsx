@@ -10,15 +10,13 @@ interface KpiCardProps {
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   trend: string;
-  alert?: boolean;
 }
 
 export function KpiCard({ 
   title, 
   value, 
   icon: Icon, 
-  trend, 
-  alert = false 
+  trend 
 }: KpiCardProps) {
   const { symbol } = useCurrency();
   const isCurrencyIcon = Icon === DollarSign;

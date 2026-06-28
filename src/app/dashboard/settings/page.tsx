@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { User, Shield, Settings, Activity, Loader2, Check, Zap, Sparkles, ShieldAlert, Globe, Lock, Upload } from "lucide-react";
+import { User, Shield, Settings, Activity, Loader2, Check, Zap, Sparkles, ShieldAlert, Lock, Upload } from "lucide-react";
 import { DiagnosticsView } from "@/dashboard/diagnostics/components/DiagnosticsView";
 import { ResetWorkspaceButton } from "@/dashboard/diagnostics/components/ResetWorkspaceButton";
 import { getCurrentUserAction, updateProfileAction, updatePasswordAction } from "@/auth/actions/auth-actions";
@@ -33,9 +33,9 @@ export default function SettingsPage() {
     }
     return "general";
   });
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string; plan?: string; workspaceType?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role?: string; currency?: string; plan?: string; workspaceType?: string; teamRole?: string } | null>(null);
+  const isEditor = currentUser?.teamRole === 'editor';
   const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState("");
@@ -97,6 +97,9 @@ export default function SettingsPage() {
           setAgencyLogoDarkUrl(user.agencyLogoDarkUrl || "");
           setAgencyScannerUrl(user.agencyScannerUrl || "");
           setAgencyBrandingMode((user.agencyBrandingMode as "logo" | "text" | "both") || "both");
+          if (user.teamRole === 'editor' && activeTab === 'pricing') {
+            setActiveTab('general');
+          }
         }
       } catch (error) {
         console.error("Failed to load settings user:", error);
@@ -106,7 +109,7 @@ export default function SettingsPage() {
     }
     loadUser();
 
-  }, []);
+  }, [activeTab]);
 
   const handleSaveProfile = async () => {
     if (!name.trim()) {
@@ -257,16 +260,18 @@ export default function SettingsPage() {
               General
             </button>
 
-            <button 
-              onClick={() => setActiveTab("pricing")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer",
-                activeTab === "pricing" ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              )}
-            >
-              <Zap className="h-4 w-4" />
-              Pricing
-            </button>
+            {!isEditor && (
+              <button 
+                onClick={() => setActiveTab("pricing")}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer",
+                  activeTab === "pricing" ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                )}
+              >
+                <Zap className="h-4 w-4" />
+                Pricing
+              </button>
+            )}
             {isAdmin && (
               <button 
                 onClick={() => setActiveTab("diagnostics")}
@@ -338,7 +343,8 @@ export default function SettingsPage() {
                           <select 
                             value={currency} 
                             onChange={(e) => setCurrency(e.target.value)}
-                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer"
+                            disabled={isEditor}
+                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="INR">INR (₹) - Indian Rupee</option>
                             <option value="USD">USD ($) - US Dollar</option>
@@ -350,14 +356,15 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
-
+ 
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Workspace Niche / Type</label>
                         <div className="relative">
                           <select 
                             value={workspaceType} 
                             onChange={(e) => setWorkspaceType(e.target.value as WorkspaceType)}
-                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer"
+                            disabled={isEditor}
+                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <option value="video_editing">Video Editing & Design (Thumbnails)</option>
                             <option value="photography">Photography & Media (Shoots)</option>
@@ -464,263 +471,265 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 2. Agency Branding Settings (White-Label) */}
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden group hover:shadow-md transition-all relative">
-                  {!limits.whitelabelPortals ? (
-                    <div className="absolute inset-0 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl">
-                        <Lock className="h-6 w-6" />
-                      </div>
-                      <div className="space-y-1 max-w-sm">
-                        <h3 className="font-bold text-slate-900 dark:text-slate-50">Agency Branding is Locked</h3>
-                        <p className="text-xs text-slate-550 dark:text-slate-400">Upgrade to the elite **Agency Plan** to customize your dashboard logos, colors, and layout white-labeling.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("pricing")}
-                        className="px-6 py-3 text-[10px] font-black text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all cursor-pointer uppercase tracking-widest shadow-md active:scale-95"
-                      >
-                        Upgrade Plan
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-5">
-                    <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl group-hover:scale-110 transition-transform">
-                      <Sparkles className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">Agency Branding (White-Label)</h2>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Customize your primary dashboard logo and brand name.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="p-8 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Name</label>
-                        <input 
-                          type="text" 
-                          value={agencyName} 
-                          onChange={(e) => setAgencyName(e.target.value)}
-                          className="w-full px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all"
-                          placeholder="Replaces 'FreelanceOS' in Sidebar"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Branding Display Mode</label>
-                        <select
-                          value={agencyBrandingMode}
-                          onChange={(e) => setAgencyBrandingMode(e.target.value as "logo" | "text" | "both")}
-                          className="w-full px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all cursor-pointer"
+                {!isEditor && (
+                  <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden group hover:shadow-md transition-all relative">
+                    {!limits.whitelabelPortals ? (
+                      <div className="absolute inset-0 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                          <Lock className="h-6 w-6" />
+                        </div>
+                        <div className="space-y-1 max-w-sm">
+                          <h3 className="font-bold text-slate-900 dark:text-slate-50">Agency Branding is Locked</h3>
+                          <p className="text-xs text-slate-555 dark:text-slate-400">Upgrade to the elite **Agency Plan** to customize your dashboard logos, colors, and layout white-labeling.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("pricing")}
+                          className="px-6 py-3 text-[10px] font-black text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all cursor-pointer uppercase tracking-widest shadow-md active:scale-95"
                         >
-                          <option value="both">Both Logo & Text</option>
-                          <option value="logo">Logo Only</option>
-                          <option value="text">Text Only</option>
-                        </select>
+                          Upgrade Plan
+                        </button>
+                      </div>
+                    ) : null}
+
+                    <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-5">
+                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl group-hover:scale-110 transition-transform">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">Agency Branding (White-Label)</h2>
+                        <p className="text-xs text-slate-400 dark:text-slate-505 font-medium">Customize your primary dashboard logo and brand name.</p>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Logo (Light Theme)</label>
-                        <div className="flex gap-2">
+                    
+                    <div className="p-8 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Name</label>
                           <input 
                             type="text" 
-                            value={agencyLogoUrl} 
-                            onChange={(e) => setAgencyLogoUrl(e.target.value)}
-                            className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all min-w-0"
-                            placeholder="Light backdrop logo URL or Base64"
+                            value={agencyName} 
+                            onChange={(e) => setAgencyName(e.target.value)}
+                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-955/40 transition-all"
+                            placeholder="Replaces 'FreelanceOS' in Sidebar"
                           />
-                          <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
-                            <Upload className="h-4 w-4 mr-1.5" />
-                            <span>Upload</span>
-                            <input 
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (file.size > 2 * 1024 * 1024) {
-                                  toast.error("File is too large (max 2MB)");
-                                  return;
-                                }
-                                try {
-                                  const compressed = await resizeAndCompressLogo(file);
-                                  setAgencyLogoUrl(compressed);
-                                  toast.success("Light logo uploaded and optimized!");
-                                } catch (err) {
-                                  toast.error("Failed to process image");
-                                  console.error(err);
-                                }
-                              }}
-                            />
-                          </label>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Branding Display Mode</label>
+                          <select
+                            value={agencyBrandingMode}
+                            onChange={(e) => setAgencyBrandingMode(e.target.value as "logo" | "text" | "both")}
+                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-955/40 transition-all cursor-pointer"
+                          >
+                            <option value="both">Both Logo & Text</option>
+                            <option value="logo">Logo Only</option>
+                            <option value="text">Text Only</option>
+                          </select>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Logo (Dark Theme)</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            value={agencyLogoDarkUrl} 
-                            onChange={(e) => setAgencyLogoDarkUrl(e.target.value)}
-                            className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all min-w-0"
-                            placeholder="Dark backdrop logo URL or Base64"
-                          />
-                          <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
-                            <Upload className="h-4 w-4 mr-1.5" />
-                            <span>Upload</span>
-                            <input 
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (file.size > 2 * 1024 * 1024) {
-                                  toast.error("File is too large (max 2MB)");
-                                  return;
-                                }
-                                try {
-                                  const compressed = await resizeAndCompressLogo(file);
-                                  setAgencyLogoDarkUrl(compressed);
-                                  toast.success("Dark logo uploaded and optimized!");
-                                } catch (err) {
-                                  toast.error("Failed to process image");
-                                  console.error(err);
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {agencyLogoUrl && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Light Logo Preview</label>
-                          <div className="h-16 w-32 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-3 overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={agencyLogoUrl} 
-                              alt="Light Logo Preview" 
-                              className="h-full w-full object-contain"
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Logo (Light Theme)</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={agencyLogoUrl} 
+                              onChange={(e) => setAgencyLogoUrl(e.target.value)}
+                              className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-955/40 transition-all min-w-0"
+                              placeholder="Light backdrop logo URL or Base64"
                             />
+                            <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
+                              <Upload className="h-4 w-4 mr-1.5" />
+                              <span>Upload</span>
+                              <input 
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 2 * 1024 * 1024) {
+                                    toast.error("File is too large (max 2MB)");
+                                    return;
+                                  }
+                                  try {
+                                    const compressed = await resizeAndCompressLogo(file);
+                                    setAgencyLogoUrl(compressed);
+                                    toast.success("Light logo uploaded and optimized!");
+                                  } catch (err) {
+                                    toast.error("Failed to process image");
+                                    console.error(err);
+                                  }
+                                }}
+                              />
+                            </label>
                           </div>
                         </div>
-                      )}
-                      {agencyLogoDarkUrl && (
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Dark Logo Preview</label>
-                          <div className="h-16 w-32 rounded-xl bg-slate-950 border border-slate-850 flex items-center justify-center p-3 overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={agencyLogoDarkUrl} 
-                              alt="Dark Logo Preview" 
-                              className="h-full w-full object-contain"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Payment QR Scanner Code</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            value={agencyScannerUrl} 
-                            onChange={(e) => setAgencyScannerUrl(e.target.value)}
-                            className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-950/40 transition-all min-w-0"
-                            placeholder="QR scanner image URL or Base64 data"
-                          />
-                          <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
-                            <Upload className="h-4 w-4 mr-1.5" />
-                            <span>Upload</span>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agency Logo (Dark Theme)</label>
+                          <div className="flex gap-2">
                             <input 
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (file.size > 2 * 1024 * 1024) {
-                                  toast.error("File is too large (max 2MB)");
-                                  return;
-                                }
-                                try {
-                                  const compressed = await resizeAndCompressLogo(file);
-                                  setAgencyScannerUrl(compressed);
-                                  toast.success("QR scanner uploaded and optimized!");
-                                } catch (err) {
-                                  toast.error("Failed to process image");
-                                  console.error(err);
-                                }
-                              }}
+                              type="text" 
+                              value={agencyLogoDarkUrl} 
+                              onChange={(e) => setAgencyLogoDarkUrl(e.target.value)}
+                              className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-955/40 transition-all min-w-0"
+                              placeholder="Dark backdrop logo URL or Base64"
                             />
-                          </label>
+                            <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
+                              <Upload className="h-4 w-4 mr-1.5" />
+                              <span>Upload</span>
+                              <input 
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 2 * 1024 * 1024) {
+                                    toast.error("File is too large (max 2MB)");
+                                    return;
+                                  }
+                                  try {
+                                    const compressed = await resizeAndCompressLogo(file);
+                                    setAgencyLogoDarkUrl(compressed);
+                                    toast.success("Dark logo uploaded and optimized!");
+                                  } catch (err) {
+                                    toast.error("Failed to process image");
+                                    console.error(err);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                         </div>
                       </div>
 
-                      {agencyScannerUrl && (
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Scanner QR Preview</label>
-                          <div className="h-16 w-16 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2 overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={agencyScannerUrl} 
-                              alt="Scanner QR Preview" 
-                              className="h-full w-full object-contain"
-                            />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {agencyLogoUrl && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Light Logo Preview</label>
+                            <div className="h-16 w-32 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-3 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img 
+                                src={agencyLogoUrl} 
+                                alt="Light Logo Preview" 
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-                      <button 
-                        type="button"
-                        onClick={handleResetBranding}
-                        disabled={brandingResetting || profileSaving}
-                        className="w-full sm:w-auto px-8 py-4 text-[10px] font-black text-slate-650 dark:text-slate-350 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest border border-slate-200 dark:border-slate-700"
-                      >
-                        {brandingResetting ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Resetting...</span>
-                          </>
-                        ) : (
-                          <span>Reset to Default</span>
                         )}
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={handleSaveProfile}
-                        disabled={profileSaving || brandingResetting}
-                        className="w-full sm:w-auto px-8 py-4 text-[10px] font-black text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest"
-                      >
-                        {profileSaving ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Saving Branding...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-4 w-4" />
-                            <span>Save Branding Settings</span>
-                          </>
+                        {agencyLogoDarkUrl && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Dark Logo Preview</label>
+                            <div className="h-16 w-32 rounded-xl bg-slate-950 border border-slate-850 flex items-center justify-center p-3 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img 
+                                src={agencyLogoDarkUrl} 
+                                alt="Dark Logo Preview" 
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                          </div>
                         )}
-                      </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Payment QR Scanner Code</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={agencyScannerUrl} 
+                              onChange={(e) => setAgencyScannerUrl(e.target.value)}
+                              className="flex-1 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-955/40 transition-all min-w-0"
+                              placeholder="QR scanner image URL or Base64 data"
+                            />
+                            <label className="flex items-center justify-center px-6 py-4 bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 select-none active:scale-95">
+                              <Upload className="h-4 w-4 mr-1.5" />
+                              <span>Upload</span>
+                              <input 
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 2 * 1024 * 1024) {
+                                    toast.error("File is too large (max 2MB)");
+                                    return;
+                                  }
+                                  try {
+                                    const compressed = await resizeAndCompressLogo(file);
+                                    setAgencyScannerUrl(compressed);
+                                    toast.success("QR scanner uploaded and optimized!");
+                                  } catch (err) {
+                                    toast.error("Failed to process image");
+                                    console.error(err);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+
+                        {agencyScannerUrl && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">Scanner QR Preview</label>
+                            <div className="h-16 w-16 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img 
+                                src={agencyScannerUrl} 
+                                alt="Scanner QR Preview" 
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+                        <button 
+                          type="button"
+                          onClick={handleResetBranding}
+                          disabled={brandingResetting || profileSaving}
+                          className="w-full sm:w-auto px-8 py-4 text-[10px] font-black text-slate-650 dark:text-slate-355 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest border border-slate-200 dark:border-slate-700"
+                        >
+                          {brandingResetting ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Resetting...</span>
+                            </>
+                          ) : (
+                            <span>Reset to Default</span>
+                          )}
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={handleSaveProfile}
+                          disabled={profileSaving || brandingResetting}
+                          className="w-full sm:w-auto px-8 py-4 text-[10px] font-black text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-widest"
+                        >
+                          {profileSaving ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Saving Branding...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4" />
+                              <span>Save Branding Settings</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Reset Workspace action available to standard users under General tab */}
-                <ResetWorkspaceButton />
+                {!isEditor && <ResetWorkspaceButton />}
               </div>
             )}
 

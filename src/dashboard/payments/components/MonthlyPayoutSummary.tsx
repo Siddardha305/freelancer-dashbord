@@ -14,7 +14,6 @@ import { ClientPayoutCard } from "./ClientPayoutCard";
 
 interface MonthlyPayoutSummaryProps {
   onCreateInvoice?: (clientName: string, amount: number) => void;
-  onSuccess?: () => void;
   clients?: Client[];
   works?: Work[];
   payments?: Payment[];
@@ -22,7 +21,6 @@ interface MonthlyPayoutSummaryProps {
 
 export function MonthlyPayoutSummary({ 
   onCreateInvoice, 
-  onSuccess,
   clients = [],
   works = [],
   payments = []

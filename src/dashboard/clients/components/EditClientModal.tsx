@@ -7,6 +7,7 @@ import { useCurrency } from '@/context/CurrencyContext'
 import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 import { RadixDialog, RadixSelect } from '@/components/ui/RadixAnimate'
+import { getCurrentUserAction } from '@/auth/actions/auth-actions'
 
 export function EditClientModal({ 
   isOpen, 
@@ -21,19 +22,55 @@ export function EditClientModal({
 }) {
   const { symbol } = useCurrency();
   const { terms } = useWorkspace();
-  const [pricingModel, setPricingModel] = useState('monthly')
-  const [status, setStatus] = useState('Active')
-  const [priority, setPriority] = useState('Medium')
+  const [pricingModel, setPricingModel] = useState(client?.pricing_model || 'monthly')
+  const [status, setStatus] = useState(client?.status || 'Active')
+  const [priority, setPriority] = useState(client?.priority || 'Medium')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  
+  const [thumbnailsCount, setThumbnailsCount] = useState(client?.thumbnails_per_month || 0)
+  const [pricePerUnit, setPricePerUnit] = useState(client?.price_per_thumbnail || 0)
 
-  useEffect(() => {
-    if (client) {
-      setPricingModel(client.pricing_model || 'monthly');
-      setStatus(client.status || 'Active');
-      setPriority(client.priority || 'Medium');
+  // Determine initial package if edit has bulk model
+  const getInitialPackage = () => {
+    if (client?.pricing_model === 'bulk_package') {
+      if (client.thumbnails_per_month === 10) return 'pkg_7_10';
+      if (client.thumbnails_per_month === 15) return 'pkg_12_15';
+      if (client.thumbnails_per_month === 20) return 'pkg_17_20';
     }
-  }, [client]);
+    return 'pkg_7_10';
+  };
+  const [bulkPackage, setBulkPackage] = useState<'pkg_7_10' | 'pkg_12_15' | 'pkg_17_20'>(getInitialPackage())
+
+  // Fetch logged in user to check if they are the special admin account
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUserAction();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error("Failed to load current user in EditClientModal:", err);
+      }
+    }
+    loadUser();
+  }, []);
+
+  // Auto-calculate rates based on selected package
+  useEffect(() => {
+    if (pricingModel === 'bulk_package') {
+      if (bulkPackage === 'pkg_7_10') {
+        setThumbnailsCount(10);
+        setPricePerUnit(310);
+      } else if (bulkPackage === 'pkg_12_15') {
+        setThumbnailsCount(15);
+        setPricePerUnit(320);
+      } else if (bulkPackage === 'pkg_17_20') {
+        setThumbnailsCount(20);
+        setPricePerUnit(290);
+      }
+    }
+  }, [pricingModel, bulkPackage]);
 
   if (!client) return null
 
@@ -209,10 +246,18 @@ export function EditClientModal({
                   name="pricing_model" 
                   value={pricingModel}
                   onValueChange={setPricingModel}
-                  options={[
-                    { value: "monthly", label: "Retainer (Monthly)" },
-                    { value: "per_thumbnail", label: terms.perUnitText }
-                  ]}
+                  options={
+                    currentUser?.email === 'siddardhachitturi789@gmail.com'
+                      ? [
+                          { value: 'bulk_package', label: 'Bulk Package' },
+                          { value: 'per_thumbnail', label: terms.perUnitText }
+                        ]
+                      : [
+                          { value: 'monthly', label: 'Retainer (Monthly)' },
+                          { value: 'per_thumbnail', label: terms.perUnitText },
+                          { value: 'bulk_package', label: 'Bulk Package' }
+                        ]
+                  }
                   className="bg-white w-full border border-slate-200 rounded-2xl text-sm font-bold px-5 py-4"
                 />
               </div>
@@ -221,11 +266,29 @@ export function EditClientModal({
                 <input 
                   type="number" 
                   name="monthly_price" 
-                  defaultValue={client.monthly_price}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold" 
+                  value={pricingModel === 'bulk_package' ? (thumbnailsCount * pricePerUnit) : monthlyPrice}
+                  onChange={(e) => setMonthlyPrice(Number(e.target.value))}
+                  readOnly={pricingModel === 'bulk_package'}
+                  className={`w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold ${pricingModel === 'bulk_package' ? 'bg-slate-100/80 cursor-not-allowed opacity-75' : ''}`} 
                 />
               </div>
             </div>
+
+            {pricingModel === 'bulk_package' && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Predefined Plan</label>
+                <RadixSelect
+                  value={bulkPackage}
+                  onValueChange={(val) => setBulkPackage(val as any)}
+                  options={[
+                    { value: 'pkg_7_10', label: '7-10 Thumbnails per month (₹3,100)' },
+                    { value: 'pkg_12_15', label: '12-15 Thumbnails per month (₹4,800)' },
+                    { value: 'pkg_17_20', label: '17-20 Thumbnails per month (₹5,800)' }
+                  ]}
+                  className="bg-white w-full border border-slate-200 rounded-2xl text-sm font-bold px-5 py-4"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -233,8 +296,10 @@ export function EditClientModal({
                 <input 
                   type="number" 
                   name="thumbnails_per_month" 
-                  defaultValue={client.thumbnails_per_month ?? 8}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
+                  value={thumbnailsCount}
+                  onChange={(e) => setThumbnailsCount(Number(e.target.value))}
+                  readOnly={pricingModel === 'bulk_package'}
+                  className={`w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold ${pricingModel === 'bulk_package' ? 'bg-slate-100/80 cursor-not-allowed opacity-75' : ''}`}
                   placeholder="e.g. 8"
                 />
               </div>
@@ -243,8 +308,10 @@ export function EditClientModal({
                 <input 
                   type="number" 
                   name="price_per_thumbnail" 
-                  defaultValue={client.price_per_thumbnail ?? 500}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold"
+                  value={pricePerUnit}
+                  onChange={(e) => setPricePerUnit(Number(e.target.value))}
+                  readOnly={pricingModel === 'bulk_package'}
+                  className={`w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold ${pricingModel === 'bulk_package' ? 'bg-slate-100/80 cursor-not-allowed opacity-75' : ''}`}
                   placeholder="e.g. 500"
                 />
               </div>

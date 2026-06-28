@@ -75,7 +75,7 @@ const PaymentSchema = new Schema({
 });
 
 if (models.Payment) {
-  delete (models as any).Payment;
+  delete (models as Record<string, unknown>).Payment;
 }
 const Payment = model('Payment', PaymentSchema);
 

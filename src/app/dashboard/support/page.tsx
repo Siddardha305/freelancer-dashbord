@@ -1,36 +1,28 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LifeBuoy, Send, Loader2, Sparkles, MessageCircle, AlertCircle, Calendar } from "lucide-react";
 import { createSupportTicketAction, getSupportTicketsForUserAction } from "@/dashboard/support/actions/support-actions";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { SupportTicket } from "@/types/support";
 
 export default function SupportPage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("technical");
   const [priority, setPriority] = useState("medium");
   const [description, setDescription] = useState("");
-  
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loadingTickets, setLoadingTickets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  async function loadTickets() {
-    try {
+  const { data: tickets = [], isLoading: loadingTickets, refetch: refetchTickets } = useQuery<SupportTicket[]>({
+    queryKey: ['support-tickets'],
+    queryFn: async () => {
       const data = await getSupportTicketsForUserAction();
-      setTickets(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingTickets(false);
+      return data as SupportTicket[];
     }
-  }
-
-  useEffect(() => {
-    loadTickets();
-  }, []);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,11 +51,11 @@ export default function SupportPage() {
         setCategory("technical");
         setPriority("medium");
         // Reload list
-        loadTickets();
+        refetchTickets();
       } else {
         toast.error(res.message);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to raise support ticket.");
     } finally {
       setSubmitting(false);

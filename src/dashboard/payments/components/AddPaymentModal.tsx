@@ -13,6 +13,7 @@ import { Payment } from '@/types/payment'
 import { Work } from '@/types/work'
 import { getCurrentUserAction } from '@/auth/actions/auth-actions'
 import { getWorksAction } from '@/dashboard/work/actions/work-actions'
+import { CustomSelect } from '@/components/ui/CustomSelect'
 
 interface FormState {
   message: string;
@@ -54,6 +55,7 @@ export function AddPaymentModal({
   const [selectedClient, setSelectedClient] = useState(initialClient);
   const [amount, setAmount] = useState(initialAmount !== undefined ? String(initialAmount) : '');
   const [dueDate, setDueDate] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('Pending');
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -169,19 +171,15 @@ export function AddPaymentModal({
         <form action={formAction} className="space-y-6 p-2">
           <div className="space-y-2">
             <label htmlFor="client" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Assign Client</label>
-            <select 
+            <CustomSelect 
               id="client" 
               name="client" 
               required
               value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium appearance-none"
-            >
-              <option value="">Select a client...</option>
-              {clients.map(client => (
-                <option key={client.id} value={client.name}>{client.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedClient}
+              placeholder="Select a client..."
+              options={clients.map(c => ({ value: c.name, label: c.name }))}
+            />
             {state?.errors?.client && <p className="text-xs text-red-500 mt-1 font-bold ml-1">{state.errors.client[0]}</p>}
           </div>
 
@@ -221,11 +219,17 @@ export function AddPaymentModal({
 
           <div className="space-y-2">
             <label htmlFor="payment_status" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
-            <select id="payment_status" name="payment_status" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium appearance-none">
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
-              <option value="Overdue">Overdue</option>
-            </select>
+            <CustomSelect
+              id="payment_status"
+              name="payment_status"
+              value={paymentStatus}
+              onChange={setPaymentStatus}
+              options={[
+                { value: 'Pending', label: 'Pending' },
+                { value: 'Paid', label: 'Paid' },
+                { value: 'Overdue', label: 'Overdue' }
+              ]}
+            />
           </div>
 
           {state?.message && state.message !== 'success' && (

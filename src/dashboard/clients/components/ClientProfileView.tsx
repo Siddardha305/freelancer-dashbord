@@ -188,6 +188,7 @@ export function ClientProfileView({
 
         {/* Edit Modal */}
         <EditClientModal 
+          key={client?.id}
           isOpen={isEditModalOpen} 
           onClose={() => setIsEditModalOpen(false)} 
           client={client}

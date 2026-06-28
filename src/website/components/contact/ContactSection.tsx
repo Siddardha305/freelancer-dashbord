@@ -31,7 +31,7 @@ export default function ContactSection() {
         } else {
           setErrorMsg(res.message || 'Transmission failed.');
         }
-      } catch (err) {
+      } catch {
         setErrorMsg('Network error, pipeline closed.');
       } finally {
         setIsSubmitting(false);

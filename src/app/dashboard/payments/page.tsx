@@ -10,6 +10,7 @@ import { getPaymentsAction, generateAllInvoicesAction } from '@/dashboard/paymen
 import { AddPaymentModal } from "@/dashboard/payments/components/AddPaymentModal";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 import { Payment } from '@/types/payment';
 import { Client } from '@/types/client';
@@ -19,8 +20,16 @@ import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 
 export default function PaymentsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<{ agencyName?: string; agencyLogoUrl?: string; agencyLogoDarkUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ 
+    teamRole?: string;
+    agencyName?: string; 
+    agencyLogoUrl?: string; 
+    agencyLogoDarkUrl?: string; 
+    agencyScannerUrl?: string; 
+    agencyBrandingMode?: "logo" | "text" | "both" 
+  } | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   
   // Prefilled invoice modal states
@@ -54,6 +63,10 @@ export default function PaymentsPage() {
     async function loadUser() {
       try {
         const user = await getCurrentUserAction();
+        if (user?.teamRole === 'editor') {
+          router.replace('/dashboard/work');
+          return;
+        }
         setCurrentUser(user);
       } catch (error) {
         console.error("Error loading payments page user:", error);
@@ -62,7 +75,7 @@ export default function PaymentsPage() {
       }
     }
     loadUser();
-  }, []);
+  }, [router]);
 
   const loading = isLoadingPayments || isLoadingClients || isLoadingWorks || loadingUser;
 
@@ -70,6 +83,34 @@ export default function PaymentsPage() {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50/50">
         <div className="h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (currentUser?.teamRole === 'editor' || currentUser?.teamRole === 'viewer') {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/50 min-h-screen">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-500 dark:text-red-400">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-wider">Access Restricted</h1>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              Your team role (<span className="text-indigo-600 dark:text-indigo-400 font-extrabold uppercase">{currentUser.teamRole}</span>) does not have permission to view billing, payments, or invoices in this workspace.
+            </p>
+          </div>
+          <div className="pt-2">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center justify-center px-6 py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-200"
+            >
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
       </div>
     );
   }

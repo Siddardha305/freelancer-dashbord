@@ -73,13 +73,38 @@ const UserSchema = new Schema({
     enum: ['video_editing', 'digital_marketing', 'photography', 'general'],
     default: 'video_editing',
   },
+  parentUserId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  teamRole: {
+    type: String,
+    enum: ['owner', 'admin', 'editor', 'viewer'],
+    default: 'owner',
+  },
+  memberRate: {
+    type: Number,
+    default: 0,
+  },
+  memberPaymentType: {
+    type: String,
+    enum: ['per_thumbnail', 'hourly', 'salary'],
+    default: 'per_thumbnail',
+  },
 }, {
   timestamps: true,
 });
 
-// Clear stale cached model if it lacks the recently added agencyScannerUrl field
-if (models.User && !models.User.schema.paths.agencyScannerUrl) {
-  delete (models as any).User;
+// Clear stale cached model if it lacks recently added fields
+if (models.User && (
+  !models.User.schema.paths.agencyScannerUrl || 
+  !models.User.schema.paths.parentUserId || 
+  !models.User.schema.paths.teamRole || 
+  !models.User.schema.paths.memberRate || 
+  !models.User.schema.paths.memberPaymentType
+)) {
+  delete (models as Record<string, unknown>).User;
   if (mongoose.modelNames().includes('User')) {
     mongoose.deleteModel('User');
   }

@@ -14,7 +14,8 @@ import {
   Zap, 
   ChevronLeft, 
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Briefcase
 } from 'lucide-react';
 import { getDatabaseDiagnostics } from '@/lib/db-diagnostics';
 import { useState, useEffect } from 'react';
@@ -23,13 +24,7 @@ import { AnimatedThemeToggler } from '@/components/shared/AnimatedThemeToggler';
 import { logoutAction } from '@/auth/actions/auth-actions';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Clients', href: '/dashboard/clients', icon: Users },
-  { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
-  { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
-  { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-];
+
 
 interface SidebarProps {
   user?: {
@@ -43,6 +38,7 @@ interface SidebarProps {
     agencyLogoUrl?: string;
     agencyLogoDarkUrl?: string;
     agencyBrandingMode?: string;
+    teamRole?: string;
   } | null;
   onLinkClick?: () => void;
   isCollapsed?: boolean;
@@ -67,7 +63,7 @@ function SidebarTooltip({ content, show, children }: { content: string; show: bo
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -10 }}
             transition={{ type: "spring", stiffness: 450, damping: 25 }}
-            className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100] bg-slate-900 dark:bg-slate-950 text-white text-[10px] font-bold px-3 py-2 rounded-xl whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none tracking-wider uppercase"
+            className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100] bg-slate-900 dark:bg-slate-955 text-white text-[10px] font-bold px-3 py-2 rounded-xl whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none tracking-wider uppercase"
           >
             {content}
             <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900 dark:border-r-slate-950" />
@@ -83,6 +79,22 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
   const [dbStats, setDbStats] = useState<{ storageUsedMB?: string } | null>(null);
   const [isDark, setIsDark] = useState(false);
   const { plan, planName } = usePlan();
+  const isAgency = plan === 'agency' || user?.plan === 'agency';
+
+  const isOwner = user?.teamRole === 'owner' || !user?.teamRole;
+  const isEditor = user?.teamRole === 'editor';
+
+  const navigation = isEditor ? [
+    { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+  ] : [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Clients', href: '/dashboard/clients', icon: Briefcase },
+    ...(isOwner ? [{ name: 'Team', href: '/dashboard/team', icon: Users }] : []),
+    { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+    { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
+    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+  ];
 
   useEffect(() => {
     const checkTheme = () => {
@@ -140,7 +152,7 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
         {isCollapsed ? (
           <button
             onClick={onToggleCollapse}
-            className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-650 transition-all cursor-pointer"
+            className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-655 transition-all cursor-pointer"
             title="Expand Sidebar"
           >
             <ChevronRight className="h-5 w-5" />
@@ -212,6 +224,41 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            
+            const isRestricted = (item.name === 'Payments' && (user?.teamRole === 'editor' || user?.teamRole === 'viewer')) ||
+                                 (item.name === 'Team' && !isAgency);
+            
+            const restrictionTooltip = item.name === 'Team' && !isAgency 
+              ? 'Team (Agency Plan Required)' 
+              : `${item.name} (Restricted)`;
+
+            if (isRestricted) {
+              return (
+                <SidebarTooltip key={item.name} content={restrictionTooltip} show={isCollapsed}>
+                  <div
+                    className={`flex items-center gap-3 rounded-xl py-3 text-sm font-semibold transition-all duration-200 relative w-full opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-950/10 ${isCollapsed ? "justify-center px-0" : "px-4"}`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-slate-400" />
+                    <AnimatePresence mode="wait">
+                      {!isCollapsed && (
+                        <motion.span
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: "auto" }}
+                          exit={{ opacity: 0, width: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="whitespace-nowrap overflow-hidden flex items-center gap-1.5"
+                        >
+                          {item.name}
+                          <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </SidebarTooltip>
+              );
+            }
             
             return (
               <SidebarTooltip key={item.name} content={item.name} show={isCollapsed}>
@@ -296,46 +343,48 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
         )}
 
         {/* Plan Badge Widget */}
-        <div className="mt-6 px-2">
-          {(() => {
-            const planBadges = {
-              hobby:  { bg: 'bg-slate-50 dark:bg-slate-950/40',   border: 'border-slate-200 dark:border-slate-800',  text: 'text-slate-600 dark:text-slate-400',  dot: 'bg-slate-400',   label: 'Hobby',  sub: 'Free Plan'      },
-              pro:    { bg: 'bg-indigo-50 dark:bg-indigo-950/20',  border: 'border-indigo-200 dark:border-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-400', dot: 'bg-indigo-500',  label: 'Pro',    sub: '₹2,499 / mo'    },
-              agency: { bg: 'bg-purple-50 dark:bg-purple-950/20',  border: 'border-purple-200 dark:border-purple-900/30', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500',  label: 'Agency', sub: '₹7,499 / mo'    },
-            };
-            const cfg = planBadges[plan as keyof typeof planBadges] ?? planBadges.hobby;
-            
-            return isCollapsed ? (
-              <SidebarTooltip content={`${planName} Plan - ${cfg.sub}`} show={isCollapsed}>
-                <Link 
-                  href="/dashboard/settings?tab=pricing"
-                  className={`flex items-center justify-center p-3.5 rounded-2xl border w-full ${cfg.bg} ${cfg.border} hover:scale-105 transition-all cursor-pointer`}
+        {!isEditor && (
+          <div className="mt-6 px-2">
+            {(() => {
+              const planBadges = {
+                hobby:  { bg: 'bg-slate-50 dark:bg-slate-950/40',   border: 'border-slate-200 dark:border-slate-800',  text: 'text-slate-600 dark:text-slate-400',  dot: 'bg-slate-400',   label: 'Hobby',  sub: 'Free Plan'      },
+                pro:    { bg: 'bg-indigo-50 dark:bg-indigo-950/20',  border: 'border-indigo-200 dark:border-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-400', dot: 'bg-indigo-500',  label: 'Pro',    sub: '₹2,499 / mo'    },
+                agency: { bg: 'bg-purple-50 dark:bg-purple-950/20',  border: 'border-purple-200 dark:border-purple-900/30', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500',  label: 'Agency', sub: '₹7,499 / mo'    },
+              };
+              const cfg = planBadges[plan as keyof typeof planBadges] ?? planBadges.hobby;
+              
+              return isCollapsed ? (
+                <SidebarTooltip content={`${planName} Plan - ${cfg.sub}`} show={isCollapsed}>
+                  <Link 
+                    href="/dashboard/settings?tab=pricing"
+                    className={`flex items-center justify-center p-3.5 rounded-2xl border w-full ${cfg.bg} ${cfg.border} hover:scale-105 transition-all cursor-pointer`}
+                  >
+                    <Zap className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                  </Link>
+                </SidebarTooltip>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`rounded-2xl border p-4 ${cfg.bg} ${cfg.border}`}
                 >
-                  <Zap className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-                </Link>
-              </SidebarTooltip>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={`rounded-2xl border p-4 ${cfg.bg} ${cfg.border}`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.text}`}>{planName} Plan</span>
-                </div>
-                <p className={`text-[10px] font-bold ${cfg.text} opacity-70 mb-3`}>{cfg.sub}</p>
-                <Link
-                  href="/dashboard/settings?tab=pricing"
-                  className="flex items-center gap-1.5 text-[9px] font-black text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/30 px-3 py-1.5 rounded-xl uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-all duration-200 w-full justify-center shadow-sm cursor-pointer"
-                >
-                  <Zap className="h-3 w-3" />
-                  {plan === 'hobby' ? 'Upgrade Plan' : 'Change Plan'}
-                </Link>
-              </motion.div>
-            );
-          })()}
-        </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.text}`}>{planName} Plan</span>
+                  </div>
+                  <p className={`text-[10px] font-bold ${cfg.text} opacity-70 mb-3`}>{cfg.sub}</p>
+                  <Link
+                    href="/dashboard/settings?tab=pricing"
+                    className="flex items-center gap-1.5 text-[9px] font-black text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/30 px-3 py-1.5 rounded-xl uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-all duration-200 w-full justify-center shadow-sm cursor-pointer"
+                  >
+                    <Zap className="h-3 w-3" />
+                    {plan === 'hobby' ? 'Upgrade Plan' : 'Change Plan'}
+                  </Link>
+                </motion.div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* User Profile Footer Section */}

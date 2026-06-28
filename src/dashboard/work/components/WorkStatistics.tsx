@@ -18,6 +18,8 @@ interface WorkStatisticsProps {
   inProgressTasksCount: number;
   pendingOverallCount: number;
   formatCurrency: (value: number | string) => string;
+  isEditor?: boolean;
+  completedTodayCount?: number;
 }
 
 export function WorkStatistics({
@@ -27,7 +29,9 @@ export function WorkStatistics({
   pendingTasksCount,
   inProgressTasksCount,
   pendingOverallCount,
-  formatCurrency
+  formatCurrency,
+  isEditor = false,
+  completedTodayCount = 0
 }: WorkStatisticsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -42,8 +46,8 @@ export function WorkStatistics({
           
           <div className="grid grid-cols-3 gap-2.5">
             <div className="bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between transition-colors shadow-sm">
-              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-tight">Earned</span>
-              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-1 truncate">{formatCurrency(earnedToday)}</span>
+              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-tight">{isEditor ? "Done Today" : "Earned"}</span>
+              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-1 truncate">{isEditor ? completedTodayCount : formatCurrency(earnedToday)}</span>
             </div>
             
             <div className="bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between transition-colors shadow-sm">

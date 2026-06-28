@@ -12,6 +12,7 @@ interface WorkFilterTabsProps {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
   onAddTaskClick: () => void;
+  isEditor?: boolean;
 }
 
 export function WorkFilterTabs({
@@ -21,7 +22,8 @@ export function WorkFilterTabs({
   setPriorityFilter,
   searchTerm,
   setSearchTerm,
-  onAddTaskClick
+  onAddTaskClick,
+  isEditor = false
 }: WorkFilterTabsProps) {
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pt-4">
@@ -76,7 +78,7 @@ export function WorkFilterTabs({
             History
           </button>
         </div>
-
+ 
         <div className="hidden md:flex items-center gap-2 text-slate-400">
           <Filter className="h-4 w-4" />
           <select 
@@ -92,7 +94,7 @@ export function WorkFilterTabs({
           </select>
         </div>
       </div>
-
+ 
       <div className="flex items-center gap-4 w-full xl:w-auto">
         <div className="relative flex-1 xl:w-96 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
@@ -104,13 +106,15 @@ export function WorkFilterTabs({
             className="w-full pl-12 pr-6 py-4 bg-card border border-card-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 text-sm text-slate-900 placeholder-slate-400 transition-all duration-200 shadow-sm"
           />
         </div>
-        <button 
-          onClick={onAddTaskClick}
-          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-100 dark:shadow-indigo-950/40 hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50 active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">New Task</span>
-        </button>
+        {!isEditor && (
+          <button 
+            onClick={onAddTaskClick}
+            className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-100 dark:shadow-indigo-950/40 hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50 active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Task</span>
+          </button>
+        )}
       </div>
     </div>
   );

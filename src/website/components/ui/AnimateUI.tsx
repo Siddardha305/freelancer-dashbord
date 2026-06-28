@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionTemplate, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useMotionTemplate, useMotionValue, Variants } from 'framer-motion';
 
 // 1. Ripple Button Component
 interface RippleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -112,7 +112,7 @@ interface InteractiveIconProps {
 }
 
 export function InteractiveIcon({ icon: Icon, className = '', animation = 'scale' }: InteractiveIconProps) {
-  const getVariants = (): any => {
+  const getVariants = (): Variants => {
     switch (animation) {
       case 'spin':
         return { hover: { rotate: 360, transition: { duration: 0.6, ease: "easeInOut" as const } } };

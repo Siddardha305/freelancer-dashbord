@@ -77,6 +77,7 @@ interface RadixSelectProps {
   placeholder?: string;
   className?: string;
   name?: string;
+  disabled?: boolean;
 }
 
 export function RadixSelect({
@@ -85,12 +86,13 @@ export function RadixSelect({
   options,
   placeholder = "Select...",
   className = "",
-  name
+  name,
+  disabled
 }: RadixSelectProps) {
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange} name={name}>
+    <SelectPrimitive.Root value={value} onValueChange={onValueChange} name={name} disabled={disabled}>
       <SelectPrimitive.Trigger
-        className={`flex items-center justify-between gap-2 px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all w-full cursor-pointer ${className}`}
+        className={`flex items-center justify-between gap-2 px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon>

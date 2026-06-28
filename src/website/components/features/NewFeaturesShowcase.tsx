@@ -101,7 +101,7 @@ export default function NewFeaturesShowcase() {
               {['video', 'design', 'consulting'].map((n) => (
                 <button
                   key={n}
-                  onClick={() => setNiche(n as any)}
+                  onClick={() => setNiche(n as 'video' | 'design' | 'consulting')}
                   className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border cursor-pointer transition-all ${
                     niche === n
                       ? 'bg-purple-500 border-purple-500 text-white shadow-md shadow-purple-600/20'
@@ -209,7 +209,7 @@ export default function NewFeaturesShowcase() {
 
             <div className="space-y-2 font-mono text-[9px] leading-relaxed text-slate-400">
               <AnimatePresence>
-                {logs.map((log, idx) => (
+                {logs.map((log) => (
                   <motion.div
                     key={log}
                     initial={{ opacity: 0, x: -10 }}

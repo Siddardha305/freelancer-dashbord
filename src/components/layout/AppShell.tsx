@@ -22,6 +22,7 @@ interface AppShellProps {
     agencyLogoDarkUrl?: string;
     agencyBrandingMode?: string;
     workspaceType?: string;
+    teamRole?: string;
   } | null
 }
 

@@ -26,7 +26,7 @@ export async function createSupportTicketAction(data: {
 
   try {
     const ticket = await SupportTicket.create({
-      userId: user.id || user._id,
+      userId: user.workspaceId,
       userName: user.name || 'Anonymous User',
       userEmail: user.email || '',
       title: data.title.trim(),
@@ -56,7 +56,7 @@ export async function getSupportTicketsForUserAction() {
   }
 
   try {
-    const tickets = await SupportTicket.find({ userId: user.id || user._id })
+    const tickets = await SupportTicket.find({ userId: user.workspaceId })
       .sort({ createdAt: -1 })
       .lean();
     return JSON.parse(JSON.stringify(tickets));

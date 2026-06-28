@@ -8,8 +8,8 @@ interface PayoutHeaderProps {
   totalPayoutDue: number;
   totalPending: number;
   formatCurrency: (value: number | string) => string;
-  timeframe: string;
-  setTimeframe: (t: any) => void;
+  timeframe: 'this_month' | 'last_month' | 'last_3m' | 'last_year';
+  setTimeframe: (t: 'this_month' | 'last_month' | 'last_3m' | 'last_year') => void;
 }
 
 const tabs = [

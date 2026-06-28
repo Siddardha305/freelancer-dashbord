@@ -15,12 +15,14 @@ const WorkSchema = z.object({
   status: z.enum(["To Do", "In Progress", "Review", "Done", "Completed"]).default("To Do"),
   priority: z.enum(["Urgent", "High", "Normal", "Low"]).default("Normal"),
   attachments: z.array(z.string()).default([]),
+  videoLink: z.string().nullable().optional().or(z.literal("")),
   estimatedHours: z.coerce.number().default(0),
   actualHours: z.coerce.number().default(0),
   revisions: z.coerce.number().default(0),
   approvedByClient: z.boolean().default(false),
   completedAt: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
+  assignedTo: z.string().nullable().optional().or(z.literal("")),
 })
 
 interface LeanWorkDoc {
@@ -33,6 +35,7 @@ interface LeanWorkDoc {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  assignedTo?: string;
 }
 
 export async function getWorksAction() {
@@ -41,7 +44,11 @@ export async function getWorksAction() {
 
   await dbConnect()
   try {
-    const works = await Work.find({ userId: user._id }).sort({ createdAt: -1 }).lean()
+    const query: Record<string, any> = { userId: user.workspaceId }
+    if (user.teamRole === 'editor') {
+      query.assignedTo = user.id
+    }
+    const works = await Work.find(query).sort({ createdAt: -1 }).lean()
     return JSON.parse(JSON.stringify(works)).map((doc: LeanWorkDoc) => ({
       ...doc,
       id: doc._id.toString(),
@@ -55,6 +62,11 @@ export async function getWorksAction() {
 export async function createWorkAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
+
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer' || user.teamRole === 'editor') {
+    return { message: 'Your permission level does not allow creating tasks.' }
+  }
 
   await dbConnect()
   const rawData: Record<string, unknown> = {}
@@ -78,10 +90,12 @@ export async function createWorkAction(prevState: unknown, formData: FormData) {
   }
 
   try {
-    const newWork = await Work.create({
+    const dataToSave = {
       ...validatedFields.data,
-      userId: user._id,
-    })
+      assignedTo: validatedFields.data.assignedTo || null,
+      userId: user.workspaceId,
+    }
+    const newWork = await Work.create(dataToSave)
     // Trigger Slack notification if webhook is configured
     if (user.slackWebhookUrl) {
       sendSlackNotification({
@@ -109,6 +123,11 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer') {
+    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
+  }
+
   try {
     await dbConnect()
     const updateData: Record<string, unknown> = { status: newStatus }
@@ -119,7 +138,7 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
     }
     
     const updated = await Work.findOneAndUpdate(
-      { _id: id, userId: user._id },
+      { _id: id, userId: user.workspaceId },
       updateData,
       { new: true }
     )
@@ -156,6 +175,11 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer') {
+    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
+  }
+
   try {
     await dbConnect()
     const validatedFields = WorkSchema.partial().safeParse(data)
@@ -163,9 +187,16 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
       return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
     }
     
+    const dataToUpdate = {
+      ...validatedFields.data
+    }
+    if ('assignedTo' in dataToUpdate) {
+      dataToUpdate.assignedTo = dataToUpdate.assignedTo || null
+    }
+    
     const updated = await Work.findOneAndUpdate(
-      { _id: id, userId: user._id },
-      validatedFields.data,
+      { _id: id, userId: user.workspaceId },
+      dataToUpdate,
       { new: true }
     )
 
@@ -186,9 +217,14 @@ export async function deleteWorkAction(id: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer' || user.teamRole === 'editor') {
+    return { message: 'Your permission level does not allow deleting tasks.' }
+  }
+
   try {
     await dbConnect()
-    const deleted = await Work.findOneAndDelete({ _id: id, userId: user._id })
+    const deleted = await Work.findOneAndDelete({ _id: id, userId: user.workspaceId })
     if (!deleted) {
       return { message: 'Work task not found' }
     }

@@ -8,16 +8,22 @@ import { ClientList } from '@/dashboard/clients/components/ClientList';
 import { AddClientModal } from '@/dashboard/clients/components/AddClientModal';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
+import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 import { ClientFilterControls } from '@/dashboard/clients/components/ClientFilterControls';
 import { ClientProfileDrawer } from '@/dashboard/clients/components/ClientProfileDrawer';
 import { Client } from '@/types/client';
 import { usePlan } from '@/context/PlanContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ClientsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { planName, limits, canAddClient } = usePlan();
   
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
   // Persist View Mode
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     if (typeof window !== 'undefined') {
@@ -25,6 +31,24 @@ export default function ClientsPage() {
     }
     return 'grid';
   });
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUserAction();
+        if (user?.teamRole === 'editor') {
+          router.replace('/dashboard/work');
+          return;
+        }
+        setCurrentUser(user);
+      } catch (err) {
+        console.error("Failed to load user on clients page:", err);
+      } finally {
+        setLoadingUser(false);
+      }
+    }
+    loadUser();
+  }, [router]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [drawerClient, setDrawerClient] = useState<Client | null>(null);
@@ -90,11 +114,13 @@ export default function ClientsPage() {
   };
 
   // Real-time clients fetching
-  const { data: clients = [], isLoading: loading } = useQuery({
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
     queryKey: ["clients"],
     queryFn: getClientsAction,
     refetchInterval: 8000,
   });
+
+  const loading = isLoadingClients || loadingUser;
 
   const totalClients = (clients as Client[]).length;
   const atClientLimit = !canAddClient(totalClients);

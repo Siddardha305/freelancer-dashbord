@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { WorkCalendar } from "./WorkCalendar";
 import { updateWorkStatusAction, getWorksAction, deleteWorkAction, updateWorkAction } from "@/dashboard/work/actions/work-actions";
 import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
+import { getTeamMembersAction } from "@/dashboard/settings/actions/team-actions";
+import { getCurrentUserAction } from "@/auth/actions/auth-actions";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AddWorkModal } from "./AddWorkModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +23,7 @@ import { WorkFilterTabs } from "./WorkFilterTabs";
 import { WorkBoardView } from "./WorkBoardView";
 import { WorkListView } from "./WorkListView";
 import { WorkHistoryView } from "./WorkHistoryView";
+import { EditWorkModal } from "./EditWorkModal";
 
 export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const { formatCurrency } = useCurrency();
@@ -33,6 +36,22 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const [prefilledDeadline, setPrefilledDeadline] = useState<string | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [taskToEdit, setTaskToEdit] = useState<Work | null>(null);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const isEditor = currentUser?.teamRole === 'editor';
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUserAction();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error("Failed to load user in WorkManager:", err);
+      }
+    }
+    loadUser();
+  }, []);
 
   const { data: tasks = initialTasks, isLoading } = useQuery({
     queryKey: ['works'],
@@ -44,6 +63,12 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
     queryFn: getClientsAction,
+    refetchInterval: 10000,
+  });
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: getTeamMembersAction,
     refetchInterval: 10000,
   });
 
@@ -235,10 +260,12 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         inProgressTasksCount={inProgressTasksCount}
         pendingOverallCount={pendingOverallCount}
         formatCurrency={formatCurrency}
+        isEditor={isEditor}
+        completedTodayCount={completedToday.length}
       />
 
       {/* Plan limit warning banner */}
-      {atTaskLimit && (
+      {!isEditor && atTaskLimit && (
         <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4">
           <div className="flex items-center gap-3">
             <Lock className="h-4 w-4 text-amber-600 shrink-0" />
@@ -260,6 +287,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         setPriorityFilter={setPriorityFilter}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
+        isEditor={isEditor}
         onAddTaskClick={() => {
           if (atTaskLimit) {
             setIsUpgradeModalOpen(true);
@@ -279,8 +307,11 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         <WorkBoardView 
           filteredTasks={activeTasksForBoardAndList}
           clients={clients}
+          teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteTask}
+          isEditor={isEditor}
+          onEditClick={(task) => setTaskToEdit(task)}
         />
       ) : view === "calendar" ? (
         /* Calendar Schedule View */
@@ -289,6 +320,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           onMoveTask={handleMoveTaskDeadline} 
           onAddTask={handleQuickAddTask}
           onStatusChange={handleStatusChange}
+          isEditor={isEditor}
         />
       ) : view === "history" ? (
         /* History day-by-day View */
@@ -296,14 +328,18 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           tasks={filteredTasks}
           clients={clients}
           formatCurrency={formatCurrency}
+          isEditor={isEditor}
         />
       ) : (
         /* List spreadsheet Activity view */
         <WorkListView 
           filteredTasks={activeTasksForBoardAndList}
           clients={clients}
+          teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDeleteClick={(id) => setTaskToDelete(id)}
+          isEditor={isEditor}
+          onEditClick={(task) => setTaskToEdit(task)}
         />
       )}
 
@@ -316,6 +352,18 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
             setPrefilledDeadline(undefined);
           }} 
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ['works'] })}
+        />
+      )}
+
+      {taskToEdit && (
+        <EditWorkModal
+          isOpen={!!taskToEdit}
+          task={taskToEdit}
+          onClose={() => setTaskToEdit(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['works'] });
+            setTaskToEdit(null);
+          }}
         />
       )}
 

@@ -28,11 +28,7 @@ import {
   Inbox,
   BarChart3,
   TrendingUp,
-  Activity,
   Shield,
-  Sliders,
-  Menu,
-  ChevronRight,
   LayoutDashboard
 } from 'lucide-react';
 import { deleteUserAction, addUserAction, updateUserPlanAction, changeAdminPasswordAction, replyToContactMessageAction } from '../actions/admin-actions';
@@ -56,6 +52,8 @@ interface UserItem {
   clientCount: number;
   taskCount: number;
   paymentCount: number;
+  teamRole?: string;
+  parentUser?: { name: string; email: string } | null;
 }
 
 interface EmailLogItem {
@@ -503,7 +501,7 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id as any)}
+                  onClick={() => setActiveTab(item.id as typeof activeTab)}
                   className={`w-full flex items-center justify-between px-4.5 py-3.5 rounded-2xl text-xs font-bold transition-all duration-200 group cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/10 scale-[1.02]'
@@ -551,7 +549,7 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
+                onClick={() => setActiveTab(item.id as typeof activeTab)}
                 className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[10px] font-bold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
@@ -605,7 +603,7 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
                 <div className="space-y-0.5 relative z-10">
                   <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-50 uppercase tracking-wider">Resend API Sandbox Active</h4>
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Note: The platform is currently operating in <strong className="text-amber-700 dark:text-amber-450">Resend API Sandbox Mode</strong> (using onboarding credentials). Dispatched client reply emails will land directly in your domain's verified email account inbox or <strong className="text-slate-800 dark:text-slate-200 font-bold">Spam / Junk folder</strong>.
+                    Note: The platform is currently operating in <strong className="text-amber-700 dark:text-amber-450">Resend API Sandbox Mode</strong> (using onboarding credentials). Dispatched client reply emails will land directly in your domain&apos;s verified email account inbox or <strong className="text-slate-800 dark:text-slate-200 font-bold">Spam / Junk folder</strong>.
                   </p>
                 </div>
               </div>
@@ -1079,18 +1077,42 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
                                     <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-505 truncate cursor-help" title={u.email}>
                                       {u.email}
                                     </p>
+                                    {u.parentUser ? (
+                                      <p className="text-[9px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mt-0.5" title={`Workspace member under: ${u.parentUser.name} (${u.parentUser.email})`}>
+                                        {u.teamRole || 'editor'} (under {u.parentUser.name})
+                                      </p>
+                                    ) : (
+                                      u.teamRole && u.teamRole !== 'owner' && (
+                                        <p className="text-[9px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mt-0.5">
+                                          {u.teamRole}
+                                        </p>
+                                      )
+                                    )}
                                   </div>
                                 </div>
                               </td>
                               <td className="py-3 px-3 md:px-4">
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
-                                  u.role === 'admin' 
-                                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-105/30 dark:border-indigo-900/30'
-                                    : 'bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                                }`}>
-                                  {u.role === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
-                                  {u.role || 'user'}
-                                </span>
+                                {u.parentUser ? (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
+                                    (u.teamRole || 'editor').toLowerCase() === 'admin'
+                                      ? 'bg-indigo-55/70 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
+                                      : (u.teamRole || 'editor').toLowerCase() === 'editor'
+                                        ? 'bg-purple-55/70 dark:bg-purple-955/40 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
+                                        : 'bg-slate-55 dark:bg-slate-955 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                                  }`}>
+                                    {(u.teamRole || 'editor').toLowerCase() === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
+                                    {u.teamRole || 'editor'}
+                                  </span>
+                                ) : (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
+                                    u.role === 'admin' 
+                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-105/30 dark:border-indigo-900/30'
+                                      : 'bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                                  }`}>
+                                    {u.role === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
+                                    {u.role || 'user'}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3 px-3 md:px-4 text-[11px] font-bold text-slate-450 dark:text-slate-400 whitespace-nowrap">
                                 {formatDate(u.createdAt)}
@@ -1107,7 +1129,16 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
 
                               {/* Subscription Plan select dropdown */}
                               <td className="py-3 px-3 md:px-4">
-                                {updatingPlanUserId === u.id ? (
+                                {u.parentUser ? (
+                                  <div className="relative inline-flex items-center">
+                                    <span 
+                                      className="inline-flex items-center px-2.5 py-1 rounded-xl text-[9px] font-extrabold uppercase tracking-wider border bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900/30 cursor-help"
+                                      title={`Inherits billing plan from agency owner: ${u.parentUser.name} (${u.parentUser.email})`}
+                                    >
+                                      Inherited
+                                    </span>
+                                  </div>
+                                ) : updatingPlanUserId === u.id ? (
                                   <div className="flex items-center gap-1">
                                     <Loader2 className="h-3 w-3 animate-spin text-indigo-500" />
                                     <span className="text-[9px] font-bold text-slate-405 dark:text-slate-555">Syncing…</span>
@@ -1289,7 +1320,7 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
                               <span className="text-slate-400 dark:text-slate-500">Sent {formatDate(msg.repliedAt || msg.createdAt)}</span>
                             </div>
                             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed italic relative z-10">
-                              "{msg.replyText}"
+                              &quot;{msg.replyText}&quot;
                             </p>
                           </div>
                         )}

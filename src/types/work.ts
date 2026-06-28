@@ -10,12 +10,14 @@ export interface Work {
   status: WorkStatus;
   priority: WorkPriority;
   attachments: string[];
+  videoLink?: string;
   estimatedHours: number;
   actualHours: number;
   revisions: number;
   approvedByClient: boolean;
   completedAt?: string;
   tags: string[];
+  assignedTo?: string;
   createdAt: string;
   updatedAt: string;
 }

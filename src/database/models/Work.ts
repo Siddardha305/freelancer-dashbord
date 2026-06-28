@@ -1,4 +1,4 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model, models } from 'mongoose';
 
 const WorkSchema = new Schema({
   client: {
@@ -29,6 +29,10 @@ const WorkSchema = new Schema({
     type: [String],
     default: [],
   },
+  videoLink: {
+    type: String,
+    default: '',
+  },
   estimatedHours: {
     type: Number,
     default: 0,
@@ -57,9 +61,21 @@ const WorkSchema = new Schema({
     ref: 'User',
     index: true,
   },
+  assignedTo: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
 }, {
   timestamps: true,
 });
+
+if (models.Work && !models.Work.schema.paths.assignedTo) {
+  delete (models as Record<string, unknown>).Work;
+  if (mongoose.modelNames().includes('Work')) {
+    mongoose.deleteModel('Work');
+  }
+}
 
 const Work = models.Work || model('Work', WorkSchema);
 

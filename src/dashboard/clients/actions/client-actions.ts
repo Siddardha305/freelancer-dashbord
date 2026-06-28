@@ -88,7 +88,7 @@ export async function getClientsAction() {
   
   await dbConnect()
   try {
-    const clients = await Client.find({ userId: user._id }).sort({ createdAt: -1 }).lean()
+    const clients = await Client.find({ userId: user.workspaceId }).sort({ createdAt: -1 }).lean()
     return JSON.parse(JSON.stringify(clients)).map((doc: LeanClientDoc) => ({
       ...doc,
       id: doc._id.toString(),
@@ -105,7 +105,7 @@ export async function getClientByIdAction(id: string) {
 
   await dbConnect()
   try {
-    const client = await Client.findOne({ _id: id, userId: user._id }).lean()
+    const client = await Client.findOne({ _id: id, userId: user.workspaceId }).lean()
     if (!client) return null
     return JSON.parse(JSON.stringify({
       ...client,
@@ -120,6 +120,11 @@ export async function getClientByIdAction(id: string) {
 export async function createClientAction(prevState: unknown, formData: FormData) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
+
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer') {
+    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
+  }
 
   await dbConnect()
   const rawData: Record<string, unknown> = {}
@@ -143,7 +148,7 @@ export async function createClientAction(prevState: unknown, formData: FormData)
 
     const newClient = await Client.create({
       ...validatedFields.data,
-      userId: user._id,
+      userId: user.workspaceId,
     })
     
     // Send automated thank you email
@@ -184,6 +189,11 @@ export async function updateClientAction(id: string, data: Record<string, unknow
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer') {
+    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
+  }
+
   await dbConnect()
   try {
     const validatedFields = UpdateClientSchema.safeParse(data)
@@ -200,7 +210,7 @@ export async function updateClientAction(id: string, data: Record<string, unknow
     })
 
     const updatedClient = await Client.findOneAndUpdate(
-      { _id: id, userId: user._id },
+      { _id: id, userId: user.workspaceId },
       updateData,
       { new: true }
     ).lean()
@@ -225,9 +235,14 @@ export async function deleteClientAction(id: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
 
+  // RBAC Permission Check
+  if (user.teamRole === 'viewer') {
+    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
+  }
+
   try {
     await dbConnect()
-    await Client.findOneAndDelete({ _id: id, userId: user._id })
+    await Client.findOneAndDelete({ _id: id, userId: user.workspaceId })
     revalidatePath('/dashboard/clients')
     revalidatePath('/dashboard')
     return { message: 'success' }

@@ -19,22 +19,30 @@ export interface Task {
   approvedByClient: boolean;
   actualHours: number;
   tags?: string[];
+  assignedTo?: string;
+  videoLink?: string;
 }
 
 interface WorkCardProps {
   task: Task;
   clients: Client[];
+  teamMembers?: any[];
   onStatusChange: (id: string, newStatus: string) => void;
   onDelete: (id: string) => void;
+  isEditor?: boolean;
+  onEditClick?: (task: Task) => void;
 }
 
-export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardProps) {
+export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDelete, isEditor = false, onEditClick }: WorkCardProps) {
   const isUrgent = task.priority === 'Urgent';
   const isCompleted = task.status === 'Completed';
 
   const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
   const channelLink = clientObj?.channel_link;
   const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
+  
+  const assignedMember = teamMembers.find(m => m.id === task.assignedTo);
+  const assignedName = assignedMember ? assignedMember.name : '';
   
   let deadlineDate = parseISO(task.deadline);
   if (isNaN(deadlineDate.getTime())) {
@@ -51,11 +59,15 @@ export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardPr
   ];
   
   return (
-    <div className={cn(
-      "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
-      isOverdue && "border-red-200 bg-red-50/30",
-      isUrgent && "border-red-400 ring-1 ring-red-100"
-    )}>
+    <div 
+      onClick={() => !isEditor && onEditClick && onEditClick(task)}
+      className={cn(
+        "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
+        !isEditor && "cursor-pointer",
+        isOverdue && "border-red-200 bg-red-50/30",
+        isUrgent && "border-red-400 ring-1 ring-red-100"
+      )}
+    >
       {/* Priority Badge */}
       <div className="flex justify-between items-start mb-4">
         <div className={cn(
@@ -82,16 +94,18 @@ export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardPr
            </div>
         )}
 
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(task.id || task._id || "");
-          }}
-          className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all active:scale-90"
-          title="Delete Task"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {!isEditor && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.id || task._id || "");
+            }}
+            className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all active:scale-90"
+            title="Delete Task"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <h4 className="font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors line-clamp-1">{task.title}</h4>
@@ -100,14 +114,50 @@ export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardPr
           href={cleanUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-widest hover:text-indigo-650 dark:hover:text-indigo-400 hover:underline transition-colors cursor-pointer inline-block"
+          className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-widest hover:text-indigo-655 dark:hover:text-indigo-400 hover:underline transition-colors cursor-pointer inline-block"
           onClick={(e) => e.stopPropagation()}
         >
           {task.client}
         </a>
       ) : (
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
+        <p className="text-[10px] text-slate-400 dark:text-slate-505 font-bold mb-4 uppercase tracking-widest">{task.client}</p>
       )}
+      
+      {task.videoLink && (
+        <div className="mb-4 mt-[-4px]">
+          <a 
+            href={task.videoLink.startsWith('http') ? task.videoLink : `https://${task.videoLink}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-650 border border-red-100/50 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-950/60 transition-all cursor-pointer shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Play className="h-2.5 w-2.5 fill-current" /> Watch Video / Footage
+          </a>
+        </div>
+      )}
+      
+      <div className="flex items-center gap-1.5 mb-4 mt-[-8px]">
+        {task.assignedTo ? (
+          <>
+            <div className="h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[8px] font-black uppercase border border-indigo-100 dark:border-indigo-900/35">
+              {assignedName?.charAt(0) || 'U'}
+            </div>
+            <span className="text-[9px] font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider">
+              Assigned: {assignedName}
+            </span>
+          </>
+        ) : (
+          <>
+            <div className="h-5 w-5 rounded-md bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 flex items-center justify-center text-[8px] font-black uppercase border border-slate-200 dark:border-slate-800/35">
+              U
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Assigned: Unassigned
+            </span>
+          </>
+        )}
+      </div>
       
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
         <div className="flex items-center justify-between">
@@ -149,7 +199,10 @@ export function WorkCard({ task, clients, onStatusChange, onDelete }: WorkCardPr
             return (
               <button
                 key={config.name}
-                onClick={() => onStatusChange(task.id || task._id || "", config.name)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id || task._id || "", config.name);
+                }}
                 title={config.name}
                 className={cn(
                   "p-2 rounded-lg border transition-all duration-200 group/btn",

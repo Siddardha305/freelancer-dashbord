@@ -74,6 +74,7 @@ export function ClientTable({
       </div>
 
       <EditClientModal
+        key={activeEditClient?.id || 'none'}
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         client={activeEditClient}

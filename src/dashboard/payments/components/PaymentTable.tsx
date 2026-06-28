@@ -71,6 +71,39 @@ export function PaymentTable({
     setPayments(initialPayments);
   }
 
+  const filteredPayments = useMemo(() => {
+    const now = new Date();
+    return payments.filter(p => {
+      const dateVal = p.invoiceDate || p.createdAt;
+      if (!dateVal) return true;
+      const d = new Date(dateVal);
+
+      if (timeframe === 'all') return true;
+      
+      if (timeframe === 'this_month') {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      
+      if (timeframe === 'last_month') {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        return d >= lastMonth && d <= lastMonthEnd;
+      }
+      
+      if (timeframe === 'last_3m') {
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1, 0, 0, 0, 0);
+        return d >= threeMonthsAgo;
+      }
+      
+      if (timeframe === 'last_year') {
+        const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0, 0);
+        return d >= oneYearAgo;
+      }
+      
+      return true;
+    });
+  }, [payments, timeframe]);
+
   const handleDownloadInvoice = (payment: Payment) => {
     const lineItems = getLineItemsForPayment(payment, clients, works);
 
@@ -138,39 +171,6 @@ export function PaymentTable({
       setPayments(previousPayments);
     }
   };
-
-  const filteredPayments = useMemo(() => {
-    const now = new Date();
-    return payments.filter(p => {
-      const dateVal = p.invoiceDate || p.createdAt;
-      if (!dateVal) return true;
-      const d = new Date(dateVal);
-
-      if (timeframe === 'all') return true;
-      
-      if (timeframe === 'this_month') {
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      }
-      
-      if (timeframe === 'last_month') {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-        return d >= lastMonth && d <= lastMonthEnd;
-      }
-      
-      if (timeframe === 'last_3m') {
-        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1, 0, 0, 0, 0);
-        return d >= threeMonthsAgo;
-      }
-      
-      if (timeframe === 'last_year') {
-        const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1, 0, 0, 0, 0);
-        return d >= oneYearAgo;
-      }
-      
-      return true;
-    });
-  }, [payments, timeframe]);
 
   const statusConfigs = [
     { name: "Paid", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100", active: "bg-emerald-600 text-white border-emerald-600 shadow-sm" },

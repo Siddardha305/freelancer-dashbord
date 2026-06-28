@@ -21,9 +21,10 @@ interface WorkCalendarProps {
   onMoveTask: (taskId: string, targetDateStr: string) => void;
   onAddTask: (dateStr: string) => void;
   onStatusChange?: (taskId: string, newStatus: string) => void;
+  isEditor?: boolean;
 }
 
-export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps) {
+export function WorkCalendar({ tasks, onMoveTask, onAddTask, isEditor = false }: WorkCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverDateStr, setDragOverDateStr] = useState<string | null>(null);
@@ -107,6 +108,10 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
 
   // HTML5 Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    if (isEditor) {
+      e.preventDefault();
+      return;
+    }
     setDraggedTaskId(taskId);
     e.dataTransfer.setData("text/plain", taskId);
     e.dataTransfer.effectAllowed = "move";
@@ -119,6 +124,7 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
 
   const handleDragOver = (e: React.DragEvent, dateStr: string) => {
     e.preventDefault();
+    if (isEditor) return;
     if (dragOverDateStr !== dateStr) {
       setDragOverDateStr(dateStr);
     }
@@ -130,6 +136,7 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
 
   const handleDrop = (e: React.DragEvent, targetDateStr: string) => {
     e.preventDefault();
+    if (isEditor) return;
     const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
     if (taskId) {
       onMoveTask(taskId, targetDateStr);
@@ -263,13 +270,15 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
                 </span>
                 
                 {/* Quick Add Button */}
-                <button
-                  onClick={() => onAddTask(dateStr)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 bg-white border border-slate-200 text-indigo-600 hover:text-white hover:bg-indigo-600 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
-                  title="Create task for this date"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
+                {!isEditor && (
+                  <button
+                    onClick={() => onAddTask(dateStr)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 bg-white border border-slate-200 text-indigo-600 hover:text-white hover:bg-indigo-600 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+                    title="Create task for this date"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                )}
               </div>
 
               {/* Tasks List */}
@@ -277,11 +286,12 @@ export function WorkCalendar({ tasks, onMoveTask, onAddTask }: WorkCalendarProps
                 {dayTasks.map((task) => (
                   <div
                     key={task.id}
-                    draggable
+                    draggable={!isEditor}
                     onDragStart={(e) => handleDragStart(e, task.id)}
                     onDragEnd={handleDragEnd}
                     className={cn(
                       "px-2.5 py-1.5 rounded-2xl border text-[10px] font-bold tracking-tight flex items-center gap-1.5 transition-all duration-200 cursor-grab active:cursor-grabbing border-slate-200/50 shadow-sm",
+                      isEditor ? "cursor-default" : "cursor-grab active:cursor-grabbing",
                       getStatusStyles(task.status)
                     )}
                     title={`${task.title} - ${task.client}`}

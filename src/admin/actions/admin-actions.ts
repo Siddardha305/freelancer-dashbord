@@ -109,6 +109,8 @@ export async function getAdminOverviewAction() {
       email?: string;
       role?: string;
       plan?: string;
+      teamRole?: string;
+      parentUserId?: any;
       createdAt?: string | Date;
     }>).map(async (u) => {
       const [clientCount, taskCount, paymentCount] = await Promise.all([
@@ -116,6 +118,14 @@ export async function getAdminOverviewAction() {
         Work.countDocuments({ userId: u._id }),
         Payment.countDocuments({ userId: u._id.toString(), isDeleted: { $ne: true } }),
       ]);
+
+      let parentUser = null;
+      if (u.parentUserId) {
+        const pDoc = await User.findById(u.parentUserId).select('name email').lean() as any;
+        if (pDoc) {
+          parentUser = { name: pDoc.name || '', email: pDoc.email || '' };
+        }
+      }
       
       return {
         id: u._id.toString(),
@@ -123,6 +133,8 @@ export async function getAdminOverviewAction() {
         email: u.email || '',
         role: u.role || 'user',
         plan: u.plan || 'hobby',
+        teamRole: u.teamRole || 'owner',
+        parentUser,
         createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : '',
         clientCount,
         taskCount,
@@ -149,9 +161,34 @@ export async function getAdminOverviewAction() {
       });
     }
 
+    interface LeanContactMessage {
+      _id: { toString(): string };
+      name?: string;
+      email?: string;
+      message?: string;
+      replied?: boolean;
+      replyText?: string;
+      repliedAt?: string | Date;
+      createdAt?: string | Date;
+    }
+
+    interface LeanSupportTicket {
+      _id: { toString(): string };
+      userId: { toString(): string };
+      userName: string;
+      userEmail: string;
+      title: string;
+      description: string;
+      category: string;
+      priority: string;
+      status: string;
+      adminReply?: string;
+      createdAt?: string | Date;
+    }
+
     // Fetch and structure all contact messages
     const rawContactMessages = await ContactMessage.find({}).sort({ createdAt: -1 }).lean();
-    const contactMessages = rawContactMessages.map((m: any) => ({
+    const contactMessages = (rawContactMessages as unknown as LeanContactMessage[]).map((m) => ({
       id: m._id.toString(),
       name: m.name || '',
       email: m.email || '',
@@ -164,7 +201,7 @@ export async function getAdminOverviewAction() {
 
     // Fetch and structure all support tickets
     const rawSupportTickets = await SupportTicket.find({}).sort({ createdAt: -1 }).lean();
-    const supportTickets = rawSupportTickets.map((t: any) => ({
+    const supportTickets = (rawSupportTickets as unknown as LeanSupportTicket[]).map((t) => ({
       id: t._id.toString(),
       userId: t.userId.toString(),
       userName: t.userName,
