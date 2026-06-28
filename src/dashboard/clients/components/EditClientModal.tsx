@@ -8,6 +8,7 @@ import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 import { RadixDialog, RadixSelect } from '@/components/ui/RadixAnimate'
 import { getCurrentUserAction } from '@/auth/actions/auth-actions'
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker'
 
 export function EditClientModal({ 
   isOpen, 
@@ -31,6 +32,9 @@ export function EditClientModal({
   
   const [thumbnailsCount, setThumbnailsCount] = useState(client?.thumbnails_per_month || 0)
   const [pricePerUnit, setPricePerUnit] = useState(client?.price_per_thumbnail || 0)
+  const [monthlyPrice, setMonthlyPrice] = useState(client?.monthly_price || 0)
+  const [contractStartDate, setContractStartDate] = useState('')
+  const [contractEndDate, setContractEndDate] = useState('')
 
   // Determine initial package if edit has bulk model
   const getInitialPackage = () => {
@@ -42,6 +46,14 @@ export function EditClientModal({
     return 'pkg_7_10';
   };
   const [bulkPackage, setBulkPackage] = useState<'pkg_7_10' | 'pkg_12_15' | 'pkg_17_20'>(getInitialPackage())
+
+  // Sync client dates on load
+  useEffect(() => {
+    if (client) {
+      setContractStartDate(client.contractStartDate ? new Date(client.contractStartDate).toISOString().split('T')[0] : '');
+      setContractEndDate(client.contractEndDate ? new Date(client.contractEndDate).toISOString().split('T')[0] : '');
+    }
+  }, [client]);
 
   // Fetch logged in user to check if they are the special admin account
   useEffect(() => {
@@ -320,20 +332,18 @@ export function EditClientModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract Start</label>
-                <input 
-                  type="date" 
-                  name="contractStartDate" 
-                  defaultValue={client.contractStartDate ? new Date(client.contractStartDate).toISOString().split('T')[0] : ''}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold" 
+                <CustomDatePicker
+                  value={contractStartDate}
+                  onChange={setContractStartDate}
+                  name="contractStartDate"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contract End</label>
-                <input 
-                  type="date" 
-                  name="contractEndDate" 
-                  defaultValue={client.contractEndDate ? new Date(client.contractEndDate).toISOString().split('T')[0] : ''}
-                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold" 
+                <CustomDatePicker
+                  value={contractEndDate}
+                  onChange={setContractEndDate}
+                  name="contractEndDate"
                 />
               </div>
             </div>

@@ -10,6 +10,7 @@ import { useWorkspace } from '@/context/WorkspaceContext'
 import { usePlan } from '@/context/PlanContext'
 import { Client } from '@/types/client'
 import { CustomSelect } from '@/components/ui/CustomSelect'
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker'
 
 const initialState = {
   message: '',
@@ -34,9 +35,16 @@ export function AddWorkModal({
   const [selectedPriority, setSelectedPriority] = useState('Normal')
   const [selectedStatus, setSelectedStatus] = useState('To Do')
   const [selectedEditor, setSelectedEditor] = useState('')
+  const [deadline, setDeadline] = useState('')
   const { terms } = useWorkspace()
   const { plan } = usePlan()
   const isAgency = plan === 'agency'
+
+  useEffect(() => {
+    if (isOpen) {
+      setDeadline(initialDeadline || '');
+    }
+  }, [isOpen, initialDeadline]);
 
   useEffect(() => {
     if (isOpen) {
@@ -140,13 +148,11 @@ export function AddWorkModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label htmlFor="deadline" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deadline Date</label>
-              <input 
-                type="date" 
-                id="deadline" 
-                name="deadline" 
-                required
-                defaultValue={initialDeadline}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold" 
+              <CustomDatePicker
+                value={deadline}
+                onChange={setDeadline}
+                name="deadline"
+                required={true}
               />
               {state?.errors?.deadline && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.deadline[0]}</p>}
             </div>

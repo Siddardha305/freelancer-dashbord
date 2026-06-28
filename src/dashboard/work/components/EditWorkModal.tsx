@@ -12,6 +12,7 @@ import { Client } from '@/types/client'
 import { Work } from '@/types/work'
 import { toast } from 'sonner'
 import { CustomSelect } from '@/components/ui/CustomSelect'
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker'
 
 export function EditWorkModal({ 
   isOpen, 
@@ -191,13 +192,11 @@ export function EditWorkModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label htmlFor="edit-deadline" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Deadline Date</label>
-              <input 
-                type="date" 
-                id="edit-deadline" 
+              <CustomDatePicker
                 value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                required
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold" 
+                onChange={setDeadline}
+                name="deadline"
+                required={true}
               />
             </div>
 

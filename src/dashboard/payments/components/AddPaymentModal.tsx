@@ -14,6 +14,7 @@ import { Work } from '@/types/work'
 import { getCurrentUserAction } from '@/auth/actions/auth-actions'
 import { getWorksAction } from '@/dashboard/work/actions/work-actions'
 import { CustomSelect } from '@/components/ui/CustomSelect'
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker'
 
 interface FormState {
   message: string;
@@ -86,7 +87,7 @@ export function AddPaymentModal({
       const timer = setTimeout(() => {
         const defaultDate = new Date();
         defaultDate.setDate(defaultDate.getDate() + 7);
-        setDueDate(format(defaultDate, 'MMM dd, yyyy'));
+        setDueDate(format(defaultDate, 'yyyy-MM-dd'));
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -204,15 +205,11 @@ export function AddPaymentModal({
 
           <div className="space-y-2">
             <label htmlFor="due_date" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Due Date</label>
-            <input 
-              type="text" 
-              id="due_date" 
-              name="due_date" 
-              required
+            <CustomDatePicker
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all placeholder-slate-400 font-medium" 
-              placeholder="e.g. Oct 15, 2024" 
+              onChange={setDueDate}
+              name="due_date"
+              required={true}
             />
             {state?.errors?.due_date && <p className="text-xs text-red-500 mt-1 font-bold ml-1">{state.errors.due_date[0]}</p>}
           </div>
