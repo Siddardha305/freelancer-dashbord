@@ -321,8 +321,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
               
               {/* LEFT COLUMN: Profile info cards */}
-              {!isViewer && (
-                <div className="lg:col-span-1 space-y-6">
+              <div className="lg:col-span-1 space-y-6">
                 
                 {/* Employee Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col items-center relative pt-12 mt-6">
@@ -436,10 +435,9 @@ export default function Home() {
                   )}
                 </div>
               </div>
-            )}
 
               {/* RIGHT COLUMN: Welcome banner, Work schedule, and Assigned Tasks */}
-              <div className={`space-y-8 mt-6 ${isViewer ? "lg:col-span-4" : "lg:col-span-3"}`}>
+              <div className="space-y-8 mt-6 lg:col-span-3">
                 
                 {/* Welcome Greeting Banner */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-sm flex items-center justify-between overflow-hidden relative group">
@@ -457,8 +455,7 @@ export default function Home() {
                 </div>
 
                 {/* Work Schedule / Weekly Timeline */}
-                {!isViewer && (
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-sm space-y-6">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-sm space-y-6">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 bg-slate-50 dark:bg-slate-955 rounded-xl border border-slate-200/40 dark:border-slate-800 flex items-center justify-center shrink-0 text-slate-555">
                         <Calendar className="h-4.5 w-4.5 text-indigo-600" />
@@ -507,15 +504,14 @@ export default function Home() {
                       })}
                     </div>
                   </div>
-                )}
 
                 {/* Assigned Deliverables List */}
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest ml-1">
-                    {isManager || isViewer ? "Active Workspace Tasks" : "My Assigned Tasks"}
+                    {isManager ? "Active Workspace Tasks" : "My Assigned Tasks"}
                   </h3>
                   
-                  {(isManager || isViewer ? works : myAssigned).length === 0 ? (
+                  {(isManager ? works : myAssigned).length === 0 ? (
                     <div className="text-center py-20 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center shadow-sm">
                       <Briefcase className="h-10 w-10 text-slate-300 mb-4" />
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1">No tasks configured</h4>
@@ -535,7 +531,7 @@ export default function Home() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {(isManager || isViewer ? works : myAssigned).slice(0, 5).map((w: any) => (
+                            {(isManager ? works : myAssigned).slice(0, 5).map((w: any) => (
                               <tr key={w.id || w._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-955/20 transition-colors">
                                 <td className="px-6 py-5">
                                   <span className="text-sm font-black text-slate-900 dark:text-white">{w.title}</span>
