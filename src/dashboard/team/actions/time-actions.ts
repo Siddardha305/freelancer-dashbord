@@ -142,7 +142,8 @@ export async function getAllTimeLogsAction() {
   if (!user) {
     return { success: false, message: 'Unauthorized.', logs: [] };
   }
-  if (user.teamRole !== 'owner' && user.teamRole !== 'admin') {
+  const isCorp = user.workspaceType === 'corporate';
+  if (!isCorp && user.teamRole !== 'owner' && user.teamRole !== 'admin') {
     return { success: false, message: 'Access denied.', logs: [] };
   }
 

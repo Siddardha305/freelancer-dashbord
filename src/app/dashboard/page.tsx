@@ -61,8 +61,7 @@ export default function Home() {
         setWorks(worksData || []);
 
         if (userData.workspaceType === 'corporate') {
-          const isManager = userData.teamRole === 'owner' || userData.teamRole === 'admin' || !userData.teamRole;
-          const logsRes = isManager ? await getAllTimeLogsAction() : await getTimeLogsAction();
+          const logsRes = await getAllTimeLogsAction();
           if (logsRes.success) {
             setTimeLogs(logsRes.logs || []);
           }
@@ -143,7 +142,14 @@ export default function Home() {
 
   // Corporate stats
   const activeLogs = timeLogs.filter((log: any) => log.status === 'active');
-  const activeUserIds = new Set(activeLogs.map((log: any) => log.userId));
+  const activeUserIds = new Set<string>(
+    activeLogs.map((log: any) => {
+      if (typeof log.userId === 'object' && log.userId) {
+        return (log.userId.id || log.userId._id || '').toString();
+      }
+      return (log.userId || '').toString();
+    }).filter(Boolean)
+  );
   const activeSessionsCount = activeUserIds.size;
 
   const totalMinutes = timeLogs.reduce((acc: number, log: any) => acc + (log.durationMinutes || 0), 0);
@@ -194,7 +200,7 @@ export default function Home() {
       const res = await clockInAction();
       if (res.success) {
         toast.success(res.message);
-        const logsRes = isManager ? await getAllTimeLogsAction() : await getTimeLogsAction();
+        const logsRes = (isManager || isCorporate) ? await getAllTimeLogsAction() : await getTimeLogsAction();
         if (logsRes.success) {
           setTimeLogs(logsRes.logs || []);
         }
@@ -207,14 +213,14 @@ export default function Home() {
       setIsPending(false);
     }
   };
-
+ 
   const handleClockOut = async () => {
     setIsPending(true);
     try {
       const res = await clockOutAction();
       if (res.success) {
         toast.success(res.message);
-        const logsRes = isManager ? await getAllTimeLogsAction() : await getTimeLogsAction();
+        const logsRes = (isManager || isCorporate) ? await getAllTimeLogsAction() : await getTimeLogsAction();
         if (logsRes.success) {
           setTimeLogs(logsRes.logs || []);
         }
