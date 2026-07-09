@@ -77,7 +77,7 @@ export async function createWorkAction(prevState: unknown, formData: FormData) {
   if (!user) return { message: 'Unauthorized' }
 
   // RBAC Permission Check
-  if (user.teamRole === 'viewer' || user.teamRole === 'editor') {
+  if (user.teamRole === 'viewer') {
     return { message: 'Your permission level does not allow creating tasks.' }
   }
 

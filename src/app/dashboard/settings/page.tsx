@@ -351,16 +351,18 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Default Currency</label>
-                        <RadixSelect 
-                          value={currency} 
-                          onValueChange={(val) => setCurrency(val)}
-                          options={currencyOptions}
-                          disabled={isEditor}
-                        />
-                      </div>
+                    <div className={cn("grid grid-cols-1 gap-6", workspaceType !== 'corporate' ? "md:grid-cols-2" : "w-full")}>
+                      {workspaceType !== 'corporate' && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Default Currency</label>
+                          <RadixSelect 
+                            value={currency} 
+                            onValueChange={(val) => setCurrency(val)}
+                            options={currencyOptions}
+                            disabled={isEditor}
+                          />
+                        </div>
+                      )}
  
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Workspace Niche / Type</label>

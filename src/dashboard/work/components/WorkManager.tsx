@@ -40,7 +40,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const isEditor = currentUser?.teamRole === 'editor';
   const isViewer = currentUser?.teamRole === 'viewer';
-  const isReadOnly = isEditor || isViewer;
+  const isReadOnly = isViewer;
 
   useEffect(() => {
     async function loadUser() {
