@@ -108,8 +108,13 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] });
     },
-    onSuccess: () => {
-      toast.success("Status updated successfully");
+    onSuccess: (res) => {
+      if (res?.message === 'success') {
+        toast.success("Status updated successfully");
+      } else {
+        toast.error(res?.message || "Failed to update status");
+        queryClient.invalidateQueries({ queryKey: ['works'] });
+      }
     }
   });
 
@@ -129,13 +134,18 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(['works'], context?.previousTasks);
-      toast.error("Failed to update task deadline");
+      toast.error("Failed to update task");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] });
     },
-    onSuccess: () => {
-      toast.success("Task deadline updated successfully");
+    onSuccess: (res) => {
+      if (res?.message === 'success') {
+        toast.success("Task updated successfully");
+      } else {
+        toast.error(res?.message || "Failed to update task");
+        queryClient.invalidateQueries({ queryKey: ['works'] });
+      }
     }
   });
 

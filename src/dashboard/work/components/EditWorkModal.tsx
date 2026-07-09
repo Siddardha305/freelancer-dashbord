@@ -27,6 +27,7 @@ export function EditWorkModal({
 }) {
   const [clients, setClients] = useState<Client[]>([])
   const [editors, setEditors] = useState<any[]>([])
+  const [reviewers, setReviewers] = useState<any[]>([])
   const [isPending, setIsPending] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const { terms, workspaceType } = useWorkspace()
@@ -43,6 +44,7 @@ export function EditWorkModal({
   const [status, setStatus] = useState(task.status || 'To Do')
   const [assignedTo, setAssignedTo] = useState(task.assignedTo || '')
   const [videoLink, setVideoLink] = useState(task.videoLink || '')
+  const [reviewerId, setReviewerId] = useState((task as any).reviewerId || '')
 
   useEffect(() => {
     // Format deadline date to YYYY-MM-DD
@@ -62,6 +64,7 @@ export function EditWorkModal({
       }
     }
     setVideoLink(task.videoLink || '')
+    setReviewerId((task as any).reviewerId || '')
   }, [task])
 
   useEffect(() => {
@@ -72,20 +75,25 @@ export function EditWorkModal({
       }
       loadClients();
 
-      if (isAgency) {
-        async function loadEditors() {
+      if (isAgency || isCorporate) {
+        async function loadTeam() {
           try {
             const data = await getTeamMembersAction();
-            const list = data.filter((m: any) => m.teamRole === 'editor' || m.teamRole === 'admin');
-            setEditors(list);
+            const staffList = isCorporate 
+              ? data.filter((m: any) => m.teamRole !== 'owner')
+              : data.filter((m: any) => m.teamRole === 'editor' || m.teamRole === 'admin');
+            setEditors(staffList);
+
+            const revList = data.filter((m: any) => m.teamRole !== 'viewer');
+            setReviewers(revList);
           } catch (e) {
-            console.error("Failed to load editors:", e);
+            console.error("Failed to load team members:", e);
           }
         }
-        loadEditors();
+        loadTeam();
       }
     }
-  }, [isOpen, isAgency]);
+  }, [isOpen, isAgency, isCorporate]);
 
   if (!isOpen) return null
 
@@ -102,6 +110,7 @@ export function EditWorkModal({
       priority,
       status,
       assignedTo: assignedTo || null, // Save empty select as null
+      reviewerId: reviewerId || null,
       videoLink: videoLink || ''
     }
 
@@ -234,7 +243,7 @@ export function EditWorkModal({
             </div>
           </div>
 
-          <div className={cn("grid grid-cols-1 gap-8", isAgency ? "md:grid-cols-2" : "w-full")}>
+          <div className={cn("grid grid-cols-1 gap-8", (isAgency || isCorporate) ? "md:grid-cols-2" : "w-full")}>
             <div className="space-y-3">
                <label htmlFor="edit-status" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Task Status</label>
                <CustomSelect 
@@ -250,9 +259,11 @@ export function EditWorkModal({
                />
             </div>
 
-            {isAgency && (
+            {(isAgency || isCorporate) && (
               <div className="space-y-3">
-                <label htmlFor="edit-assignedTo" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign Editor</label>
+                <label htmlFor="edit-assignedTo" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  {isCorporate ? "Assign Staff / Member" : "Assign Editor"}
+                </label>
                 <CustomSelect 
                   id="edit-assignedTo" 
                   value={assignedTo}
@@ -260,12 +271,31 @@ export function EditWorkModal({
                   placeholder="Unassigned"
                   options={[
                     { value: '', label: 'Unassigned' },
-                    ...editors.map(editor => ({ value: editor.id, label: `${editor.name} (${editor.teamRole})` }))
+                    ...editors.map(editor => ({ value: editor.id, label: `${editor.name} (${editor.teamRole || 'owner'})` }))
                   ]}
                 />
               </div>
             )}
           </div>
+
+          {isCorporate && (
+            <div className="space-y-3">
+              <label htmlFor="edit-reviewerId" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Designated Reviewer</label>
+              <CustomSelect 
+                id="edit-reviewerId" 
+                value={reviewerId}
+                onChange={setReviewerId}
+                placeholder="Select Reviewer"
+                options={[
+                  { value: '', label: 'None (Default Workspace Owner)' },
+                  ...reviewers.map(rev => ({ value: rev.id, label: `${rev.name} (${rev.teamRole || 'owner'})` }))
+                ]}
+              />
+              <p className="text-[9px] text-slate-400 font-semibold italic ml-1">
+                Only the designated reviewer or manager can mark this task as completed.
+              </p>
+            </div>
+          )}
 
           {errorMsg && (
             <div className="p-5 bg-red-50 border border-red-100 rounded-[1.5rem] text-[10px] text-red-600 font-bold uppercase tracking-wider animate-in shake-1 duration-300">

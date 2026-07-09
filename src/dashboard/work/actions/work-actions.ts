@@ -23,6 +23,7 @@ const WorkSchema = z.object({
   completedAt: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
   assignedTo: z.string().nullable().optional().or(z.literal("")),
+  reviewerId: z.string().nullable().optional().or(z.literal("")),
 })
 
 interface LeanWorkDoc {
@@ -36,6 +37,7 @@ interface LeanWorkDoc {
   updatedAt: string;
   completedAt?: string;
   assignedTo?: string;
+  reviewerId?: string;
 }
 
 export async function getWorksAction() {
@@ -104,6 +106,7 @@ export async function createWorkAction(prevState: unknown, formData: FormData) {
     const dataToSave = {
       ...validatedFields.data,
       assignedTo: validatedFields.data.assignedTo || null,
+      reviewerId: validatedFields.data.reviewerId || null,
       userId: user.workspaceId,
     }
     const newWork = await Work.create(dataToSave)
@@ -136,7 +139,31 @@ export async function updateWorkStatusAction(id: string, newStatus: string) {
 
   try {
     await dbConnect()
-    const updateData: Record<string, unknown> = { status: newStatus }
+    const task = await Work.findOne({ _id: id, userId: user.workspaceId })
+    if (!task) {
+      return { message: 'Work task not found' }
+    }
+
+    const isCorp = user.workspaceType === 'corporate'
+    const isManager = user.teamRole === 'owner' || user.teamRole === 'admin' || !user.teamRole
+
+    const updateData: Record<string, any> = { status: newStatus }
+
+    if (isCorp) {
+      // Rule 1: Only manager/owner, admin, or the designated reviewer can mark task completed/done
+      if (!isManager && (newStatus === 'Completed' || newStatus === 'Done')) {
+        const isDesignatedReviewer = task.reviewerId && task.reviewerId.toString() === user.id
+        if (!isDesignatedReviewer) {
+          return { message: 'Only the designated reviewer or manager can mark this task as completed.' }
+        }
+      }
+
+      // Rule 2: If task is moved to Review, set default reviewer to the workspace manager (userId) if not set
+      if (newStatus === 'Review' && !task.reviewerId) {
+        updateData.reviewerId = task.userId
+      }
+    }
+
     if (newStatus === 'Completed' || newStatus === 'Done') {
       updateData.completedAt = new Date().toISOString()
     } else {
@@ -188,6 +215,11 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
 
   try {
     await dbConnect()
+    const task = await Work.findOne({ _id: id, userId: user.workspaceId })
+    if (!task) {
+      return { message: 'Work task not found' }
+    }
+
     const validatedFields = WorkSchema.partial().safeParse(data)
     if (!validatedFields.success) {
       return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
@@ -198,6 +230,36 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
     }
     if ('assignedTo' in dataToUpdate) {
       dataToUpdate.assignedTo = dataToUpdate.assignedTo || null
+    }
+    if ('reviewerId' in dataToUpdate) {
+      dataToUpdate.reviewerId = dataToUpdate.reviewerId || null
+    }
+
+    const isCorp = user.workspaceType === 'corporate'
+    const isManager = user.teamRole === 'owner' || user.teamRole === 'admin' || !user.teamRole
+
+    if (isCorp) {
+      const newStatus = dataToUpdate.status;
+      
+      // Rule 1: Only manager/owner, admin, or the designated reviewer can mark task completed/done
+      if (!isManager && newStatus && (newStatus === 'Completed' || newStatus === 'Done')) {
+        const targetReviewerId = dataToUpdate.reviewerId || task.reviewerId?.toString()
+        const isDesignatedReviewer = targetReviewerId && targetReviewerId === user.id
+        if (!isDesignatedReviewer) {
+          return { message: 'Only the designated reviewer or manager can mark this task as completed.' }
+        }
+      }
+
+      // Rule 2: If task is moved to Review, set default reviewer to the workspace manager (userId) if not set
+      if (newStatus === 'Review' && !dataToUpdate.reviewerId && !task.reviewerId) {
+        dataToUpdate.reviewerId = task.userId.toString()
+      }
+    }
+
+    if (dataToUpdate.status === 'Completed' || dataToUpdate.status === 'Done') {
+      dataToUpdate.completedAt = new Date().toISOString()
+    } else if (dataToUpdate.status) {
+      dataToUpdate.completedAt = null
     }
     
     const updated = await Work.findOneAndUpdate(

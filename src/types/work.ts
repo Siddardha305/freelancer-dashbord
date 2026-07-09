@@ -18,6 +18,7 @@ export interface Work {
   completedAt?: string;
   tags: string[];
   assignedTo?: string;
+  reviewerId?: string;
   createdAt: string;
   updatedAt: string;
 }

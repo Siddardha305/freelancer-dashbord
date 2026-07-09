@@ -23,8 +23,8 @@ export async function getTeamMembersAction() {
   const user = await getSessionUser();
   if (!user) return [];
 
-  // Workspace owners, admins, and editors can retrieve team members to resolve assignee names
-  if (user.teamRole !== 'owner' && user.teamRole !== 'admin' && user.teamRole !== 'editor') return [];
+  // Workspace owners, admins, and editors/viewers can retrieve team members to resolve assignee names
+  if (user.teamRole !== 'owner' && user.teamRole !== 'admin' && user.teamRole !== 'editor' && user.teamRole !== 'viewer') return [];
 
   try {
     const members = await User.find({

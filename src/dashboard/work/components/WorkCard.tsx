@@ -20,6 +20,7 @@ export interface Task {
   actualHours: number;
   tags?: string[];
   assignedTo?: string;
+  reviewerId?: string;
   videoLink?: string;
 }
 
@@ -45,6 +46,9 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
   
   const assignedMember = teamMembers.find(m => m.id === task.assignedTo);
   const assignedName = assignedMember ? assignedMember.name : '';
+
+  const reviewerMember = teamMembers.find(m => m.id === task.reviewerId);
+  const reviewerName = reviewerMember ? reviewerMember.name : '';
   
   let deadlineDate = parseISO(task.deadline);
   if (isNaN(deadlineDate.getTime())) {
@@ -139,25 +143,38 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
         </div>
       )}
       
-      <div className="flex items-center gap-1.5 mb-4 mt-[-8px]">
-        {task.assignedTo ? (
-          <>
-            <div className="h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[8px] font-black uppercase border border-indigo-100 dark:border-indigo-900/35">
-              {assignedName?.charAt(0) || 'U'}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-4 mt-[-8px]">
+        <div className="flex items-center gap-1.5">
+          {task.assignedTo ? (
+            <>
+              <div className="h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[8px] font-black uppercase border border-indigo-100 dark:border-indigo-900/35">
+                {assignedName?.charAt(0) || 'U'}
+              </div>
+              <span className="text-[9px] font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider">
+                Assigned: {assignedName}
+              </span>
+            </>
+          ) : (
+            <>
+              <div className="h-5 w-5 rounded-md bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 flex items-center justify-center text-[8px] font-black uppercase border border-slate-200 dark:border-slate-800/35">
+                U
+              </div>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                Assigned: Unassigned
+              </span>
+            </>
+          )}
+        </div>
+
+        {task.reviewerId && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-5 w-5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-[8px] font-black uppercase border border-amber-100 dark:border-amber-900/35">
+              {reviewerName?.charAt(0) || 'R'}
             </div>
             <span className="text-[9px] font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider">
-              Assigned: {assignedName}
+              Reviewer: {reviewerName}
             </span>
-          </>
-        ) : (
-          <>
-            <div className="h-5 w-5 rounded-md bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 flex items-center justify-center text-[8px] font-black uppercase border border-slate-200 dark:border-slate-800/35">
-              U
-            </div>
-            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              Assigned: Unassigned
-            </span>
-          </>
+          </div>
         )}
       </div>
       

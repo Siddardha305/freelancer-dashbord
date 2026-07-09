@@ -66,11 +66,16 @@ const WorkSchema = new Schema({
     ref: 'User',
     default: null,
   },
+  reviewerId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
 }, {
   timestamps: true,
 });
 
-if (models.Work && !models.Work.schema.paths.assignedTo) {
+if (models.Work && (!models.Work.schema.paths.assignedTo || !models.Work.schema.paths.reviewerId)) {
   delete (models as Record<string, unknown>).Work;
   if (mongoose.modelNames().includes('Work')) {
     mongoose.deleteModel('Work');
