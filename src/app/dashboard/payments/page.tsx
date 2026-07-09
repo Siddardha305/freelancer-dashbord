@@ -28,7 +28,8 @@ export default function PaymentsPage() {
     agencyLogoUrl?: string; 
     agencyLogoDarkUrl?: string; 
     agencyScannerUrl?: string; 
-    agencyBrandingMode?: "logo" | "text" | "both" 
+    agencyBrandingMode?: "logo" | "text" | "both";
+    workspaceType?: string;
   } | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   
@@ -63,7 +64,7 @@ export default function PaymentsPage() {
     async function loadUser() {
       try {
         const user = await getCurrentUserAction();
-        if (user?.teamRole === 'editor') {
+        if (user?.teamRole === 'editor' || user?.workspaceType === 'corporate') {
           router.replace('/dashboard/work');
           return;
         }
@@ -87,7 +88,8 @@ export default function PaymentsPage() {
     );
   }
 
-  if (currentUser?.teamRole === 'editor' || currentUser?.teamRole === 'viewer') {
+  const isCorporate = currentUser?.workspaceType === 'corporate';
+  if (currentUser?.teamRole === 'editor' || currentUser?.teamRole === 'viewer' || isCorporate) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/50 min-h-screen">
         <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">

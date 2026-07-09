@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Lock } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AddWorkModal } from "./AddWorkModal";
@@ -8,10 +8,25 @@ import { getWorksAction } from "@/dashboard/work/actions/work-actions";
 import { Work } from "@/types/work";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
 import { cn } from "@/lib/utils";
+import { getCurrentUserAction } from "@/auth/actions/auth-actions";
 
 export function WorkHeader() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const isReadOnly = currentUser?.teamRole === 'editor' || currentUser?.teamRole === 'viewer';
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUserAction();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error("Failed to load user in WorkHeader:", err);
+      }
+    }
+    loadUser();
+  }, []);
   
   const { limits, canAddTask } = usePlan();
 
@@ -38,6 +53,7 @@ export function WorkHeader() {
       <PageHeader
         title="Monthly Work"
         action={
+          isReadOnly ? undefined :
           <button 
             onClick={() => {
               if (atTaskLimit) {

@@ -36,15 +36,21 @@ export function AddWorkModal({
   const [selectedStatus, setSelectedStatus] = useState('To Do')
   const [selectedEditor, setSelectedEditor] = useState('')
   const [deadline, setDeadline] = useState('')
-  const { terms } = useWorkspace()
+  const { terms, workspaceType } = useWorkspace()
+  const isCorporate = workspaceType === 'corporate'
   const { plan } = usePlan()
   const isAgency = plan === 'agency'
 
   useEffect(() => {
     if (isOpen) {
       setDeadline(initialDeadline || '');
+      if (isCorporate) {
+        setSelectedClient('Internal');
+      } else {
+        setSelectedClient('');
+      }
     }
-  }, [isOpen, initialDeadline]);
+  }, [isOpen, initialDeadline, isCorporate]);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,16 +115,31 @@ export function AddWorkModal({
             </div>
 
             <div className="space-y-3">
-              <label htmlFor="client" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign Client</label>
-              <CustomSelect 
-                id="client" 
-                name="client" 
-                required
-                value={selectedClient}
-                onChange={setSelectedClient}
-                placeholder="Select a client..."
-                options={clients.map(c => ({ value: c.name, label: c.name }))}
-              />
+              <label htmlFor="client" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                {isCorporate ? "Department / Project" : "Assign Client"}
+              </label>
+              {isCorporate ? (
+                <input 
+                  type="text" 
+                  id="client" 
+                  name="client" 
+                  required
+                  value={selectedClient}
+                  onChange={(e) => setSelectedClient(e.target.value)}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold"
+                  placeholder="e.g. HR, Sales, Internal..."
+                />
+              ) : (
+                <CustomSelect 
+                  id="client" 
+                  name="client" 
+                  required
+                  value={selectedClient}
+                  onChange={setSelectedClient}
+                  placeholder="Select a client..."
+                  options={clients.map(c => ({ value: c.name, label: c.name }))}
+                />
+              )}
               {state?.errors?.client && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.client[0]}</p>}
             </div>
           </div>
@@ -134,16 +155,18 @@ export function AddWorkModal({
             />
           </div>
 
-          <div className="space-y-3">
-            <label htmlFor="videoLink" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video / Footage Link</label>
-            <input 
-              type="url" 
-              id="videoLink" 
-              name="videoLink" 
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
-              placeholder="e.g. Google Drive link, Dropbox, Frame.io footage link..." 
-            />
-          </div>
+          {!isCorporate && (
+            <div className="space-y-3">
+              <label htmlFor="videoLink" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video / Footage Link</label>
+              <input 
+                type="url" 
+                id="videoLink" 
+                name="videoLink" 
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
+                placeholder="e.g. Google Drive link, Dropbox, Frame.io footage link..." 
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">

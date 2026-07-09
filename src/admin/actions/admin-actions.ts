@@ -121,19 +121,23 @@ export async function getAdminOverviewAction() {
 
       let parentUser = null;
       if (u.parentUserId) {
-        const pDoc = await User.findById(u.parentUserId).select('name email').lean() as any;
+        const pDoc = await User.findById(u.parentUserId).select('name email agencyName').lean() as any;
         if (pDoc) {
-          parentUser = { name: pDoc.name || '', email: pDoc.email || '' };
+          parentUser = { name: pDoc.name || '', email: pDoc.email || '', agencyName: pDoc.agencyName || null };
         }
       }
       
+      const agencyName = u.parentUserId ? (parentUser?.agencyName || null) : (u.agencyName || null);
+
       return {
         id: u._id.toString(),
         name: u.name || '',
         email: u.email || '',
         role: u.role || 'user',
         plan: u.plan || 'hobby',
+        workspaceType: u.workspaceType || 'general',
         teamRole: u.teamRole || 'owner',
+        agencyName,
         parentUser,
         createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : '',
         clientCount,
@@ -500,5 +504,23 @@ export async function replyToContactMessageAction(messageId: string, replyText: 
     console.error('Failed to reply to contact message:', error);
     const msg = error instanceof Error ? error.message : 'Error sending reply.';
     return { success: false, message: msg };
+  }
+}
+
+export async function updateUserWorkspaceTypeAction(userId: string, newWorkspaceType: string) {
+  const currentUser = await getSessionUser();
+  if (!currentUser || currentUser.role !== 'admin') {
+    return { success: false, message: 'Unauthorized' };
+  }
+  
+  await dbConnect();
+  try {
+    const updated = await User.findByIdAndUpdate(userId, { workspaceType: newWorkspaceType }, { new: true });
+    if (!updated) return { success: false, message: 'User not found' };
+    revalidatePath('/admin');
+    return { success: true, message: `Workspace type updated to ${newWorkspaceType}` };
+  } catch (err) {
+    console.error("Failed to update user workspace type:", err);
+    return { success: false, message: 'Database error' };
   }
 }

@@ -92,11 +92,11 @@ export function RadixSelect({
   return (
     <SelectPrimitive.Root value={value} onValueChange={onValueChange} name={name} disabled={disabled}>
       <SelectPrimitive.Trigger
-        className={`flex items-center justify-between gap-2 px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`flex items-center justify-between gap-2 px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-650/10 focus:border-indigo-650 transition-all w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon>
-          <ChevronDown className="h-4 w-4 text-slate-500" />
+          <ChevronDown className="h-4 w-4 text-slate-500 dark:text-slate-400" />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
 
@@ -105,18 +105,18 @@ export function RadixSelect({
           asChild
           position="popper"
           sideOffset={5}
-          className="z-[100] min-w-[200px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl animate-in fade-in slide-in-from-top-1 duration-200"
+          className="z-[100] min-w-[200px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 p-1.5 shadow-xl dark:shadow-slate-950/50 animate-in fade-in slide-in-from-top-1 duration-200"
         >
           <SelectPrimitive.Viewport className="p-1">
             {options.map((opt) => (
               <SelectPrimitive.Item
                 key={opt.value}
                 value={opt.value}
-                className="relative flex items-center px-8 py-2.5 text-xs font-bold text-slate-700 uppercase rounded-xl select-none outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-indigo-50 data-[highlighted]:text-indigo-600 cursor-pointer transition-colors"
+                className="relative flex items-center px-8 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase rounded-xl select-none outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-indigo-50 dark:data-[highlighted]:bg-indigo-950/20 data-[highlighted]:text-indigo-600 dark:data-[highlighted]:text-indigo-400 cursor-pointer transition-colors"
               >
                 <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator className="absolute left-2.5 flex items-center justify-center">
-                  <Check className="h-3.5 w-3.5 text-indigo-600" />
+                  <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                 </SelectPrimitive.ItemIndicator>
               </SelectPrimitive.Item>
             ))}

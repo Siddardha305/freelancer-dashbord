@@ -16,7 +16,6 @@ import { usePlan } from "@/context/PlanContext";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
 import { Lock } from "lucide-react";
 import Link from "next/link";
-
 // Modular Sub-Components
 import { WorkStatistics } from "./WorkStatistics";
 import { WorkFilterTabs } from "./WorkFilterTabs";
@@ -40,6 +39,8 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const isEditor = currentUser?.teamRole === 'editor';
+  const isViewer = currentUser?.teamRole === 'viewer';
+  const isReadOnly = isEditor || isViewer;
 
   useEffect(() => {
     async function loadUser() {
@@ -265,7 +266,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       />
 
       {/* Plan limit warning banner */}
-      {!isEditor && atTaskLimit && (
+      {!isReadOnly && atTaskLimit && (
         <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4">
           <div className="flex items-center gap-3">
             <Lock className="h-4 w-4 text-amber-600 shrink-0" />
@@ -287,7 +288,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         setPriorityFilter={setPriorityFilter}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        isEditor={isEditor}
+        isEditor={isReadOnly}
         onAddTaskClick={() => {
           if (atTaskLimit) {
             setIsUpgradeModalOpen(true);
@@ -310,7 +311,8 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteTask}
-          isEditor={isEditor}
+          isEditor={isReadOnly}
+          isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
         />
       ) : view === "calendar" ? (
@@ -320,7 +322,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           onMoveTask={handleMoveTaskDeadline} 
           onAddTask={handleQuickAddTask}
           onStatusChange={handleStatusChange}
-          isEditor={isEditor}
+          isEditor={isReadOnly}
         />
       ) : view === "history" ? (
         /* History day-by-day View */
@@ -328,7 +330,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           tasks={filteredTasks}
           clients={clients}
           formatCurrency={formatCurrency}
-          isEditor={isEditor}
+          isEditor={isReadOnly}
         />
       ) : (
         /* List spreadsheet Activity view */
@@ -338,7 +340,8 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDeleteClick={(id) => setTaskToDelete(id)}
-          isEditor={isEditor}
+          isEditor={isReadOnly}
+          isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
         />
       )}

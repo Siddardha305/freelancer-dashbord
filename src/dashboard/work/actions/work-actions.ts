@@ -44,11 +44,22 @@ export async function getWorksAction() {
 
   await dbConnect()
   try {
-    const query: Record<string, any> = { userId: user.workspaceId }
-    if (user.teamRole === 'editor') {
-      query.assignedTo = user.id
+    const mongoose = require('mongoose');
+    const query: Record<string, any> = {
+      userId: mongoose.isValidObjectId(user.workspaceId)
+        ? new mongoose.Types.ObjectId(user.workspaceId)
+        : user.workspaceId
     }
-    const works = await Work.find(query).sort({ createdAt: -1 }).lean()
+    if (user.teamRole === 'editor') {
+      const editorIdObj = mongoose.isValidObjectId(user.id)
+        ? new mongoose.Types.ObjectId(user.id)
+        : null;
+      query.$or = [
+        { assignedTo: user.id },
+        ...(editorIdObj ? [{ assignedTo: editorIdObj }] : [])
+      ];
+    }
+    const works = await Work.collection.find(query).sort({ createdAt: -1 }).toArray()
     return JSON.parse(JSON.stringify(works)).map((doc: LeanWorkDoc) => ({
       ...doc,
       id: doc._id.toString(),
@@ -122,11 +133,6 @@ export async function createWorkAction(prevState: unknown, formData: FormData) {
 export async function updateWorkStatusAction(id: string, newStatus: string) {
   const user = await getSessionUser()
   if (!user) return { message: 'Unauthorized' }
-
-  // RBAC Permission Check
-  if (user.teamRole === 'viewer') {
-    return { message: 'Your permission level is view-only. You cannot perform this operation.' }
-  }
 
   try {
     await dbConnect()

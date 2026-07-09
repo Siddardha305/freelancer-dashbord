@@ -5,6 +5,7 @@ import { Calendar, CheckCircle2, User, Award, Inbox, Clock } from "lucide-react"
 import { format, isToday, isYesterday } from "date-fns";
 import { Work } from "@/types/work";
 import { Client } from "@/types/client";
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 interface WorkHistoryViewProps {
   tasks: Work[];
@@ -14,6 +15,8 @@ interface WorkHistoryViewProps {
 }
 
 export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = false }: WorkHistoryViewProps) {
+  const { workspaceType } = useWorkspace();
+  const isCorporate = workspaceType === 'corporate';
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -112,7 +115,7 @@ export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = fal
                 {completedThisMonth.length}
               </span>
             </div>
-            {!isEditor ? (
+            {!isEditor && !isCorporate ? (
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:px-6 border border-white/10 flex flex-col justify-center">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-200">Month Earnings</span>
                 <span className="text-2xl font-black mt-1 text-emerald-300">
@@ -150,7 +153,7 @@ export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = fal
                 </div>
                 <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">{formattedDate}</h3>
-                  {!isEditor ? (
+                  {!isEditor && !isCorporate ? (
                     <div className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-[10px] font-extrabold uppercase tracking-wide">
                       + {formatCurrency(dayGroup.totalEarnings)}
                     </div>
@@ -210,9 +213,9 @@ export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = fal
                       </div>
                       
                       <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-none border-slate-100 dark:border-slate-800 pt-3 sm:pt-0">
-                        {!isEditor && (
+                        {!isEditor && !isCorporate && (
                           <div className="flex flex-col sm:items-end">
-                            <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">Priced Rate</span>
+                            <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-550">Priced Rate</span>
                             <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5">
                               {formatCurrency(taskPrice)}
                             </span>

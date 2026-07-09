@@ -17,7 +17,22 @@ import { useQuery } from "@tanstack/react-query";
 import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
 import { getWorksAction } from "@/dashboard/work/actions/work-actions";
 import { Client } from "@/types/client";
-import { Work } from "@/types/work";
+import { RadixSelect } from "@/components/ui/RadixAnimate";
+
+const currencyOptions = [
+  { value: "INR", label: "INR (₹) - Indian Rupee" },
+  { value: "USD", label: "USD ($) - US Dollar" },
+  { value: "EUR", label: "EUR (€) - Euro" },
+  { value: "GBP", label: "GBP (£) - British Pound" }
+];
+
+const workspaceOptions = [
+  { value: "video_editing", label: "Video Editing & Design (Thumbnails)" },
+  { value: "photography", label: "Photography & Media (Shoots)" },
+  { value: "digital_marketing", label: "Digital Marketing (Campaigns)" },
+  { value: "general", label: "General Freelancing (Deliverables)" },
+  { value: "corporate", label: "Corporate Workspace" }
+];
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -42,7 +57,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [currency, setCurrency] = useState("INR");
-  const [workspaceType, setWorkspaceType] = useState<"video_editing" | "digital_marketing" | "photography" | "general">("video_editing");
+  const [workspaceType, setWorkspaceType] = useState<"video_editing" | "digital_marketing" | "photography" | "general" | "corporate">("video_editing");
   const [agencyName, setAgencyName] = useState("");
   const [agencyLogoUrl, setAgencyLogoUrl] = useState("");
   const [agencyLogoDarkUrl, setAgencyLogoDarkUrl] = useState("");
@@ -339,42 +354,25 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Default Currency</label>
-                        <div className="relative">
-                          <select 
-                            value={currency} 
-                            onChange={(e) => setCurrency(e.target.value)}
-                            disabled={isEditor}
-                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="INR">INR (₹) - Indian Rupee</option>
-                            <option value="USD">USD ($) - US Dollar</option>
-                            <option value="EUR">EUR (€) - Euro</option>
-                            <option value="GBP">GBP (£) - British Pound</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                          </div>
-                        </div>
+                        <RadixSelect 
+                          value={currency} 
+                          onValueChange={(val) => setCurrency(val)}
+                          options={currencyOptions}
+                          disabled={isEditor}
+                        />
                       </div>
  
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Workspace Niche / Type</label>
-                        <div className="relative">
-                          <select 
-                            value={workspaceType} 
-                            onChange={(e) => setWorkspaceType(e.target.value as WorkspaceType)}
-                            disabled={isEditor}
-                            className="w-full px-5 py-4 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="video_editing">Video Editing & Design (Thumbnails)</option>
-                            <option value="photography">Photography & Media (Shoots)</option>
-                            <option value="digital_marketing">Digital Marketing (Campaigns)</option>
-                            <option value="general">General Freelancing (Deliverables)</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                          </div>
-                        </div>
+                        <RadixSelect 
+                          value={workspaceType} 
+                          onValueChange={(val) => setWorkspaceType(val as WorkspaceType)}
+                          options={workspaceOptions}
+                          disabled={true}
+                        />
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          To change your workspace type, contact the system administrator.
+                        </p>
                       </div>
                     </div>
 

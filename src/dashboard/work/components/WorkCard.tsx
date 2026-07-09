@@ -30,10 +30,12 @@ interface WorkCardProps {
   onStatusChange: (id: string, newStatus: string) => void;
   onDelete: (id: string) => void;
   isEditor?: boolean;
+  isViewer?: boolean;
   onEditClick?: (task: Task) => void;
 }
 
-export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDelete, isEditor = false, onEditClick }: WorkCardProps) {
+export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDelete, isEditor = false, isViewer = false, onEditClick }: WorkCardProps) {
+  const isReadOnly = isEditor || isViewer;
   const isUrgent = task.priority === 'Urgent';
   const isCompleted = task.status === 'Completed';
 
@@ -60,10 +62,10 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
   
   return (
     <div 
-      onClick={() => !isEditor && onEditClick && onEditClick(task)}
+      onClick={() => !isReadOnly && onEditClick && onEditClick(task)}
       className={cn(
         "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
-        !isEditor && "cursor-pointer",
+        !isReadOnly && "cursor-pointer",
         isOverdue && "border-red-200 bg-red-50/30",
         isUrgent && "border-red-400 ring-1 ring-red-100"
       )}
@@ -193,30 +195,30 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
         </div>
 
         <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 w-fit">
-          {statusConfigs.map((config) => {
-            const Icon = config.icon;
-            const isActive = task.status === config.name;
-            return (
-              <button
-                key={config.name}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id || task._id || "", config.name);
-                }}
-                title={config.name}
-                className={cn(
-                  "p-2 rounded-lg border transition-all duration-200 group/btn",
-                  isActive 
-                    ? cn(config.active, "shadow-sm scale-110 z-10") 
-                    : cn("border-transparent opacity-40 hover:opacity-100", config.color)
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </button>
-            );
-          })}
+            {statusConfigs.map((config) => {
+              const Icon = config.icon;
+              const isActive = task.status === config.name;
+              return (
+                <button
+                  key={config.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatusChange(task.id || task._id || "", config.name);
+                  }}
+                  title={config.name}
+                  className={cn(
+                    "p-2 rounded-lg border transition-all duration-200 group/btn",
+                    isActive 
+                      ? cn(config.active, "shadow-sm scale-110 z-10") 
+                      : cn("border-transparent opacity-40 hover:opacity-100", config.color)
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
     </div>
   );
 }

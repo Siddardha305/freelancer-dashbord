@@ -36,7 +36,7 @@ export default function ClientsPage() {
     async function loadUser() {
       try {
         const user = await getCurrentUserAction();
-        if (user?.teamRole === 'editor') {
+        if (user?.teamRole === 'editor' || user?.workspaceType === 'corporate') {
           router.replace('/dashboard/work');
           return;
         }

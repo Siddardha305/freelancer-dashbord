@@ -14,6 +14,7 @@ interface WorkListViewProps {
   onStatusChange: (taskId: string, newStatus: string) => void;
   onDeleteClick: (taskId: string) => void;
   isEditor?: boolean;
+  isViewer?: boolean;
   onEditClick?: (task: Work) => void;
 }
 
@@ -24,6 +25,7 @@ export function WorkListView({
   onStatusChange,
   onDeleteClick,
   isEditor = false,
+  isViewer = false,
   onEditClick
 }: WorkListViewProps) {
   return (
@@ -104,23 +106,23 @@ export function WorkListView({
                   })()}
                 </td>
                 <td className="px-10 py-8">
-                  <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit mx-auto">
-                    {["To Do", "In Progress", "Review", "Completed"].map((s) => (
-                      <button
-                        key={s}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(task.id, s);
-                        }}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all duration-200",
-                          task.status === s || (s === "Completed" && task.status === "Done") ? 'bg-indigo-600 text-white shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'
-                        )}
-                      >
-                        {s === "Completed" ? "Done" : s}
-                      </button>
-                    ))}
-                  </div>
+                    <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit mx-auto">
+                      {["To Do", "In Progress", "Review", "Completed"].map((s) => (
+                        <button
+                          key={s}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onStatusChange(task.id, s);
+                          }}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all duration-200",
+                            task.status === s || (s === "Completed" && task.status === "Done") ? 'bg-indigo-600 text-white shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'
+                          )}
+                        >
+                          {s === "Completed" ? "Done" : s}
+                        </button>
+                      ))}
+                    </div>
                 </td>
                 <td className="px-10 py-8">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-600">

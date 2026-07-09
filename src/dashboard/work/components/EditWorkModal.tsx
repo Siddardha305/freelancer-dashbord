@@ -29,7 +29,8 @@ export function EditWorkModal({
   const [editors, setEditors] = useState<any[]>([])
   const [isPending, setIsPending] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const { terms } = useWorkspace()
+  const { terms, workspaceType } = useWorkspace()
+  const isCorporate = workspaceType === 'corporate'
   const { plan } = usePlan()
   const isAgency = plan === 'agency'
 
@@ -155,14 +156,29 @@ export function EditWorkModal({
             </div>
 
             <div className="space-y-3">
-              <label htmlFor="edit-client" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign Client</label>
-              <CustomSelect 
-                id="edit-client" 
-                value={client}
-                onChange={setClient}
-                placeholder="Select Client"
-                options={clients.map(c => ({ value: c.name, label: c.name }))}
-              />
+              <label htmlFor="edit-client" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                {isCorporate ? "Department / Project" : "Assign Client"}
+              </label>
+              {isCorporate ? (
+                <input 
+                  type="text" 
+                  id="edit-client" 
+                  name="client"
+                  required
+                  value={client}
+                  onChange={(e) => setClient(e.target.value)}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold"
+                  placeholder="e.g. HR, Sales, Internal..."
+                />
+              ) : (
+                <CustomSelect 
+                  id="edit-client" 
+                  value={client}
+                  onChange={setClient}
+                  placeholder="Select Client"
+                  options={clients.map(c => ({ value: c.name, label: c.name }))}
+                />
+              )}
             </div>
           </div>
 
@@ -177,17 +193,19 @@ export function EditWorkModal({
             />
           </div>
 
-          <div className="space-y-3">
-            <label htmlFor="edit-videoLink" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video / Footage Link</label>
-            <input 
-              type="url" 
-              id="edit-videoLink" 
-              value={videoLink}
-              onChange={(e) => setVideoLink(e.target.value)}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
-              placeholder="e.g. Google Drive link, Dropbox, Frame.io footage link..." 
-            />
-          </div>
+          {!isCorporate && (
+            <div className="space-y-3">
+              <label htmlFor="edit-videoLink" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video / Footage Link</label>
+              <input 
+                type="url" 
+                id="edit-videoLink" 
+                value={videoLink}
+                onChange={(e) => setVideoLink(e.target.value)}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all placeholder-slate-400 font-bold" 
+                placeholder="e.g. Google Drive link, Dropbox, Frame.io footage link..." 
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">

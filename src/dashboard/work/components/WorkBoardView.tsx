@@ -12,6 +12,7 @@ interface WorkBoardViewProps {
   onStatusChange: (taskId: string, newStatus: string) => void;
   onDelete: (taskId: string) => void;
   isEditor?: boolean;
+  isViewer?: boolean;
   onEditClick?: (task: any) => void;
 }
 
@@ -22,6 +23,7 @@ export function WorkBoardView({
   onStatusChange,
   onDelete,
   isEditor = false,
+  isViewer = false,
   onEditClick
 }: WorkBoardViewProps) {
   return (
@@ -36,6 +38,7 @@ export function WorkBoardView({
         onDelete={onDelete} 
         color="slate" 
         isEditor={isEditor}
+        isViewer={isViewer}
         onEditClick={onEditClick}
       />
       <WorkColumn 
@@ -48,6 +51,7 @@ export function WorkBoardView({
         onDelete={onDelete} 
         color="indigo" 
         isEditor={isEditor}
+        isViewer={isViewer}
         onEditClick={onEditClick}
       />
       <WorkColumn 
@@ -61,6 +65,7 @@ export function WorkBoardView({
         color="amber" 
         alert 
         isEditor={isEditor}
+        isViewer={isViewer}
         onEditClick={onEditClick}
       />
       <WorkColumn 
@@ -73,6 +78,7 @@ export function WorkBoardView({
         onDelete={onDelete} 
         color="emerald" 
         isEditor={isEditor}
+        isViewer={isViewer}
         onEditClick={onEditClick}
       />
     </div>

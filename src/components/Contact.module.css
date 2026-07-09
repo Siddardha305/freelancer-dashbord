@@ -1,0 +1,247 @@
+.contactSection {
+  padding: 8rem 0 4rem 0;
+  background-color: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.sectionTag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 3rem;
+  align-items: start;
+  margin-bottom: 5rem;
+}
+
+.detailsCard, .formCard {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  transition: var(--transition-smooth);
+}
+
+.detailsCard:hover, .formCard:hover {
+  border-color: var(--border-color-hover);
+  box-shadow: 0 10px 30px rgba(124, 139, 226, 0.05);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.75rem;
+}
+
+.detailsIntro {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.infoItem {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-fast);
+}
+
+.infoItem:hover {
+  transform: translateX(4px);
+}
+
+.iconBox {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background-color: rgba(124, 139, 226, 0.08);
+  border: 1px solid rgba(124, 139, 226, 0.15);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition-fast);
+}
+
+.infoItem:hover .iconBox {
+  background-color: var(--accent);
+  color: #0c0d12;
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(124, 139, 226, 0.3);
+}
+
+.infoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* Form inputs styling */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  position: relative;
+  width: 100%;
+}
+
+.input, .textarea {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(6, 7, 10, 0.4);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.input:focus, .textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 139, 226, 0.15);
+  background-color: rgba(6, 7, 10, 0.6);
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.submitBtn {
+  background-color: var(--accent);
+  color: #0c0d12;
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: var(--transition-smooth);
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 15px rgba(124, 139, 226, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px rgba(124, 139, 226, 0.35);
+  transform: translateY(-2px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.successMessage {
+  padding: 1rem;
+  background-color: rgba(46, 213, 115, 0.1);
+  border: 1.5px solid rgba(46, 213, 115, 0.3);
+  color: #2ed573;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* Footer structure */
+.footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.footerDetail {
+  font-weight: 550;
+  color: var(--text-secondary);
+}
+
+/* Responsive styles */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .detailsCard, .formCard {
+    padding: 2.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .contactSection {
+    padding: 6rem 0 3rem 0;
+  }
+  
+  .sectionTitle {
+    font-size: 2.2rem;
+  }
+}

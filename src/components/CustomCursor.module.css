@@ -1,0 +1,48 @@
+.cursorDot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s, background-color 0.2s;
+}
+
+.cursorRing {
+  position: fixed;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid var(--secondary);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s, border-color 0.3s, background-color 0.3s;
+}
+
+/* Hover States */
+.cursorDotHover {
+  width: 4px;
+  height: 4px;
+  background-color: var(--text-primary);
+}
+
+.cursorRingHover {
+  width: 55px;
+  height: 55px;
+  border-color: var(--accent);
+  background-color: rgba(124, 139, 226, 0.08);
+}
+
+/* Click States */
+.cursorDotClick {
+  transform: translate(-50%, -50%) scale(0.6);
+}
+
+.cursorRingClick {
+  transform: translate(-50%, -50%) scale(0.85);
+  background-color: rgba(197, 163, 255, 0.15);
+  border-color: var(--secondary);
+}

@@ -31,8 +31,9 @@ import {
   Shield,
   LayoutDashboard
 } from 'lucide-react';
-import { deleteUserAction, addUserAction, updateUserPlanAction, changeAdminPasswordAction, replyToContactMessageAction } from '../actions/admin-actions';
+import { deleteUserAction, addUserAction, updateUserPlanAction, changeAdminPasswordAction, replyToContactMessageAction, updateUserWorkspaceTypeAction } from '../actions/admin-actions';
 import { resolveSupportTicketAction } from '@/dashboard/support/actions/support-actions';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 const PLAN_CONFIG = {
@@ -48,6 +49,8 @@ interface UserItem {
   email: string;
   role: string;
   plan: string;
+  workspaceType?: string;
+  agencyName?: string | null;
   createdAt: string;
   clientCount: number;
   taskCount: number;
@@ -240,6 +243,9 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
   // Plan update state
   const [updatingPlanUserId, setUpdatingPlanUserId] = useState<string | null>(null);
 
+  // Workspace type update state
+  const [updatingWorkspaceUserId, setUpdatingWorkspaceUserId] = useState<string | null>(null);
+
   // Change Password states
   const [changePwCurrentPassword, setChangePwCurrentPassword] = useState('');
   const [changePwNewPassword, setChangePwNewPassword] = useState('');
@@ -286,7 +292,48 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
   // User list filtering — now also includes plan filter
   const [planFilter, setPlanFilter] = useState('all');
 
-  const filteredUsers = initialData.userRegistry.filter(u => {
+  // 1. Group all users into workspaces
+  const allManagers = initialData.userRegistry.filter(u => !u.parentUser);
+  const managerEmails = new Set(allManagers.map(m => m.email));
+  const orphanUsers = initialData.userRegistry.filter(u => u.parentUser && !managerEmails.has(u.parentUser.email));
+
+  const allWorkspaceGroups = allManagers.map(mgr => {
+    const team = initialData.userRegistry.filter(u => u.parentUser?.email === mgr.email);
+    return {
+      manager: mgr,
+      team
+    };
+  });
+
+  // 2. Filter workspace groups based on search & filter criteria
+  const filteredWorkspaceGroups = allWorkspaceGroups.map(group => {
+    // Check if manager matches search/filters
+    const managerMatchesSearch = 
+      group.manager.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+      group.manager.email.toLowerCase().includes(userSearch.toLowerCase());
+    const managerMatchesRole = roleFilter === 'all' || group.manager.role === roleFilter;
+    const managerMatchesPlan = planFilter === 'all' || group.manager.plan === planFilter;
+    const managerMatches = managerMatchesSearch && managerMatchesRole && managerMatchesPlan;
+
+    // Filter team members based on search/filters
+    const filteredTeam = group.team.filter(member => {
+      const memberMatchesSearch = 
+        member.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+        member.email.toLowerCase().includes(userSearch.toLowerCase());
+      const memberMatchesRole = roleFilter === 'all' || member.role === roleFilter;
+      const memberMatchesPlan = planFilter === 'all' || member.plan === planFilter;
+      return memberMatchesSearch && memberMatchesRole && memberMatchesPlan;
+    });
+
+    return {
+      ...group,
+      managerMatches,
+      team: filteredTeam
+    };
+  }).filter(group => group.managerMatches || group.team.length > 0);
+
+  // Filter orphans based on search & filter
+  const filteredOrphans = orphanUsers.filter(u => {
     const matchesSearch = 
       u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
       u.email.toLowerCase().includes(userSearch.toLowerCase());
@@ -294,6 +341,10 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
     const matchesPlan = planFilter === 'all' || u.plan === planFilter;
     return matchesSearch && matchesRole && matchesPlan;
   });
+
+  const totalMatches = filteredWorkspaceGroups.reduce((acc, g) => {
+    return acc + (g.managerMatches ? 1 : 0) + g.team.length;
+  }, 0) + filteredOrphans.length;
 
   // Plan distribution counts for the stats card
   const planCounts = initialData.userRegistry.reduce((acc, u) => {
@@ -412,6 +463,24 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
     }
   };
 
+  // Handle Workspace Type Change (inline admin override)
+  const handleWorkspaceTypeChange = async (userId: string, newWorkspaceType: string) => {
+    setUpdatingWorkspaceUserId(userId);
+    try {
+      const res = await updateUserWorkspaceTypeAction(userId, newWorkspaceType);
+      if (res.success) {
+        triggerToast('success', `Workspace type updated to ${newWorkspaceType} successfully.`);
+        startTransition(() => { router.refresh(); });
+      } else {
+        triggerToast('error', res.message || 'Failed to update workspace type');
+      }
+    } catch {
+      triggerToast('error', 'An error occurred while updating workspace type.');
+    } finally {
+      setUpdatingWorkspaceUserId(null);
+    }
+  };
+
   // Handle Delete User Confirmation
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
@@ -434,6 +503,192 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const renderUserRow = (u: UserItem, isTeamMember: boolean, idx: number) => {
+    const initials = u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
+    const isCurrentAdmin = u.email === currentUser.email;
+    
+    return (
+      <motion.tr 
+        key={u.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: idx * 0.03, duration: 0.2 }}
+        className={cn(
+          "transition-colors align-middle",
+          isTeamMember 
+            ? "hover:bg-slate-50/20 dark:hover:bg-slate-950/10 border-l-4 border-slate-200 dark:border-slate-800" 
+            : "bg-indigo-50/10 dark:bg-indigo-950/5 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 border-l-4 border-indigo-500 font-bold"
+        )}
+      >
+        <td className="py-3.5 px-3 md:px-4">
+          <div className="flex items-center gap-2">
+            {isTeamMember && (
+              <span className="text-slate-300 dark:text-slate-700 font-extrabold text-xs select-none pl-2">
+                └─
+              </span>
+            )}
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-[10px] border shrink-0 ${
+              u.role === 'admin'
+                ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-900/35 text-indigo-650 dark:text-indigo-400' 
+                : 'bg-slate-100 dark:bg-slate-955 border-slate-200 dark:border-slate-800/80 text-slate-600 dark:text-slate-400'
+            }`}>
+              {initials}
+            </div>
+            <div className="min-w-0 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] xl:max-w-[220px]">
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1 cursor-help" title={u.name}>
+                <span className="truncate">{u.name}</span>
+                {isCurrentAdmin && (
+                  <span className="text-[8px] font-extrabold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-655 dark:text-emerald-400 border border-emerald-105/30 dark:border-emerald-900/30 px-1 py-0.5 rounded-full uppercase shrink-0">
+                    You
+                  </span>
+                )}
+              </p>
+              <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 truncate cursor-help" title={u.email}>
+                {u.email}
+              </p>
+              
+              {isTeamMember ? (
+                u.parentUser && (
+                  <p className="text-[9px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mt-0.5" title={`Workspace member under: ${u.parentUser.name} (${u.parentUser.email})`}>
+                    {u.teamRole || 'editor'} (under {u.parentUser.name})
+                  </p>
+                )
+              ) : (
+                <p className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-455 uppercase tracking-wider mt-0.5 flex items-center gap-1">
+                  <span>🏢 {u.agencyName || 'No Company Name'}</span>
+                </p>
+              )}
+            </div>
+          </div>
+        </td>
+        <td className="py-3.5 px-3 md:px-4">
+          {isTeamMember ? (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
+              (u.teamRole || 'editor').toLowerCase() === 'admin'
+                ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
+                : (u.teamRole || 'editor').toLowerCase() === 'editor'
+                  ? 'bg-purple-55/70 dark:bg-purple-955/40 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
+                  : 'bg-slate-50 dark:bg-slate-955 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800/80'
+            }`}>
+              {(u.teamRole || 'editor').toLowerCase() === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
+              {u.teamRole || 'editor'}
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8.5px] font-extrabold uppercase border tracking-wider ${
+              u.role === 'admin' 
+                ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
+                : 'bg-indigo-600/10 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-900/40'
+            }`}>
+              <Shield className="h-2.5 w-2.5" />
+              {u.role === 'admin' ? 'Super Admin' : 'Manager'}
+            </span>
+          )}
+        </td>
+        <td className="py-3.5 px-3 md:px-4 text-[11px] font-bold text-slate-450 dark:text-slate-400 whitespace-nowrap">
+          {formatDate(u.createdAt)}
+        </td>
+        <td className="py-3.5 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200">
+          {u.clientCount}
+        </td>
+        <td className="py-3.5 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200">
+          {u.taskCount}
+        </td>
+        <td className="py-3.5 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200 whitespace-nowrap">
+          {u.paymentCount}
+        </td>
+
+        {/* Subscription Plan select dropdown */}
+        <td className="py-3.5 px-3 md:px-4">
+          {isTeamMember ? (
+            <div className="relative inline-flex items-center">
+              <span 
+                className="inline-flex items-center px-2.5 py-1 rounded-xl text-[9px] font-extrabold uppercase tracking-wider border bg-purple-50 text-purple-650 border-purple-100 dark:bg-purple-955/35 dark:text-purple-400 dark:border-purple-900/30 cursor-help"
+                title={`Inherits billing plan from agency owner: ${u.parentUser?.name}`}
+              >
+                Inherited
+              </span>
+            </div>
+          ) : updatingPlanUserId === u.id ? (
+            <div className="flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin text-indigo-500" />
+              <span className="text-[9px] font-bold text-slate-405 dark:text-slate-555">Syncing…</span>
+            </div>
+          ) : (
+            <div className="relative inline-flex items-center">
+              <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${PLAN_CONFIG[(u.plan as PlanKey) ?? 'hobby'].dot}`} />
+              <select
+                value={u.plan || 'hobby'}
+                onChange={(e) => handlePlanChange(u.id, e.target.value as 'hobby' | 'pro' | 'agency')}
+                className={`pl-2.5 pr-6 py-1 text-[9px] font-extrabold uppercase tracking-wider rounded-xl border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-950 transition-all appearance-none ${
+                  PLAN_CONFIG[(u.plan as PlanKey) ?? 'hobby'].badge
+                }`}
+              >
+                <option value="hobby">Hobby</option>
+                <option value="pro">Pro</option>
+                <option value="agency">Agency</option>
+              </select>
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 pointer-events-none text-current opacity-60" />
+            </div>
+          )}
+        </td>
+
+        {/* Workspace Type select dropdown */}
+        <td className="py-3.5 px-3 md:px-4">
+          {isTeamMember ? (
+            <div className="relative inline-flex items-center">
+              <span 
+                className="inline-flex items-center px-2.5 py-1 rounded-xl text-[9px] font-extrabold uppercase tracking-wider border bg-purple-50 text-purple-655 border-purple-100 dark:bg-purple-955/35 dark:text-purple-400 dark:border-purple-900/30 cursor-help"
+                title={`Inherits workspace type from agency owner: ${u.parentUser?.name}`}
+              >
+                Inherited
+              </span>
+            </div>
+          ) : updatingWorkspaceUserId === u.id ? (
+            <div className="flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin text-indigo-500" />
+              <span className="text-[9px] font-bold text-slate-405 dark:text-slate-555">Syncing…</span>
+            </div>
+          ) : (
+            <div className="relative inline-flex items-center">
+              <select
+                value={u.workspaceType || 'general'}
+                onChange={(e) => handleWorkspaceTypeChange(u.id, e.target.value)}
+                className="pl-2.5 pr-6 py-1 text-[9px] font-extrabold uppercase tracking-wider rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-950 transition-all appearance-none"
+              >
+                <option value="video_editing">Video Editing</option>
+                <option value="digital_marketing">Digital Marketing</option>
+                <option value="photography">Photography</option>
+                <option value="general">General Agency</option>
+                <option value="corporate">Corporate</option>
+              </select>
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 pointer-events-none text-current opacity-60" />
+            </div>
+          )}
+        </td>
+
+        <td className="py-3.5 px-3 md:px-4 text-right pr-4 md:pr-6">
+          <button
+            onClick={() => {
+              if (!isCurrentAdmin) {
+                setUserToDelete(u);
+                setIsDeleteOpen(true);
+              }
+            }}
+            disabled={isCurrentAdmin}
+            title={isCurrentAdmin ? "Safeguard: Cannot delete your own admin session" : "Delete user and cascading workspaces"}
+            className={`p-1.5 rounded-lg transition-all ${
+              isCurrentAdmin 
+                ? 'text-slate-200 dark:text-slate-800 cursor-not-allowed'
+                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-955/20 dark:hover:text-rose-450 cursor-pointer'
+            }`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </td>
+      </motion.tr>
+    );
   };
 
   return (
@@ -1022,17 +1277,17 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
                 </div>
 
                 <span className="px-3.5 py-2 bg-indigo-50/50 dark:bg-indigo-950/45 border border-indigo-100 dark:border-indigo-900/35 text-indigo-700 dark:text-indigo-400 rounded-xl font-extrabold text-xs self-start md:self-auto">
-                  {filteredUsers.length} Users Found
+                  {totalMatches} Users Found
                 </span>
               </div>
 
               {/* User Directory Table Card */}
               <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/60 rounded-[2.2rem] shadow-sm overflow-hidden">
-                <div className="overflow-x-auto xl:overflow-x-visible">
-                  {filteredUsers.length > 0 ? (
-                    <table className="w-full text-left border-collapse table-auto">
+                <div className="overflow-x-auto w-full">
+                  {totalMatches > 0 ? (
+                    <table className="w-full min-w-[1200px] text-left border-collapse table-auto">
                       <thead>
-                        <tr className="bg-slate-55/50 dark:bg-slate-950/20 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800/80">
+                        <tr className="bg-slate-55/50 dark:bg-slate-955/20 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800/80">
                           <th className="py-3 px-3 md:px-4">User</th>
                           <th className="py-3 px-3 md:px-4">Role</th>
                           <th className="py-3 px-3 md:px-4">Joined</th>
@@ -1040,156 +1295,44 @@ export default function AdminDashboardClient({ initialData, currentUser }: Admin
                           <th className="py-3 px-2 md:px-3 text-center">Tasks</th>
                           <th className="py-3 px-2 md:px-3 text-center">Billing</th>
                           <th className="py-3 px-3 md:px-4">Plan</th>
+                          <th className="py-3 px-3 md:px-4">Workspace</th>
                           <th className="py-3 px-3 md:px-4 text-right pr-4 md:pr-6">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        {filteredUsers.map((u, uIdx) => {
-                          const initials = u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
-                          const isCurrentAdmin = u.email === currentUser.email;
-                          
+                        {filteredWorkspaceGroups.map((group, groupIdx) => {
                           return (
-                            <motion.tr 
-                              key={u.id}
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: uIdx * 0.03, duration: 0.2 }}
-                              className="hover:bg-slate-50/30 dark:hover:bg-slate-950/15 transition-colors align-middle"
-                            >
-                              <td className="py-3 px-3 md:px-4">
-                                <div className="flex items-center gap-2">
-                                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-[10px] border shrink-0 ${
-                                    u.role === 'admin'
-                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-900/35 text-indigo-650 dark:text-indigo-400' 
-                                      : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                                  }`}>
-                                    {initials}
-                                  </div>
-                                  <div className="min-w-0 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] xl:max-w-[220px]">
-                                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1 cursor-help" title={u.name}>
-                                      <span className="truncate">{u.name}</span>
-                                      {isCurrentAdmin && (
-                                        <span className="text-[8px] font-extrabold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-655 dark:text-emerald-400 border border-emerald-105/30 dark:border-emerald-900/30 px-1 py-0.5 rounded-full uppercase shrink-0">
-                                          You
-                                        </span>
-                                      )}
-                                    </p>
-                                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-505 truncate cursor-help" title={u.email}>
-                                      {u.email}
-                                    </p>
-                                    {u.parentUser ? (
-                                      <p className="text-[9px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mt-0.5" title={`Workspace member under: ${u.parentUser.name} (${u.parentUser.email})`}>
-                                        {u.teamRole || 'editor'} (under {u.parentUser.name})
-                                      </p>
-                                    ) : (
-                                      u.teamRole && u.teamRole !== 'owner' && (
-                                        <p className="text-[9px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mt-0.5">
-                                          {u.teamRole}
-                                        </p>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3 px-3 md:px-4">
-                                {u.parentUser ? (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
-                                    (u.teamRole || 'editor').toLowerCase() === 'admin'
-                                      ? 'bg-indigo-55/70 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
-                                      : (u.teamRole || 'editor').toLowerCase() === 'editor'
-                                        ? 'bg-purple-55/70 dark:bg-purple-955/40 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
-                                        : 'bg-slate-55 dark:bg-slate-955 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                                  }`}>
-                                    {(u.teamRole || 'editor').toLowerCase() === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
-                                    {u.teamRole || 'editor'}
-                                  </span>
-                                ) : (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border tracking-wider ${
-                                    u.role === 'admin' 
-                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-105/30 dark:border-indigo-900/30'
-                                      : 'bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
-                                  }`}>
-                                    {u.role === 'admin' ? <ShieldCheck className="h-2 w-2" /> : null}
-                                    {u.role || 'user'}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3 px-3 md:px-4 text-[11px] font-bold text-slate-450 dark:text-slate-400 whitespace-nowrap">
-                                {formatDate(u.createdAt)}
-                              </td>
-                              <td className="py-3 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200">
-                                {u.clientCount}
-                              </td>
-                              <td className="py-3 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200">
-                                {u.taskCount}
-                              </td>
-                              <td className="py-3 px-2 md:px-3 text-center text-xs font-bold text-slate-900 dark:text-slate-200 whitespace-nowrap">
-                                {u.paymentCount}
-                              </td>
-
-                              {/* Subscription Plan select dropdown */}
-                              <td className="py-3 px-3 md:px-4">
-                                {u.parentUser ? (
-                                  <div className="relative inline-flex items-center">
-                                    <span 
-                                      className="inline-flex items-center px-2.5 py-1 rounded-xl text-[9px] font-extrabold uppercase tracking-wider border bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900/30 cursor-help"
-                                      title={`Inherits billing plan from agency owner: ${u.parentUser.name} (${u.parentUser.email})`}
-                                    >
-                                      Inherited
-                                    </span>
-                                  </div>
-                                ) : updatingPlanUserId === u.id ? (
-                                  <div className="flex items-center gap-1">
-                                    <Loader2 className="h-3 w-3 animate-spin text-indigo-500" />
-                                    <span className="text-[9px] font-bold text-slate-405 dark:text-slate-555">Syncing…</span>
-                                  </div>
-                                ) : (
-                                  <div className="relative inline-flex items-center">
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${PLAN_CONFIG[(u.plan as PlanKey) ?? 'hobby'].dot}`} />
-                                    <select
-                                      value={u.plan || 'hobby'}
-                                      onChange={(e) => handlePlanChange(u.id, e.target.value as 'hobby' | 'pro' | 'agency')}
-                                      className={`pl-2.5 pr-6 py-1 text-[9px] font-extrabold uppercase tracking-wider rounded-xl border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-950 transition-all appearance-none ${
-                                        PLAN_CONFIG[(u.plan as PlanKey) ?? 'hobby'].badge
-                                      }`}
-                                    >
-                                      <option value="hobby">Hobby</option>
-                                      <option value="pro">Pro</option>
-                                      <option value="agency">Agency</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 pointer-events-none text-current opacity-60" />
-                                  </div>
-                                )}
-                              </td>
-
-                              <td className="py-3 px-3 md:px-4 text-right pr-4 md:pr-6">
-                                <button
-                                  onClick={() => {
-                                    if (!isCurrentAdmin) {
-                                      setUserToDelete(u);
-                                      setIsDeleteOpen(true);
-                                    }
-                                  }}
-                                  disabled={isCurrentAdmin}
-                                  title={isCurrentAdmin ? "Safeguard: Cannot delete your own admin session" : "Delete user and cascading workspaces"}
-                                  className={`p-1.5 rounded-lg transition-all ${
-                                    isCurrentAdmin 
-                                      ? 'text-slate-200 dark:text-slate-800 cursor-not-allowed'
-                                      : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-955/20 dark:hover:text-rose-450 cursor-pointer'
-                                  }`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </td>
-                            </motion.tr>
+                            <React.Fragment key={group.manager.id}>
+                              {/* Manager Row */}
+                              {group.managerMatches && renderUserRow(group.manager, false, groupIdx)}
+                              
+                              {/* Team Member Rows */}
+                              {group.team.map((member, memberIdx) => 
+                                renderUserRow(member, true, groupIdx + memberIdx + 1)
+                              )}
+                            </React.Fragment>
                           );
                         })}
+                        
+                        {/* Orphan Users (Independent Workspace Members) */}
+                        {filteredOrphans.length > 0 && (
+                          <>
+                            <tr className="bg-slate-50 dark:bg-slate-950/45 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-y border-slate-205 dark:border-slate-800/80">
+                              <td colSpan={9} className="py-2 px-4 font-black">
+                                Independent / Orphan Workspace Members
+                              </td>
+                            </tr>
+                            {filteredOrphans.map((orphan, oIdx) => 
+                              renderUserRow(orphan, true, filteredWorkspaceGroups.length + oIdx)
+                            )}
+                          </>
+                        )}
                       </tbody>
                     </table>
                   ) : (
                     <div className="py-16 text-center">
                       <Users className="h-9 w-9 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-                      <p className="text-sm font-bold text-slate-600 dark:text-slate-450">No registry matches found</p>
+                      <p className="text-sm font-bold text-slate-655 dark:text-slate-455">No registry matches found</p>
                       <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1">Try resetting your filter inputs.</p>
                     </div>
                   )}

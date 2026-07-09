@@ -17,6 +17,10 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
+import { getTeamMembersAction } from '@/dashboard/settings/actions/team-actions';
+import { getAllTimeLogsAction } from '@/dashboard/team/actions/time-actions';
+import { getLeaveRequestsAction } from '@/dashboard/team/actions/leave-actions';
+import { useWorkspace } from '@/context/WorkspaceContext';
 import { downloadCSV } from '@/lib/export-utils';
 import { format } from 'date-fns';
 import { useCurrency } from "@/context/CurrencyContext";
@@ -27,6 +31,8 @@ import { EditorReportsView } from '@/dashboard/editor/components/EditorReportsVi
 
 export default function ReportsPage() {
   const { formatCurrency, symbol } = useCurrency();
+  const { workspaceType, terms } = useWorkspace();
+  const isCorporate = workspaceType === 'corporate';
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
@@ -56,7 +62,28 @@ export default function ReportsPage() {
     refetchInterval: 8000,
   });
 
-  const loading = isLoadingClients || isLoadingWorks || loadingUser;
+  const { data: members = [], isLoading: isLoadingMembers } = useQuery({
+    queryKey: ["teamMembers"],
+    queryFn: getTeamMembersAction,
+    enabled: isCorporate,
+    refetchInterval: 8000,
+  });
+
+  const { data: allLogsRes, isLoading: isLoadingLogs } = useQuery({
+    queryKey: ["allTimeLogs"],
+    queryFn: getAllTimeLogsAction,
+    enabled: isCorporate,
+    refetchInterval: 8000,
+  });
+
+  const { data: leavesRes } = useQuery({
+    queryKey: ["leaveRequests"],
+    queryFn: getLeaveRequestsAction,
+    enabled: isCorporate,
+    refetchInterval: 8000,
+  });
+
+  const loading = isLoadingClients || isLoadingWorks || loadingUser || (isCorporate && (isLoadingMembers || isLoadingLogs));
 
   if (loading) {
     return (
@@ -74,6 +101,7 @@ export default function ReportsPage() {
 
   // --- Core Calculations ---
   const isEditor = currentUser?.teamRole === 'editor';
+  const isViewer = currentUser?.teamRole === 'viewer';
   const activeWorks = isEditor 
     ? (works as Work[]).filter((w: Work) => w.assignedTo === currentUser.id)
     : (works as Work[]);
@@ -173,11 +201,61 @@ export default function ReportsPage() {
   };
   const statusMax = Math.max(...Object.values(statusCounts), 1);
 
+  // Corporate Specific Statistics & Attendance Grouping
+  const activeLogs = (allLogsRes?.logs || []).filter((log: any) => log.status === 'active');
+  const activeUserIds = new Set(activeLogs.map((log: any) => log.userId));
+  const activeSessionsCount = activeUserIds.size;
+
+  const totalMinutes = (allLogsRes?.logs || []).reduce((acc: number, log: any) => acc + (log.durationMinutes || 0), 0);
+  const totalOfficeHours = (totalMinutes / 60).toFixed(1);
+
+  const attendanceLogs = allLogsRes?.logs || [];
+  const logsByUser: Record<string, any[]> = {};
+  attendanceLogs.forEach((log: any) => {
+    if (!logsByUser[log.userId]) {
+      logsByUser[log.userId] = [];
+    }
+    logsByUser[log.userId].push(log);
+  });
+
+  // Calculate approved leaves
+  const approvedLeaves = (leavesRes?.leaves || []).filter((l: any) => l.status === 'approved');
+  const leavesByUser: Record<string, number> = {};
+  approvedLeaves.forEach((l: any) => {
+    const uid = typeof l.userId === 'object' && l.userId ? l.userId.id : l.userId;
+    if (uid) {
+      leavesByUser[uid] = (leavesByUser[uid] || 0) + 1;
+    }
+  });
+
+  const memberStats = (members as any[]).map((member: any) => {
+    const userLogs = logsByUser[member.id] || [];
+    const presentDates = new Set(userLogs.map((log: any) => new Date(log.clockIn).toDateString()));
+    const presentDaysCount = presentDates.size;
+    const totalMins = userLogs.reduce((acc: number, log: any) => acc + (log.durationMinutes || 0), 0);
+    const hoursWorked = (totalMins / 60).toFixed(1);
+    const isActive = userLogs.some((log: any) => log.status === 'active');
+
+    const memberCompletedTasks = activeWorks.filter((w: Work) => w.assignedTo === member.id && ((w.status as string) === 'Completed' || w.status === 'Done')).length;
+    const memberPendingTasks = activeWorks.filter((w: Work) => w.assignedTo === member.id && ['To Do', 'In Progress', 'Review'].includes(w.status)).length;
+    const leavesCount = leavesByUser[member.id] || 0;
+
+    return {
+      member,
+      presentDaysCount,
+      hoursWorked,
+      isActive,
+      completedCount: memberCompletedTasks,
+      pendingCount: memberPendingTasks,
+      leavesCount,
+    };
+  });
+
   const handleExportCSV = () => {
     if (isEditor) {
       const rows = activeWorks.map((w) => ({
         Deliverable: w.title,
-        Client: w.client,
+        DepartmentOrProject: w.client,
         Deadline: w.deadline,
         Priority: w.priority,
         Revisions: w.revisions || 0,
@@ -186,6 +264,23 @@ export default function ReportsPage() {
       downloadCSV(rows, `MyPerformance_${format(now, 'yyyy-MM-dd')}.csv`);
       return;
     }
+
+    if (isCorporate) {
+      const rows = memberStats.map((s) => ({
+        Employee: s.member.name,
+        Email: s.member.email,
+        Role: s.member.teamRole,
+        'Completed Deliverables': s.completedCount,
+        'Pending Deliverables': s.pendingCount,
+        'Days Present': s.presentDaysCount,
+        'Total Hours Worked': s.hoursWorked,
+        'Leaves Approved': s.leavesCount,
+        Status: s.isActive ? 'On-Duty' : 'Off-Duty',
+      }));
+      downloadCSV(rows, `TeamAttendanceReport_${format(now, 'yyyy-MM-dd')}.csv`);
+      return;
+    }
+
     const rows = clientStats.map((s) => ({
       Client: s.client.name,
       Niche: s.client.niche || '',
@@ -242,8 +337,72 @@ export default function ReportsPage() {
           ) : (
             <>
               {/* ── Top KPI Row ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
+              <div className={`grid grid-cols-1 gap-5 ${isViewer ? "sm:grid-cols-2 lg:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+                {(isCorporate ? (
+                  isViewer ? [
+                    {
+                      label: 'Total Deliverables',
+                      value: String(activeWorks.length),
+                      sub: `${pendingCount} tasks in progress`,
+                      icon: BarChart2,
+                      color: 'indigo',
+                      bg: 'bg-indigo-50',
+                      text: 'text-indigo-600',
+                      isCurrency: false,
+                    },
+                    {
+                      label: 'Completed Tasks',
+                      value: String(totalDeliveries),
+                      sub: `${completionRate}% completion rate`,
+                      icon: CheckCircle2,
+                      color: 'emerald',
+                      bg: 'bg-emerald-50',
+                      text: 'text-emerald-600',
+                      isCurrency: false,
+                    },
+                  ] : [
+                    {
+                      label: 'Total Deliverables',
+                      value: String(activeWorks.length),
+                      sub: `${pendingCount} tasks in progress`,
+                      icon: BarChart2,
+                      color: 'indigo',
+                      bg: 'bg-indigo-50',
+                      text: 'text-indigo-600',
+                      isCurrency: false,
+                    },
+                    {
+                      label: 'Completed Tasks',
+                      value: String(totalDeliveries),
+                      sub: `${completionRate}% completion rate`,
+                      icon: CheckCircle2,
+                      color: 'emerald',
+                      bg: 'bg-emerald-50',
+                      text: 'text-emerald-600',
+                      isCurrency: false,
+                    },
+                    {
+                      label: 'Active Sessions',
+                      value: String(activeSessionsCount),
+                      sub: 'Employees currently on-duty',
+                      icon: Zap,
+                      color: 'amber',
+                      bg: 'bg-amber-50',
+                      text: 'text-amber-600',
+                      isCurrency: false,
+                    },
+                    {
+                      label: 'Total Logged Hours',
+                      value: `${totalOfficeHours}h`,
+                      sub: 'Accumulated corporate office hours',
+                      icon: Clock,
+                      color: 'purple',
+                      bg: 'bg-purple-50',
+                      text: 'text-purple-650',
+                      isCurrency: false,
+                    },
+                  ]
+                ) : [
                   {
                     label: 'This Month Revenue',
                     value: formatCurrency(thisMonthRevenue),
@@ -284,7 +443,7 @@ export default function ReportsPage() {
                     text: urgentCount > 0 ? 'text-red-600' : 'text-emerald-600',
                     isCurrency: false,
                   },
-                ].map((kpi) => {
+                ]).map((kpi) => {
                   const Icon = kpi.icon;
                   const isCurrencyIcon = kpi.isCurrency && Icon === DollarSign;
                   return (
@@ -395,13 +554,18 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              {/* Client Performance Table */}
+              {/* Client Performance Table OR Team Attendance & Deliverables Table */}
               <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-4 sm:px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                   <div>
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Client Performance</h2>
+                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+                      {isCorporate ? "Team Attendance & Deliverables" : "Client Performance"}
+                    </h2>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-                      {monthLabel} · {activeClients.length} active clients
+                      {isCorporate 
+                        ? `${monthLabel} · ${members.length} team members registered`
+                        : `${monthLabel} · ${activeClients.length} active clients`
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -410,113 +574,202 @@ export default function ReportsPage() {
                   </div>
                 </div>
 
-                {clientStats.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-4">
-                      <Users className="h-7 w-7 text-slate-200" />
+                {isCorporate ? (
+                  isViewer ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                      <div className="h-16 w-16 rounded-3xl bg-rose-50 dark:bg-rose-955/20 border border-rose-100 dark:border-rose-900/10 flex items-center justify-center mb-4">
+                        <AlertCircle className="h-7 w-7 text-rose-600 dark:text-rose-405" />
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1">Access Restricted</h4>
+                      <p className="text-[10px] text-slate-455 dark:text-slate-550 font-bold uppercase tracking-widest max-w-xs mx-auto">
+                        Detailed worker logs and present days registry are only visible to workspace administrators.
+                      </p>
                     </div>
-                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No active clients yet</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-slate-50/50">
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Orders</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate / Delivery</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">This Month</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</th>
-                          <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {clientStats.map((s) => (
-                          <tr key={s.client.id} className="hover:bg-slate-50/60 transition-colors group">
-                            {/* Client */}
-                            <td className="px-4 sm:px-6 py-5">
-                              <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
-                                  <span className="text-sm font-black text-indigo-600 group-hover:text-white transition-colors">
-                                    {s.client.name.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-black text-slate-900">{s.client.name}</p>
-                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border select-none ${
-                                      s.client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
-                                      (s.client.status as string) === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
-                                      s.client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
-                                      (s.client.status as string) === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
-                                      'bg-slate-50 text-slate-700 border-slate-200/60'
-                                    }`}>
-                                      <span className={`h-1 w-1 rounded-full ${
-                                        s.client.status === 'Active' ? 'bg-emerald-505' :
-                                        (s.client.status as string) === 'On Hold' ? 'bg-amber-505' :
-                                        s.client.status === 'Inactive' ? 'bg-red-505' :
-                                        (s.client.status as string) === 'Completed' ? 'bg-indigo-505' :
-                                        'bg-slate-400'
-                                      }`} />
-                                      {s.client.status || 'Active'}
+                  ) : memberStats.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                      <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-4">
+                        <Users className="h-7 w-7 text-slate-200" />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No team members configured</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-slate-50/50">
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Present Days</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Hours</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Leaves</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duty Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {memberStats.map((s) => (
+                            <tr key={s.member.id} className="hover:bg-slate-50/60 transition-colors group">
+                              <td className="px-4 sm:px-6 py-5">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+                                    <span className="text-sm font-black text-indigo-600 group-hover:text-white transition-colors">
+                                      {s.member.name.charAt(0).toUpperCase()}
                                     </span>
                                   </div>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.client.niche || 'General'}</p>
+                                  <div>
+                                    <p className="text-sm font-black text-slate-900">{s.member.name}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.member.email}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            {/* Completed / Quota */}
-                            <td className="px-6 py-5">
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-sm font-black text-slate-900">{s.completedThisMonth}</span>
-                                <span className="text-[10px] font-bold text-slate-400">/ {s.quota}</span>
-                              </div>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Delivered / Quota</p>
-                            </td>
-                            {/* Rate */}
-                            <td className="px-6 py-5">
-                              <span className="text-sm font-black text-slate-700">{formatCurrency(s.rate)}</span>
-                            </td>
-                            {/* Earned this month */}
-                            <td className="px-6 py-5">
-                              <span className="text-sm font-black text-emerald-600">{formatCurrency(s.earnedThisMonth)}</span>
-                            </td>
-                            {/* Monthly target */}
-                            <td className="px-6 py-5">
-                              <span className="text-sm font-black text-slate-500">{formatCurrency(s.monthlyTarget)}</span>
-                            </td>
-                            {/* Progress bar */}
-                            <td className="px-6 py-5 min-w-[120px]">
-                              <div className="space-y-1">
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-700"
-                                    style={{ width: `${s.progress}%` }}
-                                  />
-                                </div>
-                                <p className="text-[9px] font-black text-slate-400">{s.progress}%</p>
-                              </div>
-                            </td>
-                            {/* Pending tasks */}
-                            <td className="px-6 py-5">
-                              {s.pendingCount > 0 ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
-                                  <Clock className="h-3 w-3" />
-                                  {s.pendingCount} tasks
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200/50 rounded-xl text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                  {s.member.teamRole}
                                 </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-wider">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Clear
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-slate-900">{s.completedCount}</span>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">completed</p>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-slate-500">{s.pendingCount}</span>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">pending</p>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-indigo-650">{s.presentDaysCount} days</span>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-emerald-600 font-mono">{s.hoursWorked}h</span>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-purple-650 dark:text-purple-400">{s.leavesCount} days</span>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border select-none ${
+                                  s.isActive 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-250 animate-pulse' 
+                                    : 'bg-slate-50 text-slate-450 border-slate-200/50'
+                                }`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${s.isActive ? 'bg-emerald-500' : 'bg-slate-350'}`} />
+                                  {s.isActive ? 'On-Duty' : 'Off-Duty'}
                                 </span>
-                              )}
-                            </td>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                ) : (
+                  clientStats.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                      <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-4">
+                        <Users className="h-7 w-7 text-slate-200" />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No active clients yet</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-slate-50/50">
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Orders</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate / Delivery</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">This Month</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Target</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</th>
+                            <th className="px-4 sm:px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {clientStats.map((s) => (
+                            <tr key={s.client.id} className="hover:bg-slate-50/60 transition-colors group">
+                              {/* Client */}
+                              <td className="px-4 sm:px-6 py-5">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-colors">
+                                    <span className="text-sm font-black text-indigo-600 group-hover:text-white transition-colors">
+                                      {s.client.name.charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-black text-slate-900">{s.client.name}</p>
+                                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border select-none ${
+                                        s.client.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' :
+                                        (s.client.status as string) === 'On Hold' ? 'bg-amber-50 text-amber-700 border-amber-200/60' :
+                                        s.client.status === 'Inactive' ? 'bg-red-50 text-red-700 border-red-200/60' :
+                                        (s.client.status as string) === 'Completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60' :
+                                        'bg-slate-50 text-slate-700 border-slate-200/60'
+                                      }`}>
+                                        <span className={`h-1 w-1 rounded-full ${
+                                          s.client.status === 'Active' ? 'bg-emerald-555' :
+                                          (s.client.status as string) === 'On Hold' ? 'bg-amber-555' :
+                                          s.client.status === 'Inactive' ? 'bg-red-555' :
+                                          (s.client.status as string) === 'Completed' ? 'bg-indigo-555' :
+                                          'bg-slate-400'
+                                        }`} />
+                                        {s.client.status || 'Active'}
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.client.niche || 'General'}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              {/* Completed / Quota */}
+                              <td className="px-6 py-5">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-sm font-black text-slate-900">{s.completedThisMonth}</span>
+                                  <span className="text-[10px] font-bold text-slate-400">/ {s.quota}</span>
+                                </div>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Delivered / Quota</p>
+                              </td>
+                              {/* Rate */}
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-slate-700">{formatCurrency(s.rate)}</span>
+                              </td>
+                              {/* Earned this month */}
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-emerald-600">{formatCurrency(s.earnedThisMonth)}</span>
+                              </td>
+                              {/* Monthly target */}
+                              <td className="px-6 py-5">
+                                <span className="text-sm font-black text-slate-500">{formatCurrency(s.monthlyTarget)}</span>
+                              </td>
+                              {/* Progress bar */}
+                              <td className="px-6 py-5 min-w-[120px]">
+                                <div className="space-y-1">
+                                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-700"
+                                      style={{ width: `${s.progress}%` }}
+                                    />
+                                  </div>
+                                  <p className="text-[9px] font-black text-slate-400">{s.progress}%</p>
+                                </div>
+                              </td>
+                              {/* Pending tasks */}
+                              <td className="px-6 py-5">
+                                {s.pendingCount > 0 ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
+                                    <Clock className="h-3 w-3" />
+                                    {s.pendingCount} tasks
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-wider">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Clear
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
                 )}
               </div>
             </>

@@ -138,6 +138,7 @@ export async function getSessionUser() {
       _id: user._id.toString(),
       workspaceId,
       teamRole,
+      workspaceType: parentUser ? parentUser.workspaceType : user.workspaceType,
       plan: parentUser ? parentUser.plan : (user.plan || 'hobby'),
       agencyName: parentUser ? parentUser.agencyName : user.agencyName,
       agencyLogoUrl: parentUser ? parentUser.agencyLogoUrl : user.agencyLogoUrl,

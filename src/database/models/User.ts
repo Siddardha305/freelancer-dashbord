@@ -70,7 +70,7 @@ const UserSchema = new Schema({
   },
   workspaceType: {
     type: String,
-    enum: ['video_editing', 'digital_marketing', 'photography', 'general'],
+    enum: ['video_editing', 'digital_marketing', 'photography', 'general', 'corporate'],
     default: 'video_editing',
   },
   parentUserId: {
@@ -96,8 +96,10 @@ const UserSchema = new Schema({
   timestamps: true,
 });
 
-// Clear stale cached model if it lacks recently added fields
+// Clear stale cached model if it lacks recently added fields or doesn't support 'corporate' workspaceType
+const isStale = !models.User?.schema.paths.workspaceType?.options?.enum?.includes('corporate');
 if (models.User && (
+  isStale ||
   !models.User.schema.paths.agencyScannerUrl || 
   !models.User.schema.paths.parentUserId || 
   !models.User.schema.paths.teamRole || 

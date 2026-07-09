@@ -18,6 +18,7 @@ interface CustomSelectProps {
   required?: boolean;
   name?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export function CustomSelect({
@@ -28,7 +29,8 @@ export function CustomSelect({
   className,
   required = false,
   name,
-  id
+  id,
+  disabled = false
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,12 +73,13 @@ export function CustomSelect({
       {/* Select Trigger */}
       <button
         type="button"
+        disabled={disabled}
         onClick={() => {
           setIsOpen(!isOpen);
           setSearchQuery("");
         }}
         className={cn(
-          "w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all text-left relative",
+          "w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-4 focus:ring-indigo-650/10 focus:border-indigo-650 transition-all text-left relative disabled:opacity-50 disabled:cursor-not-allowed",
           isOpen && "ring-4 ring-indigo-650/10 border-indigo-600"
         )}
       >

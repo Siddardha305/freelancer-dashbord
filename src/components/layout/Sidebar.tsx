@@ -15,7 +15,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   HelpCircle,
-  Briefcase
+  Briefcase,
+  Clock,
+  Coffee
 } from 'lucide-react';
 import { getDatabaseDiagnostics } from '@/lib/db-diagnostics';
 import { useState, useEffect } from 'react';
@@ -39,6 +41,7 @@ interface SidebarProps {
     agencyLogoDarkUrl?: string;
     agencyBrandingMode?: string;
     teamRole?: string;
+    workspaceType?: string;
   } | null;
   onLinkClick?: () => void;
   isCollapsed?: boolean;
@@ -82,19 +85,49 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
   const isAgency = plan === 'agency' || user?.plan === 'agency';
 
   const isOwner = user?.teamRole === 'owner' || !user?.teamRole;
+  const isAdmin = user?.teamRole === 'admin';
   const isEditor = user?.teamRole === 'editor';
+  const isViewer = user?.teamRole === 'viewer';
+  const isCorporate = user?.workspaceType === 'corporate';
 
-  const navigation = isEditor ? [
-    { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
-    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-  ] : [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Clients', href: '/dashboard/clients', icon: Briefcase },
-    ...(isOwner ? [{ name: 'Team', href: '/dashboard/team', icon: Users }] : []),
-    { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
-    { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
-    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-  ];
+  const navigation = isCorporate
+    ? (isOwner || isAdmin)
+      ? [
+          { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
+          { name: 'Team', href: '/dashboard/team', icon: Users },
+          { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+          { name: 'Leave Tracker', href: '/dashboard/leaves', icon: Coffee },
+          { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
+          { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+        ]
+      : [
+          // Employee / Internship
+          { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
+          { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+          { name: 'Leave Tracker', href: '/dashboard/leaves', icon: Coffee },
+          { name: 'Attendance', href: '/dashboard/attendance', icon: Clock },
+          { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+        ]
+    : isEditor
+    ? [
+        { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+        { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+      ]
+    : isViewer
+    ? [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+        { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+      ]
+    : [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Clients', href: '/dashboard/clients', icon: Briefcase },
+        ...(isOwner ? [{ name: 'Team', href: '/dashboard/team', icon: Users }] : []),
+        { name: 'Monthly Work', href: '/dashboard/work', icon: CalendarDays },
+        { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
+        { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+      ];
 
   useEffect(() => {
     const checkTheme = () => {

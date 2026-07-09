@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 
-export type WorkspaceType = 'video_editing' | 'digital_marketing' | 'photography' | 'general';
+export type WorkspaceType = 'video_editing' | 'digital_marketing' | 'photography' | 'general' | 'corporate';
 
 export interface WorkspaceTerms {
   singular: string;      // e.g. "Thumbnail"
@@ -58,6 +58,15 @@ const termsMap: Record<WorkspaceType, WorkspaceTerms> = {
     unitName: '/Deliverable',
     unitShort: 'deliverable',
     perUnitText: 'Pay Per Deliverable',
+  },
+  corporate: {
+    singular: 'Deliverable',
+    plural: 'Deliverables',
+    delivery: 'Corporate Deliveries',
+    placeholderTask: 'Annual Financial Audit Report',
+    unitName: '/Task',
+    unitShort: 'task',
+    perUnitText: 'Pay Per Task',
   },
 };
 
