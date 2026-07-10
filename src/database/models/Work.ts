@@ -71,6 +71,10 @@ const WorkSchema = new Schema({
     ref: 'User',
     default: null,
   },
+  isPaid: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });

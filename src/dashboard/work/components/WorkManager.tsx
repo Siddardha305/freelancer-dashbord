@@ -122,6 +122,10 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     updateStatusMutation.mutate({ id: taskId, status: newStatus });
   };
 
+  const handlePaymentStatusChange = (taskId: string, isPaid: boolean) => {
+    updateWorkMutation.mutate({ id: taskId, data: { isPaid } });
+  };
+
   const updateWorkMutation = useMutation({
     mutationFn: ({ id, data }: { id: string, data: Partial<Work> }) => updateWorkAction(id, data),
     onMutate: async ({ id, data }) => {
@@ -324,6 +328,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           isEditor={isReadOnly}
           isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
+          onPaymentStatusChange={handlePaymentStatusChange}
         />
       ) : view === "calendar" ? (
         /* Calendar Schedule View */

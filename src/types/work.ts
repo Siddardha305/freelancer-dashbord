@@ -1,4 +1,4 @@
-export type WorkStatus = "To Do" | "In Progress" | "Review" | "Done";
+export type WorkStatus = "To Do" | "In Progress" | "Review" | "Done" | "Completed";
 export type WorkPriority = "Urgent" | "High" | "Normal" | "Low";
 
 export interface Work {
@@ -19,6 +19,7 @@ export interface Work {
   tags: string[];
   assignedTo?: string;
   reviewerId?: string;
+  isPaid?: boolean;
   createdAt: string;
   updatedAt: string;
 }

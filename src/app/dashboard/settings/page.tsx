@@ -16,6 +16,7 @@ import { PlanId } from "@/lib/plans";
 import { useQuery } from "@tanstack/react-query";
 import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
 import { getWorksAction } from "@/dashboard/work/actions/work-actions";
+import { Work } from "@/types/work";
 import { Client } from "@/types/client";
 import { RadixSelect } from "@/components/ui/RadixAnimate";
 

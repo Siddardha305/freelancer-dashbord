@@ -22,6 +22,7 @@ export interface Task {
   assignedTo?: string;
   reviewerId?: string;
   videoLink?: string;
+  isPaid?: boolean;
 }
 
 interface WorkCardProps {
@@ -33,12 +34,23 @@ interface WorkCardProps {
   isEditor?: boolean;
   isViewer?: boolean;
   onEditClick?: (task: Task) => void;
+  onPaymentStatusChange?: (id: string, isPaid: boolean) => void;
 }
 
-export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDelete, isEditor = false, isViewer = false, onEditClick }: WorkCardProps) {
+export function WorkCard({ 
+  task, 
+  clients, 
+  teamMembers = [], 
+  onStatusChange, 
+  onDelete, 
+  isEditor = false, 
+  isViewer = false, 
+  onEditClick,
+  onPaymentStatusChange
+}: WorkCardProps) {
   const isReadOnly = isEditor || isViewer;
   const isUrgent = task.priority === 'Urgent';
-  const isCompleted = task.status === 'Completed';
+  const isCompleted = task.status === 'Completed' || task.status === 'Done';
 
   const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
   const channelLink = clientObj?.channel_link;
@@ -56,6 +68,9 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
   }
   const isDeadlineValid = !isNaN(deadlineDate.getTime());
   const isOverdue = !isCompleted && isDeadlineValid && isBefore(deadlineDate, new Date());
+
+  const isPerDelivery = assignedMember?.memberPaymentType === 'per_thumbnail';
+  const isManager = !isEditor && !isViewer;
 
   const statusConfigs = [
     { name: "To Do", icon: RefreshCcw, color: "hover:bg-slate-100 text-slate-500", active: "bg-slate-100 text-slate-900 border-slate-200" },
@@ -211,7 +226,8 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 w-fit">
+        <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-100 w-fit">
             {statusConfigs.map((config) => {
               const Icon = config.icon;
               const isActive = task.status === config.name;
@@ -235,7 +251,53 @@ export function WorkCard({ task, clients, teamMembers = [], onStatusChange, onDe
               );
             })}
           </div>
+
+          {isCompleted && isPerDelivery && (
+            <div className="flex items-center gap-1.5 select-none">
+              {isManager ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onPaymentStatusChange) {
+                      onPaymentStatusChange(task.id || task._id || "", !task.isPaid);
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
+                    task.isPaid
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                  )}
+                  title="Toggle Instant Payment Status"
+                >
+                  {task.isPaid ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                      <span>Paid (₹{assignedMember.memberRate || 0})</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-3 w-3 text-red-500 animate-pulse" />
+                      <span>Unpaid (₹{assignedMember.memberRate || 0})</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border",
+                    task.isPaid
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-250"
+                      : "bg-red-50 text-red-700 border-red-250"
+                  )}
+                >
+                  {task.isPaid ? `Paid (₹${assignedMember.memberRate || 0})` : `Unpaid (₹${assignedMember.memberRate || 0})`}
+                </span>
+              )}
+            </div>
+          )}
         </div>
+      </div>
     </div>
   );
 }

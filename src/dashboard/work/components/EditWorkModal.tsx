@@ -232,7 +232,7 @@ export function EditWorkModal({
               <CustomSelect 
                 id="edit-priority" 
                 value={priority}
-                onChange={setPriority}
+                onChange={(val) => setPriority(val as any)}
                 options={[
                   { value: 'Normal', label: 'Normal' },
                   { value: 'Urgent', label: 'Urgent 🔥' },
@@ -242,14 +242,14 @@ export function EditWorkModal({
               />
             </div>
           </div>
-
+ 
           <div className={cn("grid grid-cols-1 gap-8", (isAgency || isCorporate) ? "md:grid-cols-2" : "w-full")}>
             <div className="space-y-3">
                <label htmlFor="edit-status" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Task Status</label>
                <CustomSelect 
                  id="edit-status" 
                  value={status}
-                 onChange={setStatus}
+                 onChange={(val) => setStatus(val as any)}
                  options={[
                    { value: 'To Do', label: 'To Do' },
                    { value: 'In Progress', label: 'In Progress' },

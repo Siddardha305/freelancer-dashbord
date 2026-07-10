@@ -102,7 +102,7 @@ export async function getTimeLogsAction(employeeId?: string) {
   await dbConnect();
   const user = await getSessionUser();
   if (!user) {
-    return { success: false, message: 'Unauthorized.' };
+    return { success: false, message: 'Unauthorized.', logs: [] };
   }
 
   try {
@@ -111,7 +111,7 @@ export async function getTimeLogsAction(employeeId?: string) {
     if (employeeId) {
       // Manager checking an employee's logs: check if owner/admin
       if (user.teamRole !== 'owner' && user.teamRole !== 'admin') {
-        return { success: false, message: 'Access denied.' };
+        return { success: false, message: 'Access denied.', logs: [] };
       }
       query = {
         userId: employeeId,
@@ -132,7 +132,7 @@ export async function getTimeLogsAction(employeeId?: string) {
     };
   } catch (error) {
     console.error('Error fetching time logs:', error);
-    return { success: false, message: 'Failed to get time logs.' };
+    return { success: false, message: 'Failed to get time logs.', logs: [] };
   }
 }
 

@@ -269,6 +269,12 @@ export async function getTeamMemberStatsAction(memberId: string) {
     const reviewTasks = tasks.filter((t: any) => t.status === 'Review').length;
     const todoTasks = tasks.filter((t: any) => t.status === 'To Do').length;
 
+    const unpaidCompletedTasks = tasks.filter((t: any) => ((t.status === 'Completed' || t.status === 'Done') && !t.isPaid)).length;
+
+    const unpaidHours = tasks
+      .filter((t: any) => (t.status === 'Completed' || t.status === 'Done') && !t.isPaid)
+      .reduce((sum: number, t: any) => sum + (t.actualHours || 0), 0);
+
     const totalHours = tasks
       .filter((t: any) => t.status === 'Completed' || t.status === 'Done')
       .reduce((sum: number, t: any) => sum + (t.actualHours || 0), 0);
@@ -278,9 +284,9 @@ export async function getTeamMemberStatsAction(memberId: string) {
     let estimatedPayout = 0;
 
     if (pType === 'per_thumbnail') {
-      estimatedPayout = completedTasks * rate;
+      estimatedPayout = unpaidCompletedTasks * rate;
     } else if (pType === 'hourly') {
-      estimatedPayout = totalHours * rate;
+      estimatedPayout = unpaidHours * rate;
     } else if (pType === 'salary') {
       estimatedPayout = rate;
     }

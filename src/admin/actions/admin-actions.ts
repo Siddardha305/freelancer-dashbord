@@ -112,6 +112,8 @@ export async function getAdminOverviewAction() {
       teamRole?: string;
       parentUserId?: any;
       createdAt?: string | Date;
+      agencyName?: string;
+      workspaceType?: string;
     }>).map(async (u) => {
       const [clientCount, taskCount, paymentCount] = await Promise.all([
         Client.countDocuments({ userId: u._id }),

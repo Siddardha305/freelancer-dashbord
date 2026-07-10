@@ -17,13 +17,15 @@ interface MonthlyPayoutSummaryProps {
   clients?: Client[];
   works?: Work[];
   payments?: Payment[];
+  onSuccess?: () => void;
 }
 
 export function MonthlyPayoutSummary({ 
   onCreateInvoice, 
   clients = [],
   works = [],
-  payments = []
+  payments = [],
+  onSuccess
 }: MonthlyPayoutSummaryProps) {
   const { formatCurrency } = useCurrency();
 

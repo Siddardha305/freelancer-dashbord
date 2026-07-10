@@ -229,7 +229,7 @@ export function EditClientModal({
                  <RadixSelect 
                     name="status" 
                     value={status}
-                    onValueChange={setStatus}
+                    onValueChange={(val) => setStatus(val as any)}
                     options={[
                       { value: "Active", label: "Active" },
                       { value: "On Hold", label: "On Hold" },
@@ -240,7 +240,7 @@ export function EditClientModal({
                   <RadixSelect 
                     name="priority" 
                     value={priority}
-                    onValueChange={setPriority}
+                    onValueChange={(val) => setPriority(val as any)}
                     options={[
                       { value: "High", label: "High" },
                       { value: "Medium", label: "Medium" },

@@ -24,6 +24,7 @@ const WorkSchema = z.object({
   tags: z.array(z.string()).default([]),
   assignedTo: z.string().nullable().optional().or(z.literal("")),
   reviewerId: z.string().nullable().optional().or(z.literal("")),
+  isPaid: z.boolean().optional().default(false),
 })
 
 interface LeanWorkDoc {
@@ -38,6 +39,7 @@ interface LeanWorkDoc {
   completedAt?: string;
   assignedTo?: string;
   reviewerId?: string;
+  isPaid?: boolean;
 }
 
 export async function getWorksAction() {
