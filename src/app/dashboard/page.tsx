@@ -16,12 +16,12 @@ import { Clock, Calendar, CheckCircle2, AlertCircle, BarChart3, Coffee, Users, B
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-// Modular Sub-Components
-import { DashboardHeader } from "@/dashboard/overview/components/DashboardHeader";
-import { MetricsGrid } from "@/dashboard/overview/components/MetricsGrid";
-import { RevenuePerformanceChart } from "@/dashboard/overview/components/RevenuePerformanceChart";
-import { SystemEfficiencyCircle } from "@/dashboard/overview/components/SystemEfficiencyCircle";
-import { RecentActivityTable } from "@/dashboard/overview/components/RecentActivityTable";
+// Modular Sub-Components (Video Editing & Design Workspace)
+import { DashboardHeader } from "@/dashboard/video_editing/components/DashboardHeader";
+import { MetricsGrid } from "@/dashboard/video_editing/components/MetricsGrid";
+import { RevenuePerformanceChart } from "@/dashboard/video_editing/components/RevenuePerformanceChart";
+import { SystemEfficiencyCircle } from "@/dashboard/video_editing/components/SystemEfficiencyCircle";
+import { RecentActivityTable } from "@/dashboard/video_editing/components/RecentActivityTable";
 
 export default function Home() {
   const router = useRouter();
