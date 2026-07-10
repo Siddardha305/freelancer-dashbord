@@ -122,7 +122,11 @@ export default function TeamPage() {
 
   const currentInviteRoleOptions = isCorporate ? corporateInviteOptions : inviteRoleOptions;
 
-  const [activeTab, setActiveTab] = useState<'members' | 'reports'>('reports');
+  const [activeTab, setActiveTab] = useState<'members' | 'reports'>(isCorporate ? 'reports' : 'members');
+
+  useEffect(() => {
+    setActiveTab(isCorporate ? 'reports' : 'members');
+  }, [isCorporate]);
 
   const invitePaymentOptions = [
     { value: 'per_thumbnail', label: isCorporate ? 'Per Task' : `Per ${terms.singular}` },
