@@ -25,6 +25,7 @@ const WorkSchema = z.object({
   assignedTo: z.string().nullable().optional().or(z.literal("")),
   reviewerId: z.string().nullable().optional().or(z.literal("")),
   isPaid: z.boolean().optional().default(false),
+  isPaidByClient: z.boolean().optional().default(false),
 })
 
 interface LeanWorkDoc {
@@ -40,6 +41,7 @@ interface LeanWorkDoc {
   assignedTo?: string;
   reviewerId?: string;
   isPaid?: boolean;
+  isPaidByClient?: boolean;
 }
 
 export async function getWorksAction() {
@@ -227,8 +229,11 @@ export async function updateWorkAction(id: string, data: Record<string, unknown>
       return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
     }
     
-    const dataToUpdate = {
-      ...validatedFields.data
+    const dataToUpdate: Record<string, any> = {};
+    for (const key in data) {
+      if (key in validatedFields.data) {
+        dataToUpdate[key] = (validatedFields.data as any)[key];
+      }
     }
     if ('assignedTo' in dataToUpdate) {
       dataToUpdate.assignedTo = dataToUpdate.assignedTo || null

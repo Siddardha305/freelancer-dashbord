@@ -1,20 +1,32 @@
 'use client'
 
 import React from 'react';
-import { Calendar, CheckCircle2, User, Award, Inbox, Clock } from "lucide-react";
+import { Calendar, CheckCircle2, User, Award, Inbox, Clock, AlertCircle } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { Work } from "@/types/work";
 import { Client } from "@/types/client";
 import { useWorkspace } from '@/context/WorkspaceContext';
+import { cn } from '@/lib/utils';
 
 interface WorkHistoryViewProps {
   tasks: Work[];
   clients: Client[];
+  teamMembers?: any[];
   formatCurrency: (value: number | string) => string;
   isEditor?: boolean;
+  onPaymentStatusChange?: (taskId: string, isPaid: boolean) => void;
+  onClientPaymentStatusChange?: (taskId: string, isPaidByClient: boolean) => void;
 }
 
-export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = false }: WorkHistoryViewProps) {
+export function WorkHistoryView({ 
+  tasks, 
+  clients, 
+  teamMembers = [], 
+  formatCurrency, 
+  isEditor = false,
+  onPaymentStatusChange,
+  onClientPaymentStatusChange
+}: WorkHistoryViewProps) {
   const { workspaceType } = useWorkspace();
   const isCorporate = workspaceType === 'corporate';
   const now = new Date();
@@ -169,6 +181,17 @@ export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = fal
               <div className="space-y-3 pl-4 sm:pl-8">
                 {dayGroup.tasks.map((task) => {
                   const taskPrice = getPricePerTaskDirect(task);
+                  const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
+                  const isClientPerDelivery = clientObj?.pricing_model === 'per_thumbnail';
+                  const clientQuota = clientObj?.thumbnails_per_month || 8;
+                  const clientRate = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
+                    ? clientObj.price_per_thumbnail
+                    : (clientQuota > 0 ? (clientObj?.monthly_price || 0) / clientQuota : 0);
+
+                  const assignedMember = teamMembers?.find(m => m.id === task.assignedTo || m._id === task.assignedTo);
+                  const isPerDelivery = assignedMember?.memberPaymentType === 'per_thumbnail';
+                  const isManager = !isEditor;
+
                   return (
                     <div 
                       key={task.id} 
@@ -212,8 +235,41 @@ export function WorkHistoryView({ tasks, clients, formatCurrency, isEditor = fal
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-none border-slate-100 dark:border-slate-800 pt-3 sm:pt-0">
-                        {!isEditor && !isCorporate && (
+                      <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto border-t sm:border-none border-slate-100 dark:border-slate-800 pt-3 sm:pt-0 justify-between sm:justify-end">
+                        {isClientPerDelivery && (
+                          <div className="flex flex-col items-start sm:items-end select-none">
+                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Client Invoice</span>
+                            {isManager ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onClientPaymentStatusChange?.(task.id || (task as any)._id || "", !task.isPaidByClient);
+                                }}
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer mt-0.5",
+                                  task.isPaidByClient
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                )}
+                              >
+                                {task.isPaidByClient ? "Paid" : "Unpaid"}
+                              </button>
+                            ) : (
+                              <span className={cn(
+                                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border mt-0.5",
+                                task.isPaidByClient
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-250"
+                                  : "bg-amber-50 text-amber-700 border-amber-250"
+                              )}>
+                                {task.isPaidByClient ? "Paid" : "Unpaid"}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+
+
+                        {!isEditor && !isCorporate && !isClientPerDelivery && (
                           <div className="flex flex-col sm:items-end">
                             <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-550">Priced Rate</span>
                             <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5">

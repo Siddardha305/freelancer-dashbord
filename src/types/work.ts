@@ -20,6 +20,7 @@ export interface Work {
   assignedTo?: string;
   reviewerId?: string;
   isPaid?: boolean;
+  isPaidByClient?: boolean;
   createdAt: string;
   updatedAt: string;
 }

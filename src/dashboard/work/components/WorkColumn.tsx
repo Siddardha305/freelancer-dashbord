@@ -15,6 +15,7 @@ interface WorkColumnProps {
   isViewer?: boolean;
   onEditClick?: (task: Task) => void;
   onPaymentStatusChange?: (id: string, isPaid: boolean) => void;
+  onClientPaymentStatusChange?: (id: string, isPaidByClient: boolean) => void;
 }
 
 export function WorkColumn({ 
@@ -29,7 +30,8 @@ export function WorkColumn({
   isEditor = false, 
   isViewer = false, 
   onEditClick,
-  onPaymentStatusChange
+  onPaymentStatusChange,
+  onClientPaymentStatusChange
 }: WorkColumnProps) {
   const colorClasses = {
     slate: "text-slate-500 bg-slate-100 border-slate-200",
@@ -68,6 +70,7 @@ export function WorkColumn({
             isViewer={isViewer} 
             onEditClick={onEditClick} 
             onPaymentStatusChange={onPaymentStatusChange}
+            onClientPaymentStatusChange={onClientPaymentStatusChange}
           />
         ))}
         {tasks.length === 0 && (

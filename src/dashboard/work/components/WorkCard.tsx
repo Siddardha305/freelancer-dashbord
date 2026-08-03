@@ -23,6 +23,7 @@ export interface Task {
   reviewerId?: string;
   videoLink?: string;
   isPaid?: boolean;
+  isPaidByClient?: boolean;
 }
 
 interface WorkCardProps {
@@ -35,6 +36,7 @@ interface WorkCardProps {
   isViewer?: boolean;
   onEditClick?: (task: Task) => void;
   onPaymentStatusChange?: (id: string, isPaid: boolean) => void;
+  onClientPaymentStatusChange?: (id: string, isPaidByClient: boolean) => void;
 }
 
 export function WorkCard({ 
@@ -46,7 +48,8 @@ export function WorkCard({
   isEditor = false, 
   isViewer = false, 
   onEditClick,
-  onPaymentStatusChange
+  onPaymentStatusChange,
+  onClientPaymentStatusChange
 }: WorkCardProps) {
   const isReadOnly = isEditor || isViewer;
   const isUrgent = task.priority === 'Urgent';
@@ -70,6 +73,11 @@ export function WorkCard({
   const isOverdue = !isCompleted && isDeadlineValid && isBefore(deadlineDate, new Date());
 
   const isPerDelivery = assignedMember?.memberPaymentType === 'per_thumbnail';
+  const isClientPerDelivery = clientObj?.pricing_model === 'per_thumbnail';
+  const clientQuota = clientObj?.thumbnails_per_month || 8;
+  const clientRate = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
+    ? clientObj.price_per_thumbnail
+    : (clientQuota > 0 ? (clientObj?.monthly_price || 0) / clientQuota : 0);
   const isManager = !isEditor && !isViewer;
 
   const statusConfigs = [
@@ -252,46 +260,49 @@ export function WorkCard({
             })}
           </div>
 
-          {isCompleted && isPerDelivery && (
-            <div className="flex items-center gap-1.5 select-none">
+          {isCompleted && isClientPerDelivery && (
+            <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-2 select-none w-full">
+              <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                Client Invoice
+              </span>
               {isManager ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (onPaymentStatusChange) {
-                      onPaymentStatusChange(task.id || task._id || "", !task.isPaid);
+                    if (onClientPaymentStatusChange) {
+                      onClientPaymentStatusChange(task.id || task._id || "", !task.isPaidByClient);
                     }
                   }}
                   className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
-                    task.isPaid
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                      : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
+                    task.isPaidByClient
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30"
+                      : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
                   )}
-                  title="Toggle Instant Payment Status"
+                  title="Toggle Client Payment Status"
                 >
-                  {task.isPaid ? (
+                  {task.isPaidByClient ? (
                     <>
-                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                      <span>Paid (₹{assignedMember.memberRate || 0})</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Paid</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="h-3 w-3 text-red-500 animate-pulse" />
-                      <span>Unpaid (₹{assignedMember.memberRate || 0})</span>
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 animate-pulse" />
+                      <span>Unpaid</span>
                     </>
                   )}
                 </button>
               ) : (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border",
-                    task.isPaid
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-250"
-                      : "bg-red-50 text-red-700 border-red-250"
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border",
+                    task.isPaidByClient
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-400"
+                      : "bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/20 dark:text-amber-400"
                   )}
                 >
-                  {task.isPaid ? `Paid (₹${assignedMember.memberRate || 0})` : `Unpaid (₹${assignedMember.memberRate || 0})`}
+                  {task.isPaidByClient ? "Paid" : "Unpaid"}
                 </span>
               )}
             </div>

@@ -258,18 +258,11 @@ export function EditClientModal({
                   name="pricing_model" 
                   value={pricingModel}
                   onValueChange={setPricingModel}
-                  options={
-                    currentUser?.email === 'siddardhachitturi789@gmail.com'
-                      ? [
-                          { value: 'bulk_package', label: 'Bulk Package' },
-                          { value: 'per_thumbnail', label: terms.perUnitText }
-                        ]
-                      : [
-                          { value: 'monthly', label: 'Retainer (Monthly)' },
-                          { value: 'per_thumbnail', label: terms.perUnitText },
-                          { value: 'bulk_package', label: 'Bulk Package' }
-                        ]
-                  }
+                  options={[
+                    { value: 'monthly', label: 'Retainer (Monthly)' },
+                    { value: 'per_thumbnail', label: terms.perUnitText },
+                    { value: 'bulk_package', label: 'Bulk Package' }
+                  ]}
                   className="bg-white w-full border border-slate-200 rounded-2xl text-sm font-bold px-5 py-4"
                 />
               </div>

@@ -291,7 +291,7 @@ export async function getTeamMemberStatsAction(memberId: string) {
       estimatedPayout = rate;
     }
 
-    interface LeanWorkDoc {
+     interface LeanWorkDoc {
       _id: { toString(): string };
       client: string;
       title: string;
@@ -301,6 +301,8 @@ export async function getTeamMemberStatsAction(memberId: string) {
       deadline: string;
       actualHours?: number;
       completedAt?: Date | string;
+      isPaid?: boolean;
+      isPaidByClient?: boolean;
     }
 
     const tasksList = (JSON.parse(JSON.stringify(tasks)) as LeanWorkDoc[]).map((t) => ({
@@ -313,6 +315,8 @@ export async function getTeamMemberStatsAction(memberId: string) {
       deadline: t.deadline,
       actualHours: t.actualHours || 0,
       completedAt: t.completedAt ? new Date(t.completedAt).toLocaleDateString() : null,
+      isPaid: t.isPaid || false,
+      isPaidByClient: t.isPaidByClient || false,
     }));
 
     return {

@@ -75,11 +75,15 @@ const WorkSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  isPaidByClient: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
 
-if (models.Work && (!models.Work.schema.paths.assignedTo || !models.Work.schema.paths.reviewerId)) {
+if (models.Work && (!models.Work.schema.paths.assignedTo || !models.Work.schema.paths.reviewerId || !models.Work.schema.paths.isPaidByClient)) {
   delete (models as Record<string, unknown>).Work;
   if (mongoose.modelNames().includes('Work')) {
     mongoose.deleteModel('Work');

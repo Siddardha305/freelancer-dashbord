@@ -109,6 +109,7 @@ export function MonthlyPayoutSummary({
       // Completed tasks for current billing period
       const completedThisMonth = clientWorks.filter((w: Work) => {
         if ((w.status as string) !== "Completed" && w.status !== "Done") return false;
+        if (client.pricing_model === "per_thumbnail" && w.isPaidByClient) return false;
         const dateStr = w.completedAt || w.updatedAt || w.createdAt;
         if (!dateStr) return false;
         const d = new Date(dateStr);

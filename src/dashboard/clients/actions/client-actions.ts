@@ -146,6 +146,18 @@ export async function createClientAction(prevState: unknown, formData: FormData)
       }
     }
 
+    const clientName = validatedFields.data.name;
+    const existingClient = await Client.findOne({
+      userId: user.workspaceId,
+      name: { $regex: new RegExp(`^${clientName.trim()}$`, 'i') }
+    });
+    if (existingClient) {
+      return {
+        errors: { name: ['A client with this name already exists in this workspace'] },
+        message: 'Validation Error',
+      }
+    }
+
     const newClient = await Client.create({
       ...validatedFields.data,
       userId: user.workspaceId,
@@ -199,6 +211,21 @@ export async function updateClientAction(id: string, data: Record<string, unknow
     const validatedFields = UpdateClientSchema.safeParse(data)
     if (!validatedFields.success) {
       return { errors: validatedFields.error.flatten().fieldErrors, message: 'Validation Error' }
+    }
+
+    if (validatedFields.data.name) {
+      const clientName = validatedFields.data.name;
+      const existingClient = await Client.findOne({
+        _id: { $ne: id },
+        userId: user.workspaceId,
+        name: { $regex: new RegExp(`^${clientName.trim()}$`, 'i') }
+      });
+      if (existingClient) {
+        return {
+          errors: { name: ['A client with this name already exists in this workspace'] },
+          message: 'Validation Error',
+        }
+      }
     }
 
     // Filter out undefined values to prevent overwriting with undefined

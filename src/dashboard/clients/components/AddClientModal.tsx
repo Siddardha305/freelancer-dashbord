@@ -45,9 +45,6 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
       try {
         const user = await getCurrentUserAction();
         setCurrentUser(user);
-        if (user?.email === 'siddardhachitturi789@gmail.com') {
-          setPricingModel('bulk_package');
-        }
       } catch (err) {
         console.error("Failed to load current user in AddClientModal:", err);
       }
@@ -146,18 +143,11 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                 name="pricing_model" 
                 value={pricingModel}
                 onValueChange={setPricingModel}
-                options={
-                  currentUser?.email === 'siddardhachitturi789@gmail.com'
-                    ? [
-                        { value: 'bulk_package', label: 'Bulk Package' },
-                        { value: 'per_thumbnail', label: terms.perUnitText }
-                      ]
-                    : [
-                        { value: 'monthly', label: 'Retainer (Monthly)' },
-                        { value: 'per_thumbnail', label: terms.perUnitText },
-                        { value: 'bulk_package', label: 'Bulk Package' }
-                      ]
-                }
+                options={[
+                  { value: 'monthly', label: 'Retainer (Monthly)' },
+                  { value: 'per_thumbnail', label: terms.perUnitText },
+                  { value: 'bulk_package', label: 'Bulk Package' }
+                ]}
                 className="!px-3 !py-1.5 bg-white rounded-xl text-[10px] font-bold text-slate-650 focus:ring-0 focus:border-slate-200 w-auto"
               />
           </div>

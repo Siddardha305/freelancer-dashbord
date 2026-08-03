@@ -107,10 +107,36 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
     },
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (res?.message === 'success') {
         toast.success("Status updated successfully");
+        const status = variables.status;
+        if (status === 'Completed' || status === 'Done') {
+          const taskId = variables.id;
+          const task = (tasks as Work[]).find((t: Work) => t.id === taskId || (t as any)._id === taskId);
+          if (task && !task.isPaid) {
+            const member = teamMembers.find((m: any) => m.id === task.assignedTo || m._id === task.assignedTo) as any;
+            if (member && member.memberPaymentType === 'per_thumbnail') {
+              const rate = member.memberRate || 0;
+              const formattedRate = formatCurrency(rate);
+              const memberName = member.name || 'this assignee';
+              const isManager = currentUser?.teamRole === 'owner' || currentUser?.teamRole === 'admin' || !currentUser?.teamRole;
+              if (isManager) {
+                toast.info(`Has ${memberName} been paid ${formattedRate} for completing "${task.title}"?`, {
+                  action: {
+                    label: "Mark as Paid",
+                    onClick: () => {
+                      handlePaymentStatusChange(taskId, true);
+                    }
+                  },
+                  duration: 10000
+                });
+              }
+            }
+          }
+        }
       } else {
         toast.error(res?.message || "Failed to update status");
         queryClient.invalidateQueries({ queryKey: ['works'] });
@@ -124,6 +150,10 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
 
   const handlePaymentStatusChange = (taskId: string, isPaid: boolean) => {
     updateWorkMutation.mutate({ id: taskId, data: { isPaid } });
+  };
+
+  const handleClientPaymentStatusChange = (taskId: string, isPaidByClient: boolean) => {
+    updateWorkMutation.mutate({ id: taskId, data: { isPaidByClient } });
   };
 
   const updateWorkMutation = useMutation({
@@ -142,6 +172,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
     },
     onSuccess: (res) => {
       if (res?.message === 'success') {
@@ -329,6 +360,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
           onPaymentStatusChange={handlePaymentStatusChange}
+          onClientPaymentStatusChange={handleClientPaymentStatusChange}
         />
       ) : view === "calendar" ? (
         /* Calendar Schedule View */
@@ -344,8 +376,11 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         <WorkHistoryView 
           tasks={filteredTasks}
           clients={clients}
+          teamMembers={teamMembers}
           formatCurrency={formatCurrency}
           isEditor={isReadOnly}
+          onPaymentStatusChange={handlePaymentStatusChange}
+          onClientPaymentStatusChange={handleClientPaymentStatusChange}
         />
       ) : (
         /* List spreadsheet Activity view */

@@ -144,7 +144,7 @@ export function AddWorkModal({
                   value={selectedClient}
                   onChange={setSelectedClient}
                   placeholder="Select a client..."
-                  options={clients.map(c => ({ value: c.name, label: c.name }))}
+                  options={Array.from(new Set(clients.map(c => c.name).filter(Boolean))).map(name => ({ value: name, label: name }))}
                 />
               )}
               {state?.errors?.client && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{state.errors.client[0]}</p>}

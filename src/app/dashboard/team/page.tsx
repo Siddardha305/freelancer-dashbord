@@ -40,19 +40,19 @@ import {
 import { RadixSelect } from '@/components/ui/RadixAnimate';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { getTimeLogsAction, getAllTimeLogsAction } from '@/dashboard/team/actions/time-actions';
-import { getWorksAction } from '@/dashboard/work/actions/work-actions';
+import { getWorksAction, updateWorkAction } from '@/dashboard/work/actions/work-actions';
 import { getLeaveRequestsAction, approveLeaveAction } from '@/dashboard/team/actions/leave-actions';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const roleOptions = [
   { value: 'admin', label: 'Admin' },
-  { value: 'editor', label: 'Editor' },
+  { value: 'editor', label: 'Employee / Editor' },
   { value: 'viewer', label: 'Viewer' }
 ];
 
 const inviteRoleOptions = [
-  { value: 'editor', label: 'Editor (Task Assignee)' },
+  { value: 'editor', label: 'Employee / Editor (Task Assignee)' },
   { value: 'admin', label: 'Workspace Admin (Full Control)' },
   { value: 'viewer', label: 'Viewer (Read-Only)' }
 ];
@@ -101,7 +101,7 @@ export default function TeamPage() {
     }
     if (role === 'owner') return 'Owner';
     if (role === 'admin') return 'Admin';
-    if (role === 'editor') return 'Editor';
+    if (role === 'editor') return 'Employee / Editor';
     if (role === 'viewer') return 'Viewer';
     return role;
   };
@@ -942,6 +942,81 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
     refetchInterval: 10000,
   });
 
+  const [selectedMonth, setSelectedMonth] = useState<string>('all_time');
+
+  // Filter tasks based on selected month period
+  const filteredTasks = React.useMemo(() => {
+    if (!data?.tasks) return [];
+    
+    if (selectedMonth === 'all_time') return data.tasks;
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Determine last month's month and year
+    let lastMonth = currentMonth - 1;
+    let lastMonthYear = currentYear;
+    if (lastMonth < 0) {
+      lastMonth = 11;
+      lastMonthYear = currentYear - 1;
+    }
+
+    return data.tasks.filter((task: any) => {
+      const dateStr = task.completedAt || task.deadline || task.createdAt;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return false;
+      
+      const taskMonth = d.getMonth();
+      const taskYear = d.getFullYear();
+
+      if (selectedMonth === 'this_month') {
+        return taskMonth === currentMonth && taskYear === currentYear;
+      }
+      if (selectedMonth === 'last_month') {
+        return taskMonth === lastMonth && taskYear === lastMonthYear;
+      }
+      return true;
+    });
+  }, [data?.tasks, selectedMonth]);
+
+  // Recalculate stats dynamically based on filtered tasks
+  const computedStats = React.useMemo(() => {
+    if (!data?.member) return { estimatedPayout: 0, completedTasks: 0, totalTasks: 0, totalHours: 0 };
+    const member = data.member;
+    const rateVal = member.memberRate || 0;
+    const pType = member.memberPaymentType || 'per_thumbnail';
+
+    const totalTasks = filteredTasks.length;
+    const completedTasks = filteredTasks.filter((t: any) => t.status === 'Completed' || t.status === 'Done').length;
+    
+    const unpaidCompletedTasks = filteredTasks.filter((t: any) => ((t.status === 'Completed' || t.status === 'Done') && !t.isPaid)).length;
+    const unpaidHours = filteredTasks
+      .filter((t: any) => (t.status === 'Completed' || t.status === 'Done') && !t.isPaid)
+      .reduce((sum: number, t: any) => sum + (t.actualHours || 0), 0);
+
+    const totalHours = filteredTasks
+      .filter((t: any) => t.status === 'Completed' || t.status === 'Done')
+      .reduce((sum: number, t: any) => sum + (t.actualHours || 0), 0);
+
+    let estimatedPayout = 0;
+    if (pType === 'per_thumbnail') {
+      estimatedPayout = unpaidCompletedTasks * rateVal;
+    } else if (pType === 'hourly') {
+      estimatedPayout = unpaidHours * rateVal;
+    } else if (pType === 'salary') {
+      estimatedPayout = rateVal;
+    }
+
+    return {
+      estimatedPayout,
+      completedTasks,
+      totalTasks,
+      totalHours
+    };
+  }, [filteredTasks, data?.member]);
+
   const { data: logsData, isLoading: isLogsLoading } = useQuery({
     queryKey: ['memberLogs', memberId],
     queryFn: () => getTimeLogsAction(memberId),
@@ -970,6 +1045,24 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
     },
     onError: (err) => {
       toast.error('Failed to update payout settings');
+      console.error(err);
+    }
+  });
+
+  const updateWorkPaymentMutation = useMutation({
+    mutationFn: ({ taskId, isPaidByClient }: { taskId: string, isPaidByClient: boolean }) => 
+      updateWorkAction(taskId, { isPaidByClient }),
+    onSuccess: (res) => {
+      if (res.message === 'success') {
+        toast.success("Payment status updated");
+        queryClient.invalidateQueries({ queryKey: ['memberStats', memberId] });
+        queryClient.invalidateQueries({ queryKey: ['works'] });
+      } else {
+        toast.error(res.message || 'Failed to update payment status');
+      }
+    },
+    onError: (err) => {
+      toast.error('Failed to update payment status');
       console.error(err);
     }
   });
@@ -1032,6 +1125,21 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
         ) : (
           <div className="p-8 space-y-8">
             
+            {/* Month Filter Selector */}
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-4 rounded-[1.5rem] border border-slate-200/50 dark:border-slate-800 select-none">
+              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Report Period</span>
+              <RadixSelect
+                value={selectedMonth}
+                onValueChange={setSelectedMonth}
+                options={[
+                  { value: 'this_month', label: 'This Month' },
+                  { value: 'last_month', label: 'Last Month' },
+                  { value: 'all_time', label: 'Over Alla' }
+                ]}
+                className="!px-4 !py-2 !rounded-xl !text-xs !bg-white dark:!bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-black uppercase tracking-wider min-w-[220px]"
+              />
+            </div>
+
             {/* Overview Stats Cards */}
             <div className="grid grid-cols-3 gap-4">
               
@@ -1042,7 +1150,7 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                   <DollarSign className="h-4 w-4 text-emerald-500" />
                 </div>
                 <p className="text-2xl font-black tracking-tight mt-3">
-                  ₹{data.stats.estimatedPayout.toLocaleString('en-IN')}
+                  ₹{computedStats.estimatedPayout.toLocaleString('en-IN')}
                 </p>
                 <p className="text-[8px] font-bold uppercase tracking-wide mt-1 text-emerald-600 dark:text-emerald-500 truncate">
                   Model: {getPaymentTypeLabel(data.stats.paymentType)}
@@ -1056,7 +1164,7 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                   <Briefcase className="h-4 w-4 text-indigo-500" />
                 </div>
                 <p className="text-2xl font-black tracking-tight mt-3">
-                  {data.stats.completedTasks} / {data.stats.totalTasks}
+                  {computedStats.completedTasks} / {computedStats.totalTasks}
                 </p>
                 <p className="text-[8px] font-bold uppercase tracking-wide mt-1 text-indigo-600 dark:text-indigo-500">
                   Completed / Assigned
@@ -1070,7 +1178,7 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                   <Clock className="h-4 w-4 text-purple-500" />
                 </div>
                 <p className="text-2xl font-black tracking-tight mt-3 font-mono">
-                  {data.stats.totalHours.toFixed(1)}
+                  {computedStats.totalHours.toFixed(1)}
                 </p>
                 <p className="text-[8px] font-bold uppercase tracking-wide mt-1 text-purple-600 dark:text-purple-500">
                   Total Hours Logged
@@ -1133,14 +1241,14 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
             <div className="space-y-4">
               <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Assigned task logs</h4>
               
-              {data.tasks.length === 0 ? (
+              {filteredTasks.length === 0 ? (
                 <div className="text-center py-10 bg-slate-50/40 dark:bg-slate-950/20 rounded-[2rem] border border-slate-200/50 dark:border-slate-800">
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">No work items logged under this editor.</p>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">No work items logged under this month.</p>
                 </div>
               ) : (
                 <div className="border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-slate-50/20 dark:bg-slate-950/5">
                   <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {data.tasks.map((task: any) => (
+                    {filteredTasks.map((task: any) => (
                       <div key={task.id} className="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -1163,6 +1271,32 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                           <span className={`px-3 py-1.5 border rounded-full text-[9px] font-black uppercase tracking-wider ${getStatusColor(task.status)}`}>
                             {task.status}
                           </span>
+                          {paymentType === 'per_thumbnail' && ((task.status as string) === 'Completed' || task.status === 'Done') && (
+                            isOwner ? (
+                              <button
+                                onClick={() => {
+                                  updateWorkPaymentMutation.mutate({ taskId: task.id, isPaidByClient: !task.isPaidByClient });
+                                }}
+                                className={cn(
+                                  "px-3 py-1.5 border rounded-full text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer",
+                                  task.isPaidByClient 
+                                    ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-250 dark:border-emerald-900/30 hover:bg-emerald-100" 
+                                    : "bg-amber-50 dark:bg-amber-955/30 text-amber-700 dark:text-amber-400 border-amber-250 dark:border-amber-900/30 hover:bg-amber-100"
+                                )}
+                              >
+                                {task.isPaidByClient ? "Paid" : "Unpaid"}
+                              </button>
+                            ) : (
+                              <span className={cn(
+                                "px-3 py-1.5 border rounded-full text-[9px] font-black uppercase tracking-wider",
+                                task.isPaidByClient 
+                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-250 dark:border-emerald-900/30" 
+                                  : "bg-amber-50 dark:bg-amber-955/30 text-amber-700 dark:text-amber-400 border-amber-250 dark:border-amber-900/30"
+                              )}>
+                                {task.isPaidByClient ? "Paid" : "Unpaid"}
+                              </span>
+                            )
+                          )}
                         </div>
                       </div>
                     ))}

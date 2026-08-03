@@ -15,6 +15,7 @@ interface WorkBoardViewProps {
   isViewer?: boolean;
   onEditClick?: (task: any) => void;
   onPaymentStatusChange?: (taskId: string, isPaid: boolean) => void;
+  onClientPaymentStatusChange?: (taskId: string, isPaidByClient: boolean) => void;
 }
 
 export function WorkBoardView({
@@ -26,7 +27,8 @@ export function WorkBoardView({
   isEditor = false,
   isViewer = false,
   onEditClick,
-  onPaymentStatusChange
+  onPaymentStatusChange,
+  onClientPaymentStatusChange
 }: WorkBoardViewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 items-start pb-12">
@@ -43,6 +45,7 @@ export function WorkBoardView({
         isViewer={isViewer}
         onEditClick={onEditClick}
         onPaymentStatusChange={onPaymentStatusChange}
+        onClientPaymentStatusChange={onClientPaymentStatusChange}
       />
       <WorkColumn 
         title="In Progress" 
@@ -57,6 +60,7 @@ export function WorkBoardView({
         isViewer={isViewer}
         onEditClick={onEditClick}
         onPaymentStatusChange={onPaymentStatusChange}
+        onClientPaymentStatusChange={onClientPaymentStatusChange}
       />
       <WorkColumn 
         title="Review" 
@@ -72,6 +76,7 @@ export function WorkBoardView({
         isViewer={isViewer}
         onEditClick={onEditClick}
         onPaymentStatusChange={onPaymentStatusChange}
+        onClientPaymentStatusChange={onClientPaymentStatusChange}
       />
       <WorkColumn 
         title="Completed" 
@@ -86,6 +91,7 @@ export function WorkBoardView({
         isViewer={isViewer}
         onEditClick={onEditClick}
         onPaymentStatusChange={onPaymentStatusChange}
+        onClientPaymentStatusChange={onClientPaymentStatusChange}
       />
     </div>
   );

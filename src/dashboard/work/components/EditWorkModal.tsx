@@ -185,7 +185,7 @@ export function EditWorkModal({
                   value={client}
                   onChange={setClient}
                   placeholder="Select Client"
-                  options={clients.map(c => ({ value: c.name, label: c.name }))}
+                  options={Array.from(new Set(clients.map(c => c.name).filter(Boolean))).map(name => ({ value: name, label: name }))}
                 />
               )}
             </div>

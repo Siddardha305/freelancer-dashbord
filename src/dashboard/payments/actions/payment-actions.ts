@@ -101,11 +101,12 @@ async function autoGenerateInvoices(userId: string) {
           }
         }
 
-        // Fetch completed tasks for this client
+        // Fetch completed tasks for this client that are not yet paid by the client
         const allClientWorks = await Work.find({
           userId,
           client: client.name,
-          status: { $in: ['Completed', 'Done'] }
+          status: { $in: ['Completed', 'Done'] },
+          isPaidByClient: { $ne: true }
         });
 
         // Filter tasks completed between taskStartDate and target end date
@@ -386,11 +387,12 @@ export async function generateAllInvoicesAction() {
         }
       }
 
-      // Fetch completed tasks for this client
+      // Fetch completed tasks for this client that are not yet paid by the client
       const allClientWorks = await Work.find({
         userId: user.workspaceId,
         client: client.name,
-        status: { $in: ['Completed', 'Done'] }
+        status: { $in: ['Completed', 'Done'] },
+        isPaidByClient: { $ne: true }
       });
 
       // Filter tasks in memory using taskStartDate
