@@ -65,6 +65,9 @@ export function AddPaymentModal({
       setShowSuccess(false);
       setSelectedClient(initialClient || '');
       setAmount(initialAmount !== undefined ? String(initialAmount) : '');
+      if (state) {
+        Object.assign(state, { message: '', payment: undefined, errors: {} });
+      }
     }
   }
 
