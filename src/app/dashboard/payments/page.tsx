@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PaymentTable } from "@/dashboard/payments/components/PaymentTable";
-import { PaymentHeader } from "@/dashboard/payments/components/PaymentHeader";
-import { MonthlyPayoutSummary } from "@/dashboard/payments/components/MonthlyPayoutSummary";
-import { PaymentSummaryCards } from "@/dashboard/payments/components/PaymentSummaryCards";
-import { getPaymentsAction, generateAllInvoicesAction } from '@/dashboard/payments/actions/payment-actions';
-import { AddPaymentModal } from "@/dashboard/payments/components/AddPaymentModal";
+import { PaymentTable } from "@/dashboard/payments/PaymentTable";
+import { PaymentHeader } from "@/dashboard/payments/PaymentHeader";
+import { MonthlyPayoutSummary } from "@/dashboard/payments/MonthlyPayoutSummary";
+import { PaymentSummaryCards } from "@/dashboard/payments/PaymentSummaryCards";
+import { getPaymentsAction, generateAllInvoicesAction } from '@/dashboard/payments/payment-actions';
+import { AddPaymentModal } from "@/dashboard/payments/AddPaymentModal";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';

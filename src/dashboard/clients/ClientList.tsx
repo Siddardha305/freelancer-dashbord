@@ -59,7 +59,7 @@ export function ClientList({
   const { data: payments = [] } = useQuery<Payment[]>({
     queryKey: ["payments"],
     queryFn: async () => {
-      const { getPaymentsAction } = await import("@/dashboard/payments/actions/payment-actions");
+      const { getPaymentsAction } = await import("@/dashboard/payments/payment-actions");
       return getPaymentsAction();
     },
     refetchInterval: 10000,

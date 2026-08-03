@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, CheckCircle2, Clock, AlertCircle, Trash2 } from "lucide-react";
-import { updatePaymentStatusAction, deletePaymentAction } from "@/dashboard/payments/actions/payment-actions";
+import { updatePaymentStatusAction, deletePaymentAction } from "@/dashboard/payments/payment-actions";
 import { downloadCSV, downloadInvoice } from "@/lib/export-utils";
 import { useCurrency } from "@/context/CurrencyContext";
 import { motion } from "framer-motion";
