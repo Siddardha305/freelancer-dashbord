@@ -11,6 +11,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { Client } from '@/types/client';
 import { Work } from '@/types/work';
 import { Payment } from '@/types/payment';
+import { PaymentKpiCard } from './PaymentKpiCard';
 
 interface PaymentSummaryCardsProps {
   payments: Payment[];
@@ -151,57 +152,43 @@ export function PaymentSummaryCards({
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-top-4 duration-500">
-      
-      {/* Card 1: Payout Earned */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-emerald-600">
-          <CheckCircle2 className="w-24 h-24" />
-        </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payout Earned</p>
-        <p className="mt-2 text-4xl font-bold text-slate-900 tracking-tighter">{formatCurrency(clientPayoutEarned)}</p>
-        <div className="mt-6 flex items-center text-[10px] font-bold text-emerald-600 gap-1 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100 select-none">
-          <ArrowUpRight className="w-3 h-3 animate-bounce" />
-          <span>Active Deliveries</span>
-        </div>
-      </div>
+      <PaymentKpiCard 
+        title="Payout Earned"
+        value={formatCurrency(clientPayoutEarned)}
+        icon={CheckCircle2}
+        badgeText="Active Deliveries"
+        badgeColorClass="text-emerald-600 bg-emerald-50 border-emerald-100"
+        badgeIcon={ArrowUpRight}
+        badgeIconAnimationClass="animate-bounce"
+        iconColorClass="text-emerald-600"
+      />
 
-      {/* Card 2: Balance to Collect */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-indigo-600">
-          <TrendingUp className="w-24 h-24" />
-        </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Balance to Collect</p>
-        <p className="mt-2 text-4xl font-bold text-slate-900 tracking-tighter text-indigo-600">{formatCurrency(clientBalanceToCollect)}</p>
-        <div className="mt-6 flex items-center text-[10px] font-bold text-indigo-600 gap-1 uppercase tracking-widest bg-indigo-50 w-fit px-3 py-1 rounded-full border border-indigo-100 select-none">
-          <span>Retainer Target</span>
-        </div>
-      </div>
+      <PaymentKpiCard 
+        title="Balance to Collect"
+        value={formatCurrency(clientBalanceToCollect)}
+        icon={TrendingUp}
+        badgeText="Retainer Target"
+        badgeColorClass="text-indigo-600 bg-indigo-50 border-indigo-100"
+        iconColorClass="text-indigo-600"
+      />
 
-      {/* Card 3: Total Collected */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-emerald-600 select-none">
-          <span className="text-8xl font-black tracking-tighter block leading-none mr-2 mt-2">{symbol}</span>
-        </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Collected</p>
-        <p className="mt-2 text-4xl font-bold text-slate-900 tracking-tighter">{formatCurrency(totalCollected)}</p>
-        <div className="mt-6 flex items-center text-[10px] font-bold text-emerald-600 gap-1 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100 select-none">
-          <span>Invoiced Success</span>
-        </div>
-      </div>
+      <PaymentKpiCard 
+        title="Total Collected"
+        value={formatCurrency(totalCollected)}
+        icon={symbol}
+        badgeText="Invoiced Success"
+        badgeColorClass="text-emerald-600 bg-emerald-50 border-emerald-100"
+        iconColorClass="text-emerald-600"
+      />
 
-      {/* Card 4: Pipeline & Pending */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute right-0 top-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-500 text-amber-600">
-          <Clock className="w-24 h-24" />
-        </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pipeline & Pending</p>
-        <p className="mt-2 text-4xl font-bold text-slate-900 tracking-tighter text-amber-600 font-sans">
-          {formatCurrency(totalPendingInvoices + clientPipelinePending)}
-        </p>
-        <div className="mt-6 flex items-center text-[10px] font-bold text-amber-600 gap-1 uppercase tracking-widest bg-amber-50 w-fit px-3 py-1 rounded-full border border-amber-100 select-none">
-          <span>{pendingCount} Awaiting Invoice</span>
-        </div>
-      </div>
+      <PaymentKpiCard 
+        title="Pipeline & Pending"
+        value={formatCurrency(totalPendingInvoices + clientPipelinePending)}
+        icon={Clock}
+        badgeText={`${pendingCount} Awaiting Invoice`}
+        badgeColorClass="text-amber-600 bg-amber-50 border-amber-100"
+        iconColorClass="text-amber-600"
+      />
     </div>
   );
 }
