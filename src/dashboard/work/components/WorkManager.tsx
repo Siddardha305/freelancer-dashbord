@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { WorkCalendar } from "./WorkCalendar";
 import { updateWorkStatusAction, getWorksAction, deleteWorkAction, updateWorkAction } from "@/dashboard/work/actions/work-actions";
-import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
+import { getClientsAction } from "@/dashboard/clients/client-actions";
 import { getTeamMembersAction } from "@/dashboard/settings/actions/team-actions";
 import { getCurrentUserAction } from "@/auth/actions/auth-actions";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";

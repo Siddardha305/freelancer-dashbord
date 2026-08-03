@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Payment } from '@/types/payment';
 import { Client } from '@/types/client';
 import { Work } from '@/types/work';
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
+import { getClientsAction } from '@/dashboard/clients/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 

@@ -1,4 +1,4 @@
-import { getClientByIdAction } from "@/dashboard/clients/actions/client-actions";
+import { getClientByIdAction } from "@/dashboard/clients/client-actions";
 import { notFound } from "next/navigation";
 import { ClientProfileClient } from "./ClientProfileClient";
 

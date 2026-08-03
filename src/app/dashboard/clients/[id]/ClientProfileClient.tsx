@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { ClientProfileView } from "@/dashboard/clients/components/ClientProfileView";
+import { ClientProfileView } from "@/dashboard/clients/ClientProfileView";
 
 import { Client } from "@/types/client";
 

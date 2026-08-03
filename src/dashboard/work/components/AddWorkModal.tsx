@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { createWorkAction } from '@/dashboard/work/actions/work-actions'
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
+import { getClientsAction } from '@/dashboard/clients/client-actions'
 import { getTeamMembersAction } from '@/dashboard/settings/actions/team-actions'
 import { X, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'

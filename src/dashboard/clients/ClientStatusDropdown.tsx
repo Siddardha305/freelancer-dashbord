@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { updateClientAction } from '@/dashboard/clients/actions/client-actions';
+import { updateClientAction } from '@/dashboard/clients/client-actions';
 
 interface ClientStatusDropdownProps {
   clientId: string;

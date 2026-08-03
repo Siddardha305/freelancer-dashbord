@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { updateClientAction } from '@/dashboard/clients/actions/client-actions'
+import { updateClientAction } from '@/dashboard/clients/client-actions'
 import { Loader2, Save, User, Mail, Phone, Globe, Clock, Tag, Link as LinkIcon } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useWorkspace } from '@/context/WorkspaceContext'

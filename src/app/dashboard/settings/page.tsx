@@ -14,7 +14,7 @@ import { useWorkspace, WorkspaceType } from "@/context/WorkspaceContext";
 import { usePlan } from "@/context/PlanContext";
 import { PlanId } from "@/lib/plans";
 import { useQuery } from "@tanstack/react-query";
-import { getClientsAction } from "@/dashboard/clients/actions/client-actions";
+import { getClientsAction } from "@/dashboard/clients/client-actions";
 import { getWorksAction } from "@/dashboard/work/actions/work-actions";
 import { Work } from "@/types/work";
 import { Client } from "@/types/client";

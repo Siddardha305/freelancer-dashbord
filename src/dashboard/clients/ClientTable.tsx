@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { User } from "lucide-react";
-import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
-import { EditClientModal } from "@/dashboard/clients/components/EditClientModal";
+import { deleteClientAction } from "@/dashboard/clients/client-actions";
+import { EditClientModal } from "@/dashboard/clients/EditClientModal";
 import { ClientCard } from "./ClientCard";
 
 import { Client } from "@/types/client";

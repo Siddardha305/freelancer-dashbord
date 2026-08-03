@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { createPaymentAction } from '../actions/payment-actions'
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions'
+import { getClientsAction } from '@/dashboard/clients/client-actions'
 import { Loader2, CheckCircle2, Download } from 'lucide-react'
 import { FormModal } from '@/components/shared/FormModal'
 import { downloadInvoice } from '@/lib/export-utils'

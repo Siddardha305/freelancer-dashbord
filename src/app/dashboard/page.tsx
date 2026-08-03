@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
+import { getClientsAction } from '@/dashboard/clients/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 import { getTeamMembersAction } from '@/dashboard/settings/actions/team-actions';

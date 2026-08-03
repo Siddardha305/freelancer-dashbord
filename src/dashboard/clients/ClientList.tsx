@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { deleteClientAction } from "@/dashboard/clients/actions/client-actions";
+import { deleteClientAction } from "@/dashboard/clients/client-actions";
 import { ClientRow } from "./ClientRow";
 
 import { Client } from "@/types/client";

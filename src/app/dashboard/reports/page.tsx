@@ -14,7 +14,7 @@ import {
   BarChart2,
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { getClientsAction } from '@/dashboard/clients/actions/client-actions';
+import { getClientsAction } from '@/dashboard/clients/client-actions';
 import { getWorksAction } from '@/dashboard/work/actions/work-actions';
 import { getCurrentUserAction } from '@/auth/actions/auth-actions';
 import { getTeamMembersAction } from '@/dashboard/settings/actions/team-actions';

@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState, useEffect } from 'react'
-import { createClientAction } from '@/dashboard/clients/actions/client-actions'
+import { createClientAction } from '@/dashboard/clients/client-actions'
 import { Loader2 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useWorkspace } from '@/context/WorkspaceContext'
