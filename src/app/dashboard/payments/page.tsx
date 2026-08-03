@@ -41,6 +41,7 @@ export default function PaymentsPage() {
   // Batch invoice generation states
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [timeframe, setTimeframe] = useState<'this_month' | 'last_month' | 'last_3m' | 'last_year'>('this_month');
 
   const { data: payments = [], isLoading: isLoadingPayments } = useQuery<Payment[]>({
     queryKey: ['payments'],
@@ -161,13 +162,15 @@ export default function PaymentsPage() {
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12">
         <div className="mx-auto max-w-7xl space-y-10">
           {/* 4 Financial KPI Summary Cards at the absolute top */}
-          <PaymentSummaryCards payments={payments} clients={clients} works={works} />
+          <PaymentSummaryCards payments={payments} clients={clients} works={works} timeframe={timeframe} />
           
           {/* Monthly Payout Summary section */}
           <MonthlyPayoutSummary 
             clients={clients}
             works={works}
             payments={payments}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
             onCreateInvoice={(clientName, amount) => {
               setPrefilledClient(clientName);
               setPrefilledAmount(amount);

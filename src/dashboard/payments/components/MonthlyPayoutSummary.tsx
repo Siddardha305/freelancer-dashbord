@@ -18,6 +18,8 @@ interface MonthlyPayoutSummaryProps {
   works?: Work[];
   payments?: Payment[];
   onSuccess?: () => void;
+  timeframe?: 'this_month' | 'last_month' | 'last_3m' | 'last_year';
+  setTimeframe?: (val: 'this_month' | 'last_month' | 'last_3m' | 'last_year') => void;
 }
 
 export function MonthlyPayoutSummary({ 
@@ -25,11 +27,16 @@ export function MonthlyPayoutSummary({
   clients = [],
   works = [],
   payments = [],
-  onSuccess
+  onSuccess,
+  timeframe: externalTimeframe,
+  setTimeframe: externalSetTimeframe,
 }: MonthlyPayoutSummaryProps) {
   const { formatCurrency } = useCurrency();
 
-  const [timeframe, setTimeframe] = useState<'this_month' | 'last_month' | 'last_3m' | 'last_year'>('this_month');
+  const [localTimeframe, localSetTimeframe] = useState<'this_month' | 'last_month' | 'last_3m' | 'last_year'>('this_month');
+  
+  const timeframe = externalTimeframe !== undefined ? externalTimeframe : localTimeframe;
+  const setTimeframe = externalSetTimeframe !== undefined ? externalSetTimeframe : localSetTimeframe;
 
   const now = new Date();
   
