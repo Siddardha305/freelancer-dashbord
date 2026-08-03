@@ -22,12 +22,14 @@ import { MetricsGrid } from "@/dashboard/video_editing/components/MetricsGrid";
 import { RevenuePerformanceChart } from "@/dashboard/video_editing/components/RevenuePerformanceChart";
 import { SystemEfficiencyCircle } from "@/dashboard/video_editing/components/SystemEfficiencyCircle";
 import { RecentActivityTable } from "@/dashboard/video_editing/components/RecentActivityTable";
+import { MetricsDetailDrawer } from "@/dashboard/video_editing/components/MetricsDetailDrawer";
 
 export default function Home() {
   const router = useRouter();
   const { formatCurrency } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
+  const [selectedMetric, setSelectedMetric] = useState<'clients' | 'active_projects' | 'revenue' | 'pending' | 'delivered' | null>(null);
   const [timeLogs, setTimeLogs] = useState<any[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -603,6 +605,7 @@ export default function Home() {
             pendingPayments={formatCurrency(pendingPayments)}
             pendingPaymentsAmount={pendingPayments}
             completedWorks={completedWorks}
+            onCardClick={setSelectedMetric}
           />
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -621,6 +624,15 @@ export default function Home() {
           <RecentActivityTable clients={clients} formatCurrency={formatCurrency} />
         </div>
       </main>
+
+      <MetricsDetailDrawer 
+        isOpen={!!selectedMetric}
+        onClose={() => setSelectedMetric(null)}
+        metricType={selectedMetric}
+        clients={clients}
+        works={works}
+        formatCurrency={formatCurrency}
+      />
     </div>
   );
 }
