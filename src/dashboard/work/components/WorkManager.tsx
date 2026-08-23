@@ -36,6 +36,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [taskToEdit, setTaskToEdit] = useState<Work | null>(null);
+  const [timeframeFilter, setTimeframeFilter] = useState<'this_month' | 'last_month' | 'this_year' | 'all_time'>('this_month');
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const isEditor = currentUser?.teamRole === 'editor';
@@ -224,14 +225,38 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     setTaskToDelete(null);
   };
 
-  const filteredTasks = useMemo(() => {
+  const timeframeFilteredTasks = useMemo(() => {
+    const now = new Date();
     return (tasks as Work[]).filter((task: Work) => {
+      let matchesTimeframe = true;
+      try {
+        const dateStr = task.completedAt || task.deadline || task.createdAt;
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (timeframeFilter === 'this_month') {
+            matchesTimeframe = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          } else if (timeframeFilter === 'last_month') {
+            const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            matchesTimeframe = d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear();
+          } else if (timeframeFilter === 'this_year') {
+            matchesTimeframe = d.getFullYear() === now.getFullYear();
+          }
+        }
+      } catch {
+        matchesTimeframe = true;
+      }
+      return matchesTimeframe;
+    });
+  }, [tasks, timeframeFilter]);
+
+  const filteredTasks = useMemo(() => {
+    return timeframeFilteredTasks.filter((task: Work) => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           task.client.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
       return matchesSearch && matchesPriority;
     });
-  }, [tasks, searchTerm, priorityFilter]);
+  }, [timeframeFilteredTasks, searchTerm, priorityFilter]);
 
   const activeTasksForBoardAndList = useMemo(() => {
     return filteredTasks.filter((task: Work) => {
@@ -282,14 +307,14 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     return sum + price;
   }, 0);
 
-  const pendingTasksCount = (tasks as Work[]).filter((t: Work) => t.status === "To Do").length;
-  const inProgressTasksCount = (tasks as Work[]).filter((t: Work) => t.status === "In Progress").length;
-  const pendingOverallCount = (tasks as Work[]).filter((t: Work) => (t.status as string) !== "Completed" && t.status !== "Done").length;
+  const pendingTasksCount = timeframeFilteredTasks.filter((t: Work) => t.status === "To Do").length;
+  const inProgressTasksCount = timeframeFilteredTasks.filter((t: Work) => t.status === "In Progress").length;
+  const pendingOverallCount = timeframeFilteredTasks.filter((t: Work) => (t.status as string) !== "Completed" && t.status !== "Done").length;
 
   const stats = {
-    total: tasks.length,
-    completed: (tasks as Work[]).filter((t: Work) => (t.status as string) === "Completed" || t.status === "Done").length,
-    urgent: (tasks as Work[]).filter((t: Work) => t.priority === "Urgent").length,
+    total: timeframeFilteredTasks.length,
+    completed: timeframeFilteredTasks.filter((t: Work) => (t.status as string) === "Completed" || t.status === "Done").length,
+    urgent: timeframeFilteredTasks.filter((t: Work) => t.priority === "Urgent").length,
     weekly: weeklyTasks.length,
   };
 
@@ -331,6 +356,8 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
         setView={setView}
         priorityFilter={priorityFilter}
         setPriorityFilter={setPriorityFilter}
+        timeframeFilter={timeframeFilter}
+        setTimeframeFilter={setTimeframeFilter}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         isEditor={isReadOnly}

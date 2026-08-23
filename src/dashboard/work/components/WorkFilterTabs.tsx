@@ -9,6 +9,8 @@ interface WorkFilterTabsProps {
   setView: (v: "board" | "list" | "calendar" | "history") => void;
   priorityFilter: string;
   setPriorityFilter: (p: string) => void;
+  timeframeFilter: 'this_month' | 'last_month' | 'this_year' | 'all_time';
+  setTimeframeFilter: (t: 'this_month' | 'last_month' | 'this_year' | 'all_time') => void;
   searchTerm: string;
   setSearchTerm: (s: string) => void;
   onAddTaskClick: () => void;
@@ -20,6 +22,8 @@ export function WorkFilterTabs({
   setView,
   priorityFilter,
   setPriorityFilter,
+  timeframeFilter,
+  setTimeframeFilter,
   searchTerm,
   setSearchTerm,
   onAddTaskClick,
@@ -91,6 +95,20 @@ export function WorkFilterTabs({
             <option value="High">High</option>
             <option value="Normal">Normal</option>
             <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 text-slate-400 border-l border-slate-200 dark:border-slate-800 pl-6">
+          <Calendar className="h-4 w-4" />
+          <select 
+            value={timeframeFilter}
+            onChange={(e) => setTimeframeFilter(e.target.value as any)}
+            className="bg-transparent text-[10px] font-bold uppercase tracking-widest border-none focus:ring-0 cursor-pointer hover:text-slate-900 transition-colors"
+          >
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="this_year">This Year</option>
+            <option value="all_time">All Time</option>
           </select>
         </div>
       </div>
