@@ -1089,6 +1089,24 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
     }
   }, [data, hasSyncRate]);
 
+  const updateColorMutation = useMutation({
+    mutationFn: ({ color }: { color: string }) => 
+      updateTeamMemberColorAction(memberId, color),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(res.message);
+        queryClient.invalidateQueries({ queryKey: ['memberStats', memberId] });
+        queryClient.invalidateQueries({ queryKey: ['teamMembers'] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: (err) => {
+      toast.error('Failed to update member color.');
+      console.error(err);
+    }
+  });
+
   const updateRateMutation = useMutation({
     mutationFn: ({ rate, paymentType }: { rate: number, paymentType: 'per_thumbnail' | 'hourly' | 'salary' }) => 
       updateTeamMemberRateAction(memberId, rate, paymentType),
@@ -1170,6 +1188,38 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">
                 {isLoading ? "Syncing stats..." : data?.member?.email}
               </p>
+              
+              {!isLoading && data?.member && isOwner && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  {[
+                    '#6366F1', // Indigo
+                    '#3B82F6', // Blue
+                    '#06B6D4', // Cyan
+                    '#10B981', // Emerald
+                    '#F59E0B', // Amber
+                    '#F97316', // Orange
+                    '#F43F5E', // Rose
+                    '#EC4899', // Pink
+                  ].map((c) => {
+                    const isCurrent = (data.member.color || '#6366F1') === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => updateColorMutation.mutate({ color: c })}
+                        className={cn(
+                          "h-3.5 w-3.5 rounded-full border transition-all active:scale-75 cursor-pointer",
+                          isCurrent 
+                            ? "scale-110 ring-2 ring-slate-300 dark:ring-slate-700 border-white dark:border-slate-955" 
+                            : "border-transparent hover:scale-105"
+                        )}
+                        style={{ backgroundColor: c }}
+                        title="Set Color Theme"
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <button 
