@@ -2,12 +2,14 @@
 
 import { useActionState, useState, useEffect } from 'react'
 import { createClientAction } from '@/dashboard/clients/client-actions'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Trash2, Settings } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useWorkspace } from '@/context/WorkspaceContext'
 import { Client } from '@/types/client'
 import { RadixDialog, RadixSelect } from '@/components/ui/RadixAnimate'
 import { getCurrentUserAction } from '@/auth/actions/auth-actions'
+import { getPredefinedPlansAction, addPredefinedPlanAction, deletePredefinedPlanAction } from '@/dashboard/clients/actions/plan-actions'
+import { toast } from 'sonner'
 
 interface FormState {
   message: string;
@@ -37,7 +39,14 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   const [thumbnailsCount, setThumbnailsCount] = useState(0)
   const [pricePerUnit, setPricePerUnit] = useState(400)
   const [pricingModel, setPricingModel] = useState('monthly')
-  const [bulkPackage, setBulkPackage] = useState<'pkg_7_10' | 'pkg_12_15' | 'pkg_17_20'>('pkg_7_10')
+  
+  const [predefinedPlans, setPredefinedPlans] = useState<any[]>([])
+  const [bulkPackage, setBulkPackage] = useState<string>('')
+  const [showManagePlans, setShowManagePlans] = useState(false)
+  const [newPlanName, setNewPlanName] = useState('')
+  const [newPlanCount, setNewPlanCount] = useState(10)
+  const [newPlanPrice, setNewPlanPrice] = useState(300)
+  const [isMutatingPlan, setIsMutatingPlan] = useState(false)
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -62,21 +71,61 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
     loadUser();
   }, []);
 
+  async function loadPlans() {
+    const res = await getPredefinedPlansAction();
+    setPredefinedPlans(res);
+    if (res.length > 0 && (!bulkPackage || !res.some(p => p.id === bulkPackage))) {
+      setBulkPackage(res[0].id);
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      loadPlans();
+    }
+  }, [isOpen]);
+
+  const handleAddPlan = async () => {
+    if (!newPlanName) {
+      toast.error("Please enter a plan name.");
+      return;
+    }
+    setIsMutatingPlan(true);
+    const res = await addPredefinedPlanAction(newPlanName, newPlanCount, newPlanPrice);
+    if (res.success) {
+      toast.success(res.message);
+      setNewPlanName('');
+      await loadPlans();
+    } else {
+      toast.error(res.message);
+    }
+    setIsMutatingPlan(false);
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    if (confirm("Are you sure you want to delete this predefined plan?")) {
+      setIsMutatingPlan(true);
+      const res = await deletePredefinedPlanAction(id);
+      if (res.success) {
+        toast.success(res.message);
+        await loadPlans();
+      } else {
+        toast.error(res.message);
+      }
+      setIsMutatingPlan(false);
+    }
+  };
+
   // Auto-calculate rates based on selected package
   useEffect(() => {
-    if (pricingModel === 'bulk_package') {
-      if (bulkPackage === 'pkg_7_10') {
-        setThumbnailsCount(10);
-        setPricePerUnit(310);
-      } else if (bulkPackage === 'pkg_12_15') {
-        setThumbnailsCount(15);
-        setPricePerUnit(320);
-      } else if (bulkPackage === 'pkg_17_20') {
-        setThumbnailsCount(20);
-        setPricePerUnit(290);
+    if (pricingModel === 'bulk_package' && bulkPackage && predefinedPlans.length > 0) {
+      const selected = predefinedPlans.find(p => p.id === bulkPackage);
+      if (selected) {
+        setThumbnailsCount(selected.thumbnailsCount);
+        setPricePerUnit(selected.pricePerUnit);
       }
     }
-  }, [pricingModel, bulkPackage]);
+  }, [pricingModel, bulkPackage, predefinedPlans]);
 
   // Auto-calculate total price dynamically during render
   const totalPrice = thumbnailsCount * pricePerUnit;
@@ -163,18 +212,86 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
           </div>
 
           {pricingModel === 'bulk_package' && (
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Predefined Plan</label>
+            <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Predefined Plan</label>
+                <button
+                  type="button"
+                  onClick={() => setShowManagePlans(!showManagePlans)}
+                  className="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 uppercase tracking-wider focus:outline-none cursor-pointer flex items-center gap-1"
+                >
+                  <Settings className="h-3 w-3" />
+                  {showManagePlans ? "Hide Management" : "Manage Plans"}
+                </button>
+              </div>
               <RadixSelect
                 value={bulkPackage}
-                onValueChange={(val) => setBulkPackage(val as any)}
-                options={[
-                  { value: 'pkg_7_10', label: '7-10 Thumbnails per month (₹3,100)' },
-                  { value: 'pkg_12_15', label: '12-15 Thumbnails per month (₹4,800)' },
-                  { value: 'pkg_17_20', label: '17-20 Thumbnails per month (₹5,800)' }
-                ]}
-                className="!px-4 !py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900"
+                onValueChange={setBulkPackage}
+                options={predefinedPlans.map(p => ({ value: p.id, label: p.name }))}
+                className="!px-4 !py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 w-full"
               />
+
+              {showManagePlans && (
+                <div className="mt-4 p-4 bg-white border border-slate-200 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="space-y-2.5 max-h-40 overflow-y-auto">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b pb-1.5">Manage Custom Plans</p>
+                    {predefinedPlans.map(p => (
+                      <div key={p.id} className="flex justify-between items-center text-xs font-bold text-slate-700">
+                        <span>{p.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePlan(p.id)}
+                          disabled={isMutatingPlan}
+                          className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-4 space-y-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Create New Plan</p>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Plan Name (e.g. 7-10 Thumbnails)"
+                        value={newPlanName}
+                        onChange={(e) => setNewPlanName(e.target.value)}
+                        className="w-full px-4 py-2 border rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400 uppercase block mb-1">Count</label>
+                          <input
+                            type="number"
+                            value={newPlanCount}
+                            onChange={(e) => setNewPlanCount(Number(e.target.value))}
+                            className="w-full px-4 py-2 border rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400 uppercase block mb-1">Rate (₹)</label>
+                          <input
+                            type="number"
+                            value={newPlanPrice}
+                            onChange={(e) => setNewPlanPrice(Number(e.target.value))}
+                            className="w-full px-4 py-2 border rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddPlan}
+                        disabled={isMutatingPlan}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                      >
+                        ➕ Add Predefined Plan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
