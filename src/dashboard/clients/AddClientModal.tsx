@@ -39,6 +39,16 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   const [pricingModel, setPricingModel] = useState('monthly')
   const [bulkPackage, setBulkPackage] = useState<'pkg_7_10' | 'pkg_12_15' | 'pkg_17_20'>('pkg_7_10')
 
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      if (state) {
+        Object.assign(state, { message: '', client: undefined, errors: {} });
+      }
+    }
+  }
+
   // Fetch logged in user to check if they are the special admin account
   useEffect(() => {
     async function loadUser() {
