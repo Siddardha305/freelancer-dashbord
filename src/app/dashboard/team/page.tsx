@@ -525,38 +525,6 @@ export default function TeamPage() {
                               <div className="min-w-0">
                                 <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{member.name}</h4>
                                 <p className="text-[10px] text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wide mt-0.5 truncate">{member.email}</p>
-                                
-                                {isOwnerOrAdmin && (
-                                  <div className="flex items-center gap-1.5 mt-2">
-                                    {[
-                                      '#6366F1', // Indigo
-                                      '#3B82F6', // Blue
-                                      '#06B6D4', // Cyan
-                                      '#10B981', // Emerald
-                                      '#F59E0B', // Amber
-                                      '#F97316', // Orange
-                                      '#F43F5E', // Rose
-                                      '#EC4899', // Pink
-                                    ].map((c) => {
-                                      const isCurrent = (member.color || '#6366F1') === c;
-                                      return (
-                                        <button
-                                          key={c}
-                                          type="button"
-                                          onClick={() => updateColorMutation.mutate({ memberId: member.id, color: c })}
-                                          className={cn(
-                                            "h-3.5 w-3.5 rounded-full border transition-all active:scale-75 cursor-pointer",
-                                            isCurrent 
-                                              ? "scale-110 ring-2 ring-slate-300 dark:ring-slate-700 border-white dark:border-slate-950" 
-                                              : "border-transparent hover:scale-105"
-                                          )}
-                                          style={{ backgroundColor: c }}
-                                          title="Set Color Theme"
-                                        />
-                                      );
-                                    })}
-                                  </div>
-                                )}
                               </div>
                             </div>
 
