@@ -505,7 +505,9 @@ export default function TeamPage() {
                       {members.map((member: any) => {
                         const isThisMemberOwner = !member.parentUserId || member.id === currentUser?.workspaceId;
                         return (
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all"
+                          <div 
+                            key={member.id}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all"
                           >
                             <div className="flex items-center gap-4 min-w-0">
                               {/* Initials Badge */}
