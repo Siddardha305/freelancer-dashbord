@@ -90,12 +90,15 @@ export function WorkCard({
   return (
     <div 
       onClick={() => !isReadOnly && onEditClick && onEditClick(task)}
-      style={assignedMember?.color ? { borderLeftColor: assignedMember.color, borderLeftWidth: '4px' } : undefined}
+      style={assignedMember?.color ? { 
+        backgroundColor: `${assignedMember.color}0F`, 
+        borderColor: `${assignedMember.color}45` 
+      } : undefined}
       className={cn(
         "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
         !isReadOnly && "cursor-pointer",
-        isOverdue && "border-red-200 bg-red-50/30",
-        isUrgent && "border-red-400 ring-1 ring-red-100"
+        isOverdue && !assignedMember?.color && "border-red-200 bg-red-50/30",
+        isUrgent && !assignedMember?.color && "border-red-400 ring-1 ring-red-100"
       )}
     >
       {/* Priority Badge */}
