@@ -507,7 +507,11 @@ export default function TeamPage() {
                         return (
                           <div 
                             key={member.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all"
+                            style={member.color ? { backgroundColor: `${member.color}0F` } : undefined}
+                            className={cn(
+                              "flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 transition-all",
+                              !member.color && "hover:bg-slate-50/50 dark:hover:bg-slate-900/40"
+                            )}
                           >
                             <div className="flex items-center gap-4 min-w-0">
                               {/* Initials Badge */}
