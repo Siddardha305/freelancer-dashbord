@@ -43,6 +43,16 @@ export function AddWorkModal({
   const { plan } = usePlan()
   const isAgency = plan === 'agency'
 
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      if (state) {
+        Object.assign(state, { message: '', errors: {} });
+      }
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
       setDeadline(initialDeadline || '');
