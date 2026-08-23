@@ -7,6 +7,7 @@ import { Client } from "@/types/client";
 import { Work } from "@/types/work";
 import { Payment } from "@/types/payment";
 import { useState } from "react";
+import { Search } from "lucide-react";
 
 // Modular Sub-Components
 import { PayoutHeader } from "./PayoutHeader";
@@ -37,6 +38,8 @@ export function MonthlyPayoutSummary({
   
   const timeframe = externalTimeframe !== undefined ? externalTimeframe : localTimeframe;
   const setTimeframe = externalSetTimeframe !== undefined ? externalSetTimeframe : localSetTimeframe;
+
+  const [searchQuery, setSearchQuery] = useState("");
 
   const now = new Date();
   
@@ -162,6 +165,10 @@ export function MonthlyPayoutSummary({
     .filter((cp) => cp.client.status !== "Inactive")
     .reduce((sum, c) => sum + c.pendingAmount, 0);
 
+  const filteredClientPayouts = clientPayouts.filter(cp => 
+    cp.client.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (clientPayouts.length === 0) return null;
 
   return (
@@ -176,9 +183,21 @@ export function MonthlyPayoutSummary({
         setTimeframe={setTimeframe}
       />
 
+      {/* Search Filter Box */}
+      <div className="relative max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm focus-within:border-indigo-500/50 transition-all select-none">
+        <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search client/channel name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-transparent text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+        />
+      </div>
+
       {/* Responsive Client Payout Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {clientPayouts.map((cp) => (
+        {filteredClientPayouts.map((cp) => (
           <ClientPayoutCard 
             key={cp.client.id}
             client={cp.client}
@@ -195,6 +214,12 @@ export function MonthlyPayoutSummary({
             onCreateInvoice={onCreateInvoice}
           />
         ))}
+
+        {filteredClientPayouts.length === 0 && (
+          <div className="col-span-full py-16 text-center bg-white border border-slate-200 rounded-[2rem]">
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No matching channels found</p>
+          </div>
+        )}
       </div>
     </section>
   );
