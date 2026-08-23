@@ -339,11 +339,56 @@ export async function getTeamMemberStatsAction(memberId: string) {
         teamRole: member.teamRole,
         memberRate: member.memberRate || 0,
         memberPaymentType: member.memberPaymentType || 'per_thumbnail',
+        color: member.color || '#6366F1',
       },
       tasks: tasksList,
     };
   } catch (error) {
     console.error("Error in getTeamMemberStatsAction:", error);
     throw new Error('Failed to fetch team member statistics');
+  }
+}
+
+/**
+ * Updates the associated color tag for a team member
+ */
+export async function updateTeamMemberColorAction(memberId: string, color: string) {
+  await dbConnect();
+  const user = await getSessionUser();
+  if (!user) {
+    return { success: false, message: 'Unauthorized' };
+  }
+
+  if (user.teamRole !== 'owner' && user.teamRole !== 'admin') {
+    return { success: false, message: 'Only workspace owners or admins can modify team member color settings.' };
+  }
+
+  try {
+    const updated = await User.findOneAndUpdate(
+      { _id: memberId, parentUserId: user.workspaceId },
+      { color },
+      { new: true }
+    );
+
+    if (!updated) {
+      if (memberId === user.workspaceId) {
+        const ownerUpdated = await User.findOneAndUpdate(
+          { _id: memberId },
+          { color },
+          { new: true }
+        );
+        if (ownerUpdated) {
+          revalidatePath('/dashboard/team');
+          return { success: true, message: 'Successfully updated color tag.' };
+        }
+      }
+      return { success: false, message: 'Team member not found.' };
+    }
+
+    revalidatePath('/dashboard/team');
+    return { success: true, message: 'Successfully updated color tag.' };
+  } catch (error) {
+    console.error("Error updating member color:", error);
+    return { success: false, message: 'Failed to update member color.' };
   }
 }

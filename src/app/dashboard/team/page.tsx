@@ -35,7 +35,8 @@ import {
   updateTeamMemberRoleAction, 
   deleteTeamMemberAction,
   updateTeamMemberRateAction,
-  getTeamMemberStatsAction
+  getTeamMemberStatsAction,
+  updateTeamMemberColorAction
 } from '@/dashboard/settings/actions/team-actions';
 import { RadixSelect } from '@/components/ui/RadixAnimate';
 import { useWorkspace } from '@/context/WorkspaceContext';
@@ -250,6 +251,23 @@ export default function TeamPage() {
     },
     onError: (err) => {
       toast.error('Failed to remove team member.');
+      console.error(err);
+    }
+  });
+
+  const updateColorMutation = useMutation({
+    mutationFn: ({ memberId, color }: { memberId: string; color: string }) => 
+      updateTeamMemberColorAction(memberId, color),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(res.message);
+        queryClient.invalidateQueries({ queryKey: ['teamMembers'] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: (err) => {
+      toast.error('Failed to update member color.');
       console.error(err);
     }
   });
@@ -487,19 +505,56 @@ export default function TeamPage() {
                       {members.map((member: any) => {
                         const isThisMemberOwner = !member.parentUserId || member.id === currentUser?.workspaceId;
                         return (
-                          <div 
-                            key={member.id} 
-                            className="flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all"
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-8 gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all"
                           >
                             <div className="flex items-center gap-4 min-w-0">
                               {/* Initials Badge */}
-                              <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/20 flex items-center justify-center font-bold text-md uppercase shrink-0">
+                              <div 
+                                style={{
+                                  backgroundColor: `${member.color || '#6366F1'}15`,
+                                  borderColor: `${member.color || '#6366F1'}40`,
+                                  color: member.color || '#6366F1',
+                                }}
+                                className="h-12 w-12 rounded-2xl border flex items-center justify-center font-bold text-md uppercase shrink-0"
+                              >
                                 {member.name?.charAt(0) || 'U'}
                               </div>
                               
                               <div className="min-w-0">
                                 <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{member.name}</h4>
                                 <p className="text-[10px] text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wide mt-0.5 truncate">{member.email}</p>
+                                
+                                {isOwnerOrAdmin && (
+                                  <div className="flex items-center gap-1.5 mt-2">
+                                    {[
+                                      '#6366F1', // Indigo
+                                      '#3B82F6', // Blue
+                                      '#06B6D4', // Cyan
+                                      '#10B981', // Emerald
+                                      '#F59E0B', // Amber
+                                      '#F97316', // Orange
+                                      '#F43F5E', // Rose
+                                      '#EC4899', // Pink
+                                    ].map((c) => {
+                                      const isCurrent = (member.color || '#6366F1') === c;
+                                      return (
+                                        <button
+                                          key={c}
+                                          type="button"
+                                          onClick={() => updateColorMutation.mutate({ memberId: member.id, color: c })}
+                                          className={cn(
+                                            "h-3.5 w-3.5 rounded-full border transition-all active:scale-75 cursor-pointer",
+                                            isCurrent 
+                                              ? "scale-110 ring-2 ring-slate-300 dark:ring-slate-700 border-white dark:border-slate-950" 
+                                              : "border-transparent hover:scale-105"
+                                          )}
+                                          style={{ backgroundColor: c }}
+                                          title="Set Color Theme"
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
                             </div>
 

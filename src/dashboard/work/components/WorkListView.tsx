@@ -95,7 +95,17 @@ export function WorkListView({
                     const assignedMember = teamMembers.find(m => m.id === task.assignedTo);
                     return assignedMember ? (
                       <div className="flex items-center gap-1.5">
-                        <div className="h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-405 flex items-center justify-center text-[8px] font-black uppercase border border-indigo-100 dark:border-indigo-900/30">
+                        <div 
+                          style={assignedMember.color ? {
+                            backgroundColor: `${assignedMember.color}15`,
+                            borderColor: `${assignedMember.color}40`,
+                            color: assignedMember.color
+                          } : undefined}
+                          className={cn(
+                            "h-5 w-5 rounded-md flex items-center justify-center text-[8px] font-black uppercase border",
+                            !assignedMember.color && "bg-indigo-50 dark:bg-indigo-955/40 text-indigo-600 dark:text-indigo-405 border-indigo-100 dark:border-indigo-900/30"
+                          )}
+                        >
                           {assignedMember.name?.charAt(0) || 'U'}
                         </div>
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-205">{assignedMember.name}</span>

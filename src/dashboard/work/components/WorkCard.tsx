@@ -90,6 +90,7 @@ export function WorkCard({
   return (
     <div 
       onClick={() => !isReadOnly && onEditClick && onEditClick(task)}
+      style={assignedMember?.color ? { borderLeftColor: assignedMember.color, borderLeftWidth: '4px' } : undefined}
       className={cn(
         "glass-bg p-6 rounded-3xl border border-card-border hover:border-indigo-300 transition-all duration-300 relative overflow-hidden shadow-sm hover:shadow-xl group/card",
         !isReadOnly && "cursor-pointer",
@@ -170,7 +171,17 @@ export function WorkCard({
         <div className="flex items-center gap-1.5">
           {task.assignedTo ? (
             <>
-              <div className="h-5 w-5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[8px] font-black uppercase border border-indigo-100 dark:border-indigo-900/35">
+              <div 
+                style={assignedMember?.color ? {
+                  backgroundColor: `${assignedMember.color}15`,
+                  borderColor: `${assignedMember.color}40`,
+                  color: assignedMember.color
+                } : undefined}
+                className={cn(
+                  "h-5 w-5 rounded-md flex items-center justify-center text-[8px] font-black uppercase border",
+                  !assignedMember?.color && "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/35"
+                )}
+              >
                 {assignedName?.charAt(0) || 'U'}
               </div>
               <span className="text-[9px] font-bold text-slate-550 dark:text-slate-400 uppercase tracking-wider">

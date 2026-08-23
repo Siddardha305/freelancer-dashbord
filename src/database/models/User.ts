@@ -92,6 +92,10 @@ const UserSchema = new Schema({
     enum: ['per_thumbnail', 'hourly', 'salary'],
     default: 'per_thumbnail',
   },
+  color: {
+    type: String,
+    default: '#6366F1',
+  },
 }, {
   timestamps: true,
 });
@@ -104,7 +108,8 @@ if (models.User && (
   !models.User.schema.paths.parentUserId || 
   !models.User.schema.paths.teamRole || 
   !models.User.schema.paths.memberRate || 
-  !models.User.schema.paths.memberPaymentType
+  !models.User.schema.paths.memberPaymentType ||
+  !models.User.schema.paths.color
 )) {
   delete (models as Record<string, unknown>).User;
   if (mongoose.modelNames().includes('User')) {
