@@ -47,6 +47,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   const [newPlanCount, setNewPlanCount] = useState(10)
   const [newPlanPrice, setNewPlanPrice] = useState(300)
   const [isMutatingPlan, setIsMutatingPlan] = useState(false)
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null)
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -103,17 +104,15 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   };
 
   const handleDeletePlan = async (id: string) => {
-    if (confirm("Are you sure you want to delete this predefined plan?")) {
-      setIsMutatingPlan(true);
-      const res = await deletePredefinedPlanAction(id);
-      if (res.success) {
-        toast.success(res.message);
-        await loadPlans();
-      } else {
-        toast.error(res.message);
-      }
-      setIsMutatingPlan(false);
+    setIsMutatingPlan(true);
+    const res = await deletePredefinedPlanAction(id);
+    if (res.success) {
+      toast.success(res.message);
+      await loadPlans();
+    } else {
+      toast.error(res.message);
     }
+    setIsMutatingPlan(false);
   };
 
   // Auto-calculate rates based on selected package
@@ -240,7 +239,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                         <span>{p.name}</span>
                         <button
                           type="button"
-                          onClick={() => handleDeletePlan(p.id)}
+                          onClick={() => setPlanToDelete(p.id)}
                           disabled={isMutatingPlan}
                           className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                         >
@@ -361,6 +360,42 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
           </button>
         </div>
       </form>
+
+      {planToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-200/50 animate-in zoom-in-95 duration-200 text-center space-y-6">
+            <div className="mx-auto w-12 h-12 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-center font-bold text-lg select-none">
+              ⚠️
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Confirm Deletion</h4>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-relaxed">
+                Are you sure you want to delete this predefined plan? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setPlanToDelete(null)}
+                className="flex-1 py-3 bg-slate-50 text-slate-500 hover:bg-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = planToDelete;
+                  setPlanToDelete(null);
+                  handleDeletePlan(id);
+                }}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-lg shadow-red-100"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </RadixDialog>
   )
 }
