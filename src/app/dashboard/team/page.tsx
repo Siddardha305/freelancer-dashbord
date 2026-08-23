@@ -1148,7 +1148,17 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
         {/* Close Button / Header */}
         <div className="flex justify-between items-center p-8 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/20 flex items-center justify-center font-black text-md uppercase">
+            <div 
+              style={data?.member?.color ? {
+                backgroundColor: `${data.member.color}15`,
+                borderColor: `${data.member.color}40`,
+                color: data.member.color
+              } : undefined}
+              className={cn(
+                "h-12 w-12 rounded-2xl border flex items-center justify-center font-black text-md uppercase",
+                !data?.member?.color && "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/20"
+              )}
+            >
               {data?.member?.name?.charAt(0) || 'U'}
             </div>
             <div>
@@ -1213,15 +1223,45 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
               </div>
 
               {/* Completed Tasks */}
-              <div className="bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-[2rem] p-6 text-indigo-800 dark:text-indigo-300">
+              <div 
+                style={data?.member?.color ? {
+                  backgroundColor: `${data.member.color}0F`,
+                  borderColor: `${data.member.color}35`,
+                  color: data.member.color
+                } : undefined}
+                className={cn(
+                  "rounded-[2rem] p-6 border",
+                  !data?.member?.color && "bg-indigo-50/50 dark:bg-indigo-955/10 border-indigo-100/50 dark:border-indigo-900/20 text-indigo-800 dark:text-indigo-350"
+                )}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{terms.plural}</span>
-                  <Briefcase className="h-4 w-4 text-indigo-500" />
+                  <span 
+                    style={data?.member?.color ? { color: data.member.color } : undefined}
+                    className={cn(
+                      "text-[9px] font-black uppercase tracking-wider",
+                      !data?.member?.color && "text-indigo-600 dark:text-indigo-400"
+                    )}
+                  >
+                    {terms.plural}
+                  </span>
+                  <Briefcase 
+                    style={data?.member?.color ? { color: data.member.color } : undefined}
+                    className={cn(
+                      "h-4 w-4",
+                      !data?.member?.color && "text-indigo-500"
+                    )}
+                  />
                 </div>
-                <p className="text-2xl font-black tracking-tight mt-3">
+                <p className="text-2xl font-black tracking-tight mt-3 text-slate-900 dark:text-white">
                   {computedStats.completedTasks} / {computedStats.totalTasks}
                 </p>
-                <p className="text-[8px] font-bold uppercase tracking-wide mt-1 text-indigo-600 dark:text-indigo-500">
+                <p 
+                  style={data?.member?.color ? { color: data.member.color } : undefined}
+                  className={cn(
+                    "text-[8px] font-bold uppercase tracking-wide mt-1",
+                    !data?.member?.color && "text-indigo-600 dark:text-indigo-500"
+                  )}
+                >
                   Completed / Assigned
                 </p>
               </div>
@@ -1279,7 +1319,11 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                   <button
                     type="submit"
                     disabled={updateRateMutation.isPending}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-all cursor-pointer disabled:opacity-50 shadow-lg"
+                    style={data?.member?.color ? { backgroundColor: data.member.color } : undefined}
+                    className={cn(
+                      "flex items-center gap-2 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider hover:brightness-95 transition-all cursor-pointer disabled:opacity-50 shadow-lg",
+                      !data?.member?.color && "bg-indigo-600 hover:bg-indigo-700"
+                    )}
                   >
                     {updateRateMutation.isPending ? "Saving..." : "Save Payout Settings"}
                   </button>
@@ -1307,7 +1351,15 @@ function MemberStatsModal({ memberId, onClose, isOwner }: { memberId: string, on
                       <div key={task.id} className="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider">{task.client}</span>
+                            <span 
+                              style={data?.member?.color ? { color: data.member.color } : undefined}
+                              className={cn(
+                                "text-[9px] font-black uppercase tracking-wider",
+                                !data?.member?.color && "text-indigo-650 dark:text-indigo-400"
+                              )}
+                            >
+                              {task.client}
+                            </span>
                             <span className="text-[8px] text-slate-300 dark:text-slate-700">•</span>
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Due {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}</span>
                           </div>
