@@ -38,7 +38,7 @@ const workspaceOptions = [
 export default function SettingsPage() {
   const router = useRouter();
   const { setCurrency: setGlobalCurrency } = useCurrency();
-  const { setWorkspaceType: setGlobalWorkspaceType } = useWorkspace();
+  const { terms, setWorkspaceType: setGlobalWorkspaceType } = useWorkspace();
   const [activeTab, setActiveTab] = useState<"general" | "pricing" | "diagnostics">(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -757,7 +757,7 @@ export default function SettingsPage() {
                       Current Active plan: <span className="font-extrabold text-indigo-600">{currentPlanId.toUpperCase()}</span>
                     </h3>
                     <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                      You are currently using <span className="text-slate-700 font-bold">{totalClients} / {limits.maxClients === Infinity ? '∞' : limits.maxClients} client(s)</span> and <span className="text-slate-700 font-bold">{monthlyTasksCount} / {limits.maxTasksPerMonth === Infinity ? '∞' : limits.maxTasksPerMonth} task(s)</span> this month.
+                      You are currently using <span className="text-slate-700 font-bold">{totalClients} / {limits.maxClients === Infinity ? '∞' : limits.maxClients} client(s)</span> and <span className="text-slate-700 font-bold">{monthlyTasksCount} / {limits.maxTasksPerMonth === Infinity ? '∞' : limits.maxTasksPerMonth} {terms.singular.toLowerCase()}(s)</span> this month.
                     </p>
                   </div>
                   
@@ -802,7 +802,7 @@ export default function SettingsPage() {
                         description: "Perfect for independent creators just starting out.",
                         features: [
                           "Up to 2 active clients",
-                          "5 thumbnail deliveries / mo",
+                          `5 ${terms.singular.toLowerCase()} deliveries / mo`,
                           "1 visual Kanban workboard",
                           "Single-user private workspace",
                           "Standard ledger tracking"
@@ -826,7 +826,7 @@ export default function SettingsPage() {
                         description: "Designed for active freelancers scaling their client load.",
                         features: [
                           "Up to 15 active clients",
-                          "Unlimited task deliveries",
+                          `Unlimited ${terms.singular.toLowerCase()} deliveries`,
                           "Dedicated revision history trackers",
                           "3 collaborative team seats",
                           "Custom welcome email templates",
@@ -851,7 +851,7 @@ export default function SettingsPage() {
                         description: "Built for elite production agencies and growing teams.",
                         features: [
                           "Unlimited active clients",
-                          "Unlimited task deliveries",
+                          `Unlimited ${terms.singular.toLowerCase()} deliveries`,
                           "10 collaborative team seats",
                           "Role-based workspace permissions",
                           "Custom domain sending verified",
