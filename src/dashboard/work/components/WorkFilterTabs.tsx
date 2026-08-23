@@ -1,7 +1,7 @@
 'use client'
 
-import React from 'react';
-import { Search, LayoutGrid, List as ListIcon, Plus, Filter, Calendar, History } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, LayoutGrid, List as ListIcon, Plus, Filter, Calendar, History, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WorkFilterTabsProps {
@@ -29,6 +29,27 @@ export function WorkFilterTabs({
   onAddTaskClick,
   isEditor = false
 }: WorkFilterTabsProps) {
+  const [isTimeframeOpen, setIsTimeframeOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close timeframe dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsTimeframeOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const timeframeLabels = {
+    this_month: 'THIS MONTH',
+    last_month: 'LAST MONTH',
+    this_year: 'THIS YEAR',
+    all_time: 'ALL TIME'
+  };
+
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pt-4">
       <div className="flex items-center gap-6">
@@ -98,18 +119,43 @@ export function WorkFilterTabs({
           </select>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-slate-400 border-l border-slate-200 dark:border-slate-800 pl-6">
-          <Calendar className="h-4 w-4" />
-          <select 
-            value={timeframeFilter}
-            onChange={(e) => setTimeframeFilter(e.target.value as any)}
-            className="bg-transparent text-[10px] font-bold uppercase tracking-widest border-none focus:ring-0 cursor-pointer hover:text-slate-900 transition-colors"
+        <div ref={dropdownRef} className="relative hidden md:flex items-center text-slate-400 border-l border-slate-200 dark:border-slate-800 pl-6">
+          <button
+            onClick={() => setIsTimeframeOpen(!isTimeframeOpen)}
+            className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest hover:text-slate-900 transition-colors focus:outline-none"
           >
-            <option value="this_month">This Month</option>
-            <option value="last_month">Last Month</option>
-            <option value="this_year">This Year</option>
-            <option value="all_time">All Time</option>
-          </select>
+            <Calendar className="h-4 w-4 text-slate-400" />
+            <span className="text-slate-500 font-extrabold">{timeframeLabels[timeframeFilter]}</span>
+            <ChevronDown className={cn("h-3 w-3 text-slate-400 transition-transform duration-200", isTimeframeOpen && "transform rotate-180")} />
+          </button>
+
+          {isTimeframeOpen && (
+            <div className="absolute left-6 top-full mt-2 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <ul className="py-1">
+                {(Object.keys(timeframeLabels) as Array<keyof typeof timeframeLabels>).map((key) => {
+                  const isSelected = timeframeFilter === key;
+                  return (
+                    <li key={key}>
+                      <button
+                        onClick={() => {
+                          setTimeframeFilter(key);
+                          setIsTimeframeOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-5 py-3 text-[10px] font-extrabold uppercase tracking-wider transition-colors",
+                          isSelected 
+                            ? "bg-indigo-600 text-white" 
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {timeframeLabels[key]}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
  
