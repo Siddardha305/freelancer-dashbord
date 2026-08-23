@@ -33,7 +33,6 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [prefilledDeadline, setPrefilledDeadline] = useState<string | undefined>(undefined);
-  const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [taskToEdit, setTaskToEdit] = useState<Work | null>(null);
   const [timeframeFilter, setTimeframeFilter] = useState<'this_month' | 'last_month' | 'this_year' | 'all_time'>('this_month');
@@ -253,10 +252,9 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
     return timeframeFilteredTasks.filter((task: Work) => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           task.client.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
-      return matchesSearch && matchesPriority;
+      return matchesSearch;
     });
-  }, [timeframeFilteredTasks, searchTerm, priorityFilter]);
+  }, [timeframeFilteredTasks, searchTerm]);
 
   const activeTasksForBoardAndList = useMemo(() => {
     return filteredTasks.filter((task: Work) => {
@@ -354,8 +352,6 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
       <WorkFilterTabs 
         view={view}
         setView={setView}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
         timeframeFilter={timeframeFilter}
         setTimeframeFilter={setTimeframeFilter}
         searchTerm={searchTerm}

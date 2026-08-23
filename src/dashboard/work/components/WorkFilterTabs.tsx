@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 interface WorkFilterTabsProps {
   view: "board" | "list" | "calendar" | "history";
   setView: (v: "board" | "list" | "calendar" | "history") => void;
-  priorityFilter: string;
-  setPriorityFilter: (p: string) => void;
   timeframeFilter: 'this_month' | 'last_month' | 'this_year' | 'all_time';
   setTimeframeFilter: (t: 'this_month' | 'last_month' | 'this_year' | 'all_time') => void;
   searchTerm: string;
@@ -20,8 +18,6 @@ interface WorkFilterTabsProps {
 export function WorkFilterTabs({
   view,
   setView,
-  priorityFilter,
-  setPriorityFilter,
   timeframeFilter,
   setTimeframeFilter,
   searchTerm,
@@ -30,18 +26,13 @@ export function WorkFilterTabs({
   isEditor = false
 }: WorkFilterTabsProps) {
   const [isTimeframeOpen, setIsTimeframeOpen] = useState(false);
-  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const priorityDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
+  // Close timeframe dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsTimeframeOpen(false);
-      }
-      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(event.target as Node)) {
-        setIsPriorityOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -53,14 +44,6 @@ export function WorkFilterTabs({
     last_month: 'LAST MONTH',
     this_year: 'THIS YEAR',
     all_time: 'ALL TIME'
-  };
-
-  const priorityLabels = {
-    All: 'ALL PRIORITIES',
-    Urgent: 'URGENT',
-    High: 'HIGH',
-    Normal: 'NORMAL',
-    Low: 'LOW'
   };
 
   return (
@@ -117,46 +100,7 @@ export function WorkFilterTabs({
           </button>
         </div>
  
-        <div ref={priorityDropdownRef} className="relative hidden md:flex items-center text-slate-400">
-          <button
-            onClick={() => setIsPriorityOpen(!isPriorityOpen)}
-            className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest hover:text-slate-900 transition-colors focus:outline-none"
-          >
-            <Filter className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-500 font-extrabold">{priorityLabels[priorityFilter as keyof typeof priorityLabels]}</span>
-            <ChevronDown className={cn("h-3 w-3 text-slate-400 transition-transform duration-200", isPriorityOpen && "transform rotate-180")} />
-          </button>
-
-          {isPriorityOpen && (
-            <div className="absolute left-0 top-full mt-2 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              <ul className="py-1">
-                {(Object.keys(priorityLabels) as Array<keyof typeof priorityLabels>).map((key) => {
-                  const isSelected = priorityFilter === key;
-                  return (
-                    <li key={key}>
-                      <button
-                        onClick={() => {
-                          setPriorityFilter(key);
-                          setIsPriorityOpen(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-5 py-3 text-[10px] font-extrabold uppercase tracking-wider transition-colors",
-                          isSelected 
-                            ? "bg-indigo-600 text-white" 
-                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
-                        )}
-                      >
-                        {priorityLabels[key]}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        <div ref={dropdownRef} className="relative hidden md:flex items-center text-slate-400 border-l border-slate-200 dark:border-slate-800 pl-6">
+        <div ref={dropdownRef} className="relative hidden md:flex items-center text-slate-400 pl-2">
           <button
             onClick={() => setIsTimeframeOpen(!isTimeframeOpen)}
             className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest hover:text-slate-900 transition-colors focus:outline-none"
@@ -167,7 +111,7 @@ export function WorkFilterTabs({
           </button>
 
           {isTimeframeOpen && (
-            <div className="absolute left-6 top-full mt-2 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute left-0 top-full mt-2 w-44 bg-white dark:bg-slate-955 border border-slate-200 dark:border-slate-850 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <ul className="py-1">
                 {(Object.keys(timeframeLabels) as Array<keyof typeof timeframeLabels>).map((key) => {
                   const isSelected = timeframeFilter === key;
