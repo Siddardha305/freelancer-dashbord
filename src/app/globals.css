@@ -262,8 +262,8 @@ html[data-magicui-theme-vt="active"]::view-transition-group(root) {
 
 /* Glassmorphism overrides for dark mode */
 .dark .glass-bg {
-  background: var(--glass-bg) !important;
-  border-color: var(--glass-border) !important;
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
 }
 
 
