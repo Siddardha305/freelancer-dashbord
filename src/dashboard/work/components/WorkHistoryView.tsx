@@ -12,6 +12,7 @@ interface WorkHistoryViewProps {
   tasks: Work[];
   clients: Client[];
   teamMembers?: any[];
+  currentUser?: any;
   formatCurrency: (value: number | string) => string;
   isEditor?: boolean;
   onPaymentStatusChange?: (taskId: string, isPaid: boolean) => void;
@@ -22,6 +23,7 @@ export function WorkHistoryView({
   tasks, 
   clients, 
   teamMembers = [], 
+  currentUser,
   formatCurrency, 
   isEditor = false,
   onPaymentStatusChange,
@@ -42,13 +44,16 @@ export function WorkHistoryView({
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
 
-  // Group tasks by day (latest first) and calculate total daily earnings
   const clientMap: Record<string, Client> = {};
   clients.forEach((c) => {
     clientMap[c.name] = c;
   });
 
-  const getPricePerTask = (work: Work): number => {
+  // Check if current viewing user is salaried
+  const isSalariedEmployee = isEditor && currentUser?.memberPaymentType === 'salary';
+
+  // Helper: Client rate (what client pays the agency)
+  const getClientPricePerTask = (work: Work): number => {
     const c = clientMap[work.client];
     if (!c) return 0;
     if (c.status === "Inactive") return 0;
@@ -57,6 +62,34 @@ export function WorkHistoryView({
     return quota > 0 ? (c.monthly_price || 0) / quota : 0;
   };
 
+  // Helper: Employee assigned payout (what agency pays the employee)
+  const getEmployeePayoutPerTask = (work: Work): number => {
+    const assignedMember = teamMembers?.find(
+      (m) => m.id === work.assignedTo || m._id === work.assignedTo
+    ) || (currentUser && (currentUser.id === work.assignedTo || currentUser._id === work.assignedTo) ? currentUser : null) || (isEditor ? currentUser : null);
+
+    if (!assignedMember) return 0;
+    const pType = assignedMember.memberPaymentType || 'per_thumbnail';
+    const rate = assignedMember.memberRate || 0;
+    if (pType === 'per_thumbnail') {
+      return rate;
+    } else if (pType === 'hourly') {
+      return (work.actualHours || work.estimatedHours || 1) * rate;
+    } else if (pType === 'salary') {
+      return 0; // Salaried employees receive flat monthly salary, not per-task additions
+    }
+    return rate;
+  };
+
+  // Effective amount for display and earnings calculations
+  const getTaskAmount = (work: Work): number => {
+    if (isEditor) {
+      return getEmployeePayoutPerTask(work);
+    }
+    return getClientPricePerTask(work);
+  };
+
+  // Group tasks by day (latest first) and calculate total daily earnings
   const groups: Record<string, { date: Date; tasks: Work[]; totalEarnings: number }> = {};
 
   completedThisMonth.forEach((task) => {
@@ -77,7 +110,7 @@ export function WorkHistoryView({
     }
 
     groups[key].tasks.push(task);
-    groups[key].totalEarnings += getPricePerTask(task);
+    groups[key].totalEarnings += getTaskAmount(task);
   });
 
   const dailyHistory = Object.entries(groups)
@@ -89,21 +122,10 @@ export function WorkHistoryView({
 
   const monthLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
-  // Compute total monthly earnings from completed tasks
-  const totalMonthlyEarnings = dailyHistory.reduce((sum, day) => sum + day.totalEarnings, 0);
-
-  const getPricePerTaskDirect = (task: Work): number => {
-    const clientMap: Record<string, Client> = {};
-    clients.forEach((c) => {
-      clientMap[c.name] = c;
-    });
-    const c = clientMap[task.client];
-    if (!c) return 0;
-    if (c.status === "Inactive") return 0;
-    if (c.price_per_thumbnail > 0) return c.price_per_thumbnail;
-    const quota = c.thumbnails_per_month || 8;
-    return quota > 0 ? (c.monthly_price || 0) / quota : 0;
-  };
+  // Compute total monthly earnings
+  const totalMonthlyEarnings = isSalariedEmployee 
+    ? (currentUser?.memberRate || 0) 
+    : dailyHistory.reduce((sum, day) => sum + day.totalEarnings, 0);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -127,9 +149,11 @@ export function WorkHistoryView({
                 {completedThisMonth.length}
               </span>
             </div>
-            {!isEditor && !isCorporate ? (
+            {!isCorporate ? (
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:px-6 border border-white/10 flex flex-col justify-center">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-200">Month Earnings</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-200">
+                  {isSalariedEmployee ? "Fixed Monthly Salary" : isEditor ? "Month Earnings" : "Month Revenue"}
+                </span>
                 <span className="text-2xl font-black mt-1 text-emerald-300">
                   {formatCurrency(totalMonthlyEarnings)}
                 </span>
@@ -165,7 +189,7 @@ export function WorkHistoryView({
                 </div>
                 <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">{formattedDate}</h3>
-                  {!isEditor && !isCorporate ? (
+                  {!isCorporate && !isSalariedEmployee ? (
                     <div className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-[10px] font-extrabold uppercase tracking-wide">
                       + {formatCurrency(dayGroup.totalEarnings)}
                     </div>
@@ -180,16 +204,14 @@ export function WorkHistoryView({
               {/* Tasks of the Day */}
               <div className="space-y-3 pl-4 sm:pl-8">
                 {dayGroup.tasks.map((task) => {
-                  const taskPrice = getPricePerTaskDirect(task);
+                  const clientPrice = getClientPricePerTask(task);
+                  const employeePayout = getEmployeePayoutPerTask(task);
                   const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
                   const isClientPerDelivery = clientObj?.pricing_model === 'per_thumbnail';
-                  const clientQuota = clientObj?.thumbnails_per_month || 8;
-                  const clientRate = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
-                    ? clientObj.price_per_thumbnail
-                    : (clientQuota > 0 ? (clientObj?.monthly_price || 0) / clientQuota : 0);
 
                   const assignedMember = teamMembers?.find(m => m.id === task.assignedTo || m._id === task.assignedTo);
-                  const isPerDelivery = assignedMember?.memberPaymentType === 'per_thumbnail';
+                  const memberPaymentType = assignedMember?.memberPaymentType || (isEditor ? currentUser?.memberPaymentType : 'per_thumbnail') || 'per_thumbnail';
+                  const isMemberSalaried = memberPaymentType === 'salary';
                   const isManager = !isEditor;
 
                   return (
@@ -236,47 +258,117 @@ export function WorkHistoryView({
                       </div>
                       
                       <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto border-t sm:border-none border-slate-100 dark:border-slate-800 pt-3 sm:pt-0 justify-between sm:justify-end">
-                        {isClientPerDelivery && (
-                          <div className="flex flex-col items-start sm:items-end select-none">
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Client Invoice</span>
-                            {isManager ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onClientPaymentStatusChange?.(task.id || (task as any)._id || "", !task.isPaidByClient);
-                                }}
-                                className={cn(
-                                  "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer mt-0.5",
-                                  task.isPaidByClient
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                                )}
-                              >
-                                {task.isPaidByClient ? "Paid" : "Unpaid"}
-                              </button>
+                        
+                        {/* EMPLOYEE VIEW: Show assigned payout and employee payout status (Paid / Unpaid) */}
+                        {isEditor && (
+                          <>
+                            {isMemberSalaried ? (
+                              <div className="flex flex-col items-start sm:items-end">
+                                <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">Compensation</span>
+                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 px-2.5 py-1 rounded-lg mt-0.5">
+                                  Fixed Salary
+                                </span>
+                              </div>
                             ) : (
-                              <span className={cn(
-                                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border mt-0.5",
-                                task.isPaidByClient
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-250"
-                                  : "bg-amber-50 text-amber-700 border-amber-250"
-                              )}>
-                                {task.isPaidByClient ? "Paid" : "Unpaid"}
-                              </span>
+                              <>
+                                <div className="flex flex-col items-start sm:items-end">
+                                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">Assigned Payout</span>
+                                  <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5">
+                                    {formatCurrency(employeePayout)}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col items-start sm:items-end select-none">
+                                  <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Payout Status</span>
+                                  <span className={cn(
+                                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border mt-0.5",
+                                    task.isPaid
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                                      : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800"
+                                  )}>
+                                    {task.isPaid ? (
+                                      <>
+                                        <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                        <span>Paid</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                        <span>Unpaid</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </>
                             )}
-                          </div>
+                          </>
                         )}
 
+                        {/* MANAGER VIEW: Show client invoice and member payout toggle controls */}
+                        {isManager && (
+                          <>
+                            {isClientPerDelivery && (
+                              <div className="flex flex-col items-start sm:items-end select-none">
+                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Client Invoice</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClientPaymentStatusChange?.(task.id || (task as any)._id || "", !task.isPaidByClient);
+                                  }}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer mt-0.5",
+                                    task.isPaidByClient
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                      : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400"
+                                  )}
+                                  title="Toggle Client Payment Status"
+                                >
+                                  {task.isPaidByClient ? "Paid" : "Unpaid"}
+                                </button>
+                              </div>
+                            )}
 
+                            {assignedMember && (
+                              <div className="flex flex-col items-start sm:items-end select-none">
+                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Assignee</span>
+                                {isMemberSalaried ? (
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-indigo-200 text-indigo-700 bg-indigo-50 dark:bg-indigo-950/30 dark:text-indigo-400 mt-0.5"
+                                    title={`Salaried Member (${formatCurrency(assignedMember.memberRate || 0)}/mo)`}
+                                  >
+                                    Salary
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onPaymentStatusChange?.(task.id || (task as any)._id || "", !task.isPaid);
+                                    }}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer mt-0.5",
+                                      task.isPaid
+                                        ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400"
+                                        : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400"
+                                    )}
+                                    title={`Mark payout (${formatCurrency(employeePayout)}) as paid/unpaid`}
+                                  >
+                                    {task.isPaid ? "Paid" : "Unpaid"}
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
-                        {!isEditor && !isCorporate && !isClientPerDelivery && (
-                          <div className="flex flex-col sm:items-end">
-                            <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-550">Priced Rate</span>
-                            <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5">
-                              {formatCurrency(taskPrice)}
-                            </span>
-                          </div>
+                            {!isCorporate && !isClientPerDelivery && (
+                              <div className="flex flex-col sm:items-end">
+                                <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-550">Client Rate</span>
+                                <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5">
+                                  {formatCurrency(clientPrice)}
+                                </span>
+                              </div>
+                            )}
+                          </>
                         )}
+
                         <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30 shadow-inner">
                           <Award className="h-4.5 w-4.5" />
                         </div>
@@ -308,3 +400,4 @@ export function WorkHistoryView({
     </div>
   );
 }
+

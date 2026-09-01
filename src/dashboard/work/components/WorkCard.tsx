@@ -274,50 +274,104 @@ export function WorkCard({
             })}
           </div>
 
-          {isCompleted && isClientPerDelivery && (
+          {isCompleted && isEditor && (
             <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-2 select-none w-full">
               <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Client Invoice
+                Payout Status
               </span>
-              {isManager ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClientPaymentStatusChange) {
-                      onClientPaymentStatusChange(task.id || task._id || "", !task.isPaidByClient);
-                    }
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
-                    task.isPaidByClient
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30"
-                      : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
-                  )}
-                  title="Toggle Client Payment Status"
-                >
-                  {task.isPaidByClient ? (
-                    <>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Paid</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 animate-pulse" />
-                      <span>Unpaid</span>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border",
-                    task.isPaidByClient
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-400"
-                      : "bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/20 dark:text-amber-400"
-                  )}
-                >
-                  {task.isPaidByClient ? "Paid" : "Unpaid"}
-                </span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border",
+                  task.isPaid
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-400"
+                    : "bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/20 dark:text-amber-400"
+                )}
+              >
+                {task.isPaid ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Paid</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                    <span>Unpaid</span>
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+
+          {isCompleted && isManager && (
+            <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-2 select-none w-full">
+              {isClientPerDelivery && (
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Client Invoice
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onClientPaymentStatusChange) {
+                        onClientPaymentStatusChange(task.id || task._id || "", !task.isPaidByClient);
+                      }
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
+                      task.isPaidByClient
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30"
+                        : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                    )}
+                    title="Toggle Client Payment Status"
+                  >
+                    {task.isPaidByClient ? (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Paid</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 animate-pulse" />
+                        <span>Unpaid</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {assignedMember && (
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Assignee Payout
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onPaymentStatusChange) {
+                        onPaymentStatusChange(task.id || task._id || "", !task.isPaid);
+                      }
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 border cursor-pointer",
+                      task.isPaid
+                        ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/30"
+                        : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-955/20 dark:text-rose-400 dark:border-rose-900/30"
+                    )}
+                    title="Toggle Assignee Payout Status"
+                  >
+                    {task.isPaid ? (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Paid</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400 animate-pulse" />
+                        <span>Unpaid</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           )}

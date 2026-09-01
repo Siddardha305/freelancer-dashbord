@@ -379,7 +379,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteTask}
-          isEditor={isReadOnly}
+          isEditor={isEditor}
           isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
           onPaymentStatusChange={handlePaymentStatusChange}
@@ -392,7 +392,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           onMoveTask={handleMoveTaskDeadline} 
           onAddTask={handleQuickAddTask}
           onStatusChange={handleStatusChange}
-          isEditor={isReadOnly}
+          isEditor={isEditor}
         />
       ) : view === "history" ? (
         /* History day-by-day View */
@@ -400,8 +400,9 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           tasks={filteredTasks}
           clients={clients}
           teamMembers={teamMembers}
+          currentUser={currentUser}
           formatCurrency={formatCurrency}
-          isEditor={isReadOnly}
+          isEditor={isEditor}
           onPaymentStatusChange={handlePaymentStatusChange}
           onClientPaymentStatusChange={handleClientPaymentStatusChange}
         />
@@ -413,7 +414,7 @@ export function WorkManager({ initialTasks = [] }: { initialTasks?: Work[] }) {
           teamMembers={teamMembers}
           onStatusChange={handleStatusChange}
           onDeleteClick={(id) => setTaskToDelete(id)}
-          isEditor={isReadOnly}
+          isEditor={isEditor}
           isViewer={isViewer}
           onEditClick={(task) => setTaskToEdit(task)}
         />
