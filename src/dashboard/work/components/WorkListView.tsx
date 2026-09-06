@@ -73,7 +73,7 @@ export function WorkListView({
                 <td className="px-10 py-8">
                   {(() => {
                     const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
-                    const channelLink = clientObj?.channel_link;
+                    const channelLink = !isEditor && !isViewer ? clientObj?.channel_link : undefined;
                     const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
                     return channelLink ? (
                       <a 

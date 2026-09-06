@@ -56,7 +56,7 @@ export function WorkCard({
   const isCompleted = task.status === 'Completed' || task.status === 'Done';
 
   const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
-  const channelLink = clientObj?.channel_link;
+  const channelLink = !isEditor && !isViewer ? clientObj?.channel_link : undefined;
   const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
   
   const assignedMember = teamMembers.find(m => m.id === task.assignedTo);

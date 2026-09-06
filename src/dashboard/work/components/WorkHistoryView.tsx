@@ -223,7 +223,7 @@ export function WorkHistoryView({
                         <div className="flex items-center gap-2.5 flex-wrap">
                           {(() => {
                             const clientObj = clients.find(c => c.name.toLowerCase() === task.client.toLowerCase());
-                            const channelLink = clientObj?.channel_link;
+                            const channelLink = !isEditor ? clientObj?.channel_link : undefined;
                             const cleanUrl = channelLink ? (channelLink.startsWith('http') ? channelLink : `https://${channelLink}`) : '';
                             return channelLink ? (
                               <a 
