@@ -23,10 +23,10 @@ if (!cached) {
 }
 
 async function dbConnect() {
-  const MONGODB_URI = process.env.MONGODB_URI;
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://Dashbo-ard:igo7A4hrvrbT7nKv@cluster0.6arbyrg.mongodb.net/freelanceos?retryWrites=true&w=majority';
 
   if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable');
+    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
   }
 
   if (cached!.conn) {
