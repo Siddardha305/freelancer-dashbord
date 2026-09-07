@@ -5,7 +5,8 @@ import { ClientProfileClient } from "./ClientProfileClient";
 
 export default async function ClientProfilePage({ params }: { params: { id: string } }) {
   const user = await getSessionUser();
-  if (user?.teamRole === 'editor' || user?.workspaceType === 'corporate') {
+  const isOwner = user?.role === 'admin' || user?.teamRole === 'owner';
+  if (!isOwner && (user?.teamRole === 'editor' || user?.teamRole === 'viewer')) {
     redirect('/dashboard/work');
   }
 

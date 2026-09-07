@@ -36,7 +36,8 @@ export default function ClientsPage() {
     async function loadUser() {
       try {
         const user = await getCurrentUserAction();
-        if (user?.teamRole === 'editor' || user?.workspaceType === 'corporate') {
+        const isOwner = user?.role === 'admin' || user?.teamRole === 'owner';
+        if (!isOwner && (user?.teamRole === 'editor' || user?.teamRole === 'viewer')) {
           router.replace('/dashboard/work');
           return;
         }
