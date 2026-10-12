@@ -4,7 +4,8 @@ import React, { useActionState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { resetPasswordAction } from '@/auth/actions/auth-actions';
-import { KeyRound, ArrowLeft, Loader2, CheckCircle, ShieldAlert, ShieldX } from 'lucide-react';
+import { KeyRound, ArrowLeft, Loader2, CheckCircle, ShieldX } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const initialState = {
   message: '',
@@ -17,7 +18,6 @@ function ResetPasswordForm() {
   const token = searchParams.get('token');
   
   const [state, formAction, isPending] = useActionState(resetPasswordAction, initialState);
-  
   const isSuccess = state?.message === 'success';
   const errors = state?.errors as Record<string, string[]> | undefined;
 
@@ -33,168 +33,159 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="space-y-6 text-center py-4">
-        <div className="mx-auto h-16 w-16 bg-rose-50 border border-rose-100 text-rose-600 rounded-3xl flex items-center justify-center shadow-lg shadow-rose-50">
+        <div className="mx-auto h-16 w-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-3xl flex items-center justify-center shadow-lg">
           <ShieldX className="h-8 w-8" />
         </div>
         
         <div className="space-y-2">
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Invalid Recovery Token</h2>
-          <p className="text-sm font-semibold text-slate-500 leading-relaxed">
-            The password reset link is invalid, malformed, or missing its security token.
+          <h2 className="text-2xl font-black tracking-tight text-white">Invalid Recovery Token</h2>
+          <p className="text-xs font-semibold text-slate-400 leading-relaxed">
+            The password reset link is invalid, expired, or missing its verification token.
           </p>
         </div>
 
         <Link 
           href="/forgot-password"
-          className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center shadow-lg shadow-indigo-100 active:scale-[0.98] transition-all cursor-pointer block text-center"
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#fe8e02] to-[#cb2100] text-white font-black text-xs uppercase tracking-widest flex items-center justify-center shadow-lg shadow-[#cb2100]/25 active:scale-[0.98] transition-all cursor-pointer block text-center"
         >
-          Request New Reset Link
+          Request Fresh Link
         </Link>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="space-y-6">
       {isSuccess ? (
         <div className="space-y-6 text-center py-4">
-          <div className="mx-auto h-16 w-16 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-50">
+          <div className="mx-auto h-16 w-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-3xl flex items-center justify-center shadow-lg">
             <CheckCircle className="h-8 w-8" />
           </div>
-          
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Password Updated!</h2>
-            <p className="text-sm font-semibold text-slate-500 leading-relaxed">
-              Your password has been successfully reset. You are now being redirected to the login portal...
-            </p>
-          </div>
 
-          <div className="flex justify-center items-center gap-2 text-indigo-600 text-xs font-bold uppercase tracking-wider">
-            <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to login
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-white">Password Updated!</h2>
+            <p className="text-xs font-semibold text-slate-400 leading-relaxed">
+              Your credentials have been securely updated. Redirecting to workspace login...
+            </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <>
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 mb-2">Configure Password</h1>
-            <p className="text-sm font-semibold text-slate-400">Establish a new, secure password for your workspace</p>
+            <h1 className="text-2xl font-black tracking-tight text-white mb-2">Create New Password</h1>
+            <p className="text-xs font-medium text-slate-400 leading-relaxed">
+              Ensure your new password contains at least 8 characters.
+            </p>
           </div>
 
-          <form action={formAction} className="space-y-6">
+          <form action={formAction} className="space-y-5">
+            <input type="hidden" name="token" value={token} />
+
             {state?.message && state.message !== 'success' && (
-              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2.5 animate-shake">
-                <ShieldAlert className="h-5 w-5 text-rose-500 shrink-0" />
+              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
                 {state.message}
               </div>
             )}
 
-            {/* Hidden Token Input */}
-            <input type="hidden" name="token" value={token} />
-
-            {/* New Password Field */}
             <div className="space-y-2">
-              <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-500 block">New Password</label>
+              <label htmlFor="password" className="text-[11px] font-black uppercase tracking-widest text-slate-400 block">
+                New Password
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                  <KeyRound className="h-5 w-5 shrink-0" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                  <KeyRound className="h-4.5 w-4.5 shrink-0" />
                 </div>
                 <input 
                   type="password" 
                   id="password" 
                   name="password" 
                   required
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 transition-all"
+                  placeholder="••••••••••••"
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#070b16] border border-white/10 rounded-2xl text-sm font-medium text-white placeholder:text-slate-600 focus:outline-none focus:border-[#fe8e02] focus:ring-4 focus:ring-[#fe8e02]/15 transition-all shadow-inner"
                 />
               </div>
               {errors?.password && (
-                <p className="text-xs font-bold text-rose-500 mt-1">{errors.password[0]}</p>
+                <p className="text-xs font-bold text-rose-400 mt-1">{errors.password[0]}</p>
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Confirm Password</label>
+              <label htmlFor="confirmPassword" className="text-[11px] font-black uppercase tracking-widest text-slate-400 block">
+                Confirm Password
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                  <KeyRound className="h-5 w-5 shrink-0" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                  <KeyRound className="h-4.5 w-4.5 shrink-0" />
                 </div>
                 <input 
                   type="password" 
                   id="confirmPassword" 
                   name="confirmPassword" 
                   required
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 transition-all"
+                  placeholder="••••••••••••"
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#070b16] border border-white/10 rounded-2xl text-sm font-medium text-white placeholder:text-slate-600 focus:outline-none focus:border-[#fe8e02] focus:ring-4 focus:ring-[#fe8e02]/15 transition-all shadow-inner"
                 />
               </div>
               {errors?.confirmPassword && (
-                <p className="text-xs font-bold text-rose-500 mt-1">{errors.confirmPassword[0]}</p>
+                <p className="text-xs font-bold text-rose-400 mt-1">{errors.confirmPassword[0]}</p>
               )}
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isPending}
-              className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#fe8e02] to-[#cb2100] text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-[#cb2100]/25 hover:shadow-xl hover:shadow-[#fe8e02]/30 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" /> Saving Changes...
+                  <Loader2 className="h-4.5 w-4.5 animate-spin" /> Saving Password...
                 </>
               ) : (
-                <>
-                  Reset Password
-                </>
+                "Update & Continue"
               )}
             </button>
           </form>
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 }
 
-import { motion } from 'framer-motion';
-
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden">
-      {/* Decorative gradients */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#4f46e5_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.03] pointer-events-none" />
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#060913] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-slate-100 relative overflow-hidden selection:bg-[#fe8e02]/30 selection:text-white">
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-25"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}
+      />
+      <div className="absolute top-1/4 -right-20 w-96 h-96 bg-[#fe8e02]/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -left-20 w-96 h-96 bg-[#cb2100]/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <motion.div 
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="sm:mx-auto w-full max-w-md z-10 px-4"
-      >
-        <Link href="/login" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors mb-8 group">
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-          Back to Sign In
-        </Link>
-
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-indigo-200">
-            F
-          </div>
-          <span className="text-lg font-bold tracking-tight text-slate-900">FreelanceOS</span>
+      <div className="sm:mx-auto w-full max-w-md z-10 px-4">
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/login" className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-[#fe8e02] transition-colors group">
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+            Back to Sign In
+          </Link>
+          <Link href="/" className="inline-flex items-center">
+            <Logo height={36} />
+          </Link>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-[2rem] shadow-xl shadow-slate-100/50 p-8 sm:p-10 relative overflow-hidden">
+        <div className="bg-[#0a0f1d]/90 border border-white/10 rounded-[2.5rem] shadow-2xl p-8 sm:p-10 relative overflow-hidden backdrop-blur-2xl">
           <Suspense fallback={
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Validating Token...</p>
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-[#fe8e02]" />
             </div>
           }>
             <ResetPasswordForm />
           </Suspense>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

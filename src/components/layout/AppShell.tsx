@@ -60,7 +60,7 @@ export function AppShell({ children, user }: AppShellProps) {
   }, []);
 
   const isWhiteLabelEnabled = user?.plan === 'agency';
-  const sidebarTitle = isWhiteLabelEnabled && user?.agencyName ? user.agencyName : "FreelanceOS";
+  const sidebarTitle = isWhiteLabelEnabled && user?.agencyName ? user.agencyName : "SmartAdverts";
   
   const brandingMode = isWhiteLabelEnabled ? (user?.agencyBrandingMode || "both") : "both";
   const customLogoUrl = isWhiteLabelEnabled
@@ -86,8 +86,9 @@ export function AppShell({ children, user }: AppShellProps) {
                     <img src={customLogoUrl} alt={sidebarTitle} className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-md text-white shadow-md shrink-0">
-                    {sidebarTitle.charAt(0).toUpperCase()}
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/smartadverts-color.png" alt={sidebarTitle} className="h-full w-full object-contain" />
                   </div>
                 )
               )}

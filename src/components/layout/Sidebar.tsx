@@ -164,7 +164,7 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
   const storagePercent = Math.min((storageUsed / storageLimit) * 100, 100);
 
   const isWhiteLabelEnabled = user?.plan === 'agency';
-  const sidebarTitle = isWhiteLabelEnabled && user?.agencyName ? user.agencyName : "FreelanceOS";
+  const sidebarTitle = isWhiteLabelEnabled && user?.agencyName ? user.agencyName : "SmartAdverts";
   
   const brandingMode = isWhiteLabelEnabled ? (user?.agencyBrandingMode || "both") : "both";
   const customLogoUrl = isWhiteLabelEnabled
@@ -200,8 +200,9 @@ export function Sidebar({ user, onLinkClick, isCollapsed = false, onToggleCollap
                     <img src={customLogoUrl} alt={sidebarTitle} className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-indigo-200 shrink-0">
-                    {sidebarTitle.charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center p-1.5 overflow-hidden shrink-0 shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/smartadverts-color.png" alt={sidebarTitle} className="h-full w-full object-contain" />
                   </div>
                 )
               )}

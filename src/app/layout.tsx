@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FreelanceOS | Premium Dashboard",
-  description: "High-performance dashboard for independent professionals",
+  title: "SmartAdverts | Client Portal & Workspace",
+  description: "High-performance creative media production and client management platform",
 };
 
 export default function RootLayout({
