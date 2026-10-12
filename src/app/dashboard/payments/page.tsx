@@ -195,6 +195,9 @@ export default function PaymentsPage() {
         onSuccess={refreshData}
         initialClient={prefilledClient}
         initialAmount={prefilledAmount}
+        clients={clients}
+        works={works}
+        currentUser={currentUser}
       />
 
       <ConfirmModal

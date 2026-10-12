@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, CheckCircle2, Clock, AlertCircle, Trash2 } from "lucide-react";
 import { updatePaymentStatusAction, deletePaymentAction } from "@/dashboard/payments/payment-actions";
-import { downloadCSV, downloadInvoice } from "@/lib/export-utils";
+import { downloadCSV, downloadInvoice, resolveLineItemsForInvoice } from "@/lib/export-utils";
 import { useCurrency } from "@/context/CurrencyContext";
 import { motion } from "framer-motion";
 
@@ -17,33 +17,6 @@ interface PaymentTableProps {
   clients?: Client[];
   works?: Work[];
   currentUser?: { agencyName?: string; agencyLogoUrl?: string; agencyLogoDarkUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null;
-}
-
-function getLineItemsForPayment(payment: Payment, clients: Client[], works: Work[]) {
-  const clientObj = clients.find(c => c.name === payment.client);
-  const quota = clientObj?.thumbnails_per_month || 8;
-  const ratePerTask = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
-    ? clientObj.price_per_thumbnail
-    : (quota > 0 ? (clientObj?.monthly_price || 0) / quota : 0);
-
-  const dateVal = payment.invoiceDate || payment.createdAt;
-  const invDate = dateVal ? new Date(dateVal) : new Date();
-  const start = new Date(invDate.getFullYear(), invDate.getMonth(), 1, 0, 0, 0, 0);
-  const end = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 0, 23, 59, 59, 999);
-
-  const completedTasks = works.filter((w) => {
-    if (w.client !== payment.client) return false;
-    if ((w.status as string) !== 'Completed' && w.status !== 'Done') return false;
-    const dateStr = w.completedAt || w.updatedAt || w.createdAt;
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    return d >= start && d <= end;
-  });
-
-  return completedTasks.map(w => ({
-    title: w.title,
-    amount: ratePerTask
-  }));
 }
 
 const tabs = [
@@ -105,13 +78,13 @@ export function PaymentTable({
   }, [payments, timeframe]);
 
   const handleDownloadInvoice = (payment: Payment) => {
-    const lineItems = getLineItemsForPayment(payment, clients, works);
+    const lineItems = resolveLineItemsForInvoice(payment, clients, works);
 
-    const clientObj = clients.find(c => c.name === payment.client);
+    const clientObj = clients.find(c => (c.name || '').trim().toLowerCase() === (payment.client || '').trim().toLowerCase());
     const quota = clientObj?.thumbnails_per_month || 8;
     const ratePerTask = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
       ? clientObj.price_per_thumbnail
-      : (quota > 0 ? (clientObj?.monthly_price || 0) / quota : 0);
+      : (quota > 0 && clientObj?.monthly_price ? Number(clientObj.monthly_price) / quota : 0);
 
     downloadInvoice(
       payment,
@@ -121,7 +94,9 @@ export function PaymentTable({
       currentUser?.agencyBrandingMode || "both",
       lineItems,
       ratePerTask,
-      currentUser?.agencyScannerUrl
+      currentUser?.agencyScannerUrl,
+      clients,
+      works
     );
   };
 
@@ -162,12 +137,11 @@ export function PaymentTable({
     try {
       const result = await deletePaymentAction(id);
       if (result.message !== 'success') {
-        throw new Error(result.message);
+        throw new Error();
       }
       queryClient.invalidateQueries({ queryKey: ['payments'] });
     } catch (error) {
-      console.error("Delete failed:", error);
-      alert("Failed to delete invoice.");
+      console.error("Failed to delete payment:", error);
       setPayments(previousPayments);
     }
   };

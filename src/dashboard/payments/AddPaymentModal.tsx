@@ -1,31 +1,20 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import { createPaymentAction } from './payment-actions'
+import { createPaymentAction } from '@/dashboard/payments/payment-actions'
 import { getClientsAction } from '@/dashboard/clients/client-actions'
-import { Loader2, CheckCircle2, Download } from 'lucide-react'
-import { FormModal } from '@/components/shared/FormModal'
-import { downloadInvoice } from '@/lib/export-utils'
-import { useCurrency } from '@/context/CurrencyContext'
-import { format } from 'date-fns'
-import { Client } from '@/types/client'
-import { Payment } from '@/types/payment'
-import { Work } from '@/types/work'
-import { getCurrentUserAction } from '@/auth/actions/auth-actions'
 import { getWorksAction } from '@/dashboard/work/actions/work-actions'
+import { getCurrentUserAction } from '@/auth/actions/auth-actions'
+import { downloadInvoice, resolveLineItemsForInvoice } from '@/lib/export-utils'
+import { FormModal } from '@/components/shared/FormModal'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker'
+import { useCurrency } from '@/context/CurrencyContext'
+import { CheckCircle2, Download, Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
 
-interface FormState {
-  message: string;
-  errors?: Record<string, string[]>;
-  payment?: Payment;
-}
-
-const initialState: FormState = {
-  message: '',
-  errors: {},
-}
+import { Client } from '@/types/client'
+import { Work } from '@/types/work'
 
 interface AddPaymentModalProps {
   isOpen: boolean;
@@ -33,54 +22,70 @@ interface AddPaymentModalProps {
   onSuccess?: () => void;
   initialClient?: string;
   initialAmount?: number;
+  clients?: Client[];
+  works?: Work[];
+  currentUser?: { agencyName?: string; agencyLogoUrl?: string; agencyLogoDarkUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null;
 }
 
 export function AddPaymentModal({ 
   isOpen, 
   onClose, 
   onSuccess,
-  initialClient = '',
-  initialAmount
+  initialClient,
+  initialAmount,
+  clients: propClients,
+  works: propWorks,
+  currentUser: propUser
 }: AddPaymentModalProps) {
-  const { symbol } = useCurrency();
-  const [state, formAction, isPending] = useActionState(
-    createPaymentAction as (state: FormState, formData: FormData) => Promise<FormState>,
-    initialState
-  )
-  const [clients, setClients] = useState<Client[]>([])
-  const [works, setWorks] = useState<Work[]>([])
+  const [state, formAction, isPending] = useActionState(createPaymentAction, null)
+  const [selectedClient, setSelectedClient] = useState('')
+  const [amount, setAmount] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('Pending')
+  const [dueDate, setDueDate] = useState('')
+  const [clients, setClients] = useState<Client[]>(propClients || [])
+  const [works, setWorks] = useState<Work[]>(propWorks || [])
+  const [currentUser, setCurrentUser] = useState<{ agencyName?: string; agencyLogoUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null>(propUser || null)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ agencyName?: string; agencyLogoUrl?: string; agencyLogoDarkUrl?: string; agencyScannerUrl?: string; agencyBrandingMode?: "logo" | "text" | "both" } | null>(null);
+  const { symbol } = useCurrency()
 
-  // Prefill states
-  const [selectedClient, setSelectedClient] = useState(initialClient);
-  const [amount, setAmount] = useState(initialAmount !== undefined ? String(initialAmount) : '');
-  const [dueDate, setDueDate] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState('Pending');
+  // Sync prop changes
+  useEffect(() => {
+    if (propClients && propClients.length > 0) setClients(propClients);
+  }, [propClients]);
 
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (isOpen) {
-      setShowSuccess(false);
-      setSelectedClient(initialClient || '');
-      setAmount(initialAmount !== undefined ? String(initialAmount) : '');
-      if (state) {
-        Object.assign(state, { message: '', payment: undefined, errors: {} });
-      }
-    }
-  }
+  useEffect(() => {
+    if (propWorks && propWorks.length > 0) setWorks(propWorks);
+  }, [propWorks]);
+
+  useEffect(() => {
+    if (propUser) setCurrentUser(propUser);
+  }, [propUser]);
+
+  useEffect(() => {
+    if (initialClient !== undefined) setSelectedClient(initialClient);
+  }, [initialClient]);
+
+  useEffect(() => {
+    if (initialAmount !== undefined) setAmount(String(initialAmount));
+  }, [initialAmount]);
 
   useEffect(() => {
     if (isOpen) {
+      setShowSuccess(false);
       async function loadClientsAndUser() {
-        const data = await getClientsAction();
-        setClients(data);
         try {
-          const user = await getCurrentUserAction();
-          setCurrentUser(user);
-          const worksData = await getWorksAction();
-          setWorks(worksData);
+          if (!propClients || propClients.length === 0) {
+            const clientData = await getClientsAction();
+            setClients(clientData);
+          }
+          if (!propUser) {
+            const user = await getCurrentUserAction();
+            setCurrentUser(user);
+          }
+          if (!propWorks || propWorks.length === 0) {
+            const worksData = await getWorksAction();
+            setWorks(worksData);
+          }
         } catch (e) {
           console.error("Failed to load user branding details:", e);
         }
@@ -94,7 +99,7 @@ export function AddPaymentModal({
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, propClients, propUser, propWorks]);
 
   useEffect(() => {
     if (state?.message === 'success' && isOpen) {
@@ -121,31 +126,15 @@ export function AddPaymentModal({
           <div className="w-full flex flex-col gap-3 px-2">
             <button 
               onClick={() => {
-                if (!state.payment) return;
+                if (!state?.payment) return;
 
-                const clientObj = clients.find(c => c.name === selectedClient);
+                const lineItems = resolveLineItemsForInvoice(state.payment, clients, works);
+
+                const clientObj = clients.find(c => (c.name || '').trim().toLowerCase() === (selectedClient || '').trim().toLowerCase());
                 const quota = clientObj?.thumbnails_per_month || 8;
                 const ratePerTask = clientObj?.price_per_thumbnail && clientObj.price_per_thumbnail > 0
                   ? clientObj.price_per_thumbnail
-                  : (quota > 0 ? (clientObj?.monthly_price || 0) / quota : 0);
-
-                const today = new Date();
-                const start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
-                const end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-
-                const completedTasks = works.filter((w) => {
-                  if (w.client !== selectedClient) return false;
-                  if ((w.status as string) !== 'Completed' && (w.status as string) !== 'Done') return false;
-                  const dateStr = w.completedAt || w.updatedAt || w.createdAt;
-                  if (!dateStr) return false;
-                  const d = new Date(dateStr);
-                  return d >= start && d <= end;
-                });
-
-                const lineItems = completedTasks.map(w => ({
-                  title: w.title,
-                  amount: ratePerTask
-                }));
+                  : (quota > 0 && clientObj?.monthly_price ? Number(clientObj.monthly_price) / quota : 0);
 
                 downloadInvoice(
                   state.payment, 
@@ -155,17 +144,19 @@ export function AddPaymentModal({
                   currentUser?.agencyBrandingMode || "both",
                   lineItems,
                   ratePerTask,
-                  currentUser?.agencyScannerUrl
+                  currentUser?.agencyScannerUrl,
+                  clients,
+                  works
                 );
               }}
-              className="flex items-center justify-center gap-3 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+              className="flex items-center justify-center gap-3 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 cursor-pointer"
             >
               <Download className="h-4 w-4" />
               Download Invoice
             </button>
             <button 
               onClick={onClose}
-              className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all"
+              className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all cursor-pointer"
             >
               Close
             </button>
@@ -240,14 +231,14 @@ export function AddPaymentModal({
             <button 
               type="button" 
               onClick={onClose} 
-              className="flex-1 px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all"
+              className="flex-1 px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all cursor-pointer"
             >
               Discard
             </button>
             <button 
               type="submit" 
               disabled={isPending} 
-              className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100"
+              className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100 cursor-pointer"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Record
@@ -258,4 +249,3 @@ export function AddPaymentModal({
     </FormModal>
   )
 }
-
